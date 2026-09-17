@@ -23,9 +23,11 @@ yarn-error.log*
 .nx/
 
 # Cypress
-cypress/videos/
-cypress/screenshots/
-cypress/downloads/
+# Barra inicial para casar em qualquer profundidade: `cypress/videos/` contém uma barra no
+# meio, então o Git ancora o padrão na raiz e ele nunca casaria com frontend/cypress/.
+**/cypress/videos/
+**/cypress/screenshots/
+**/cypress/downloads/
 
 # IDE
 .idea/
