@@ -31,8 +31,14 @@ export const APP_ROUTES: Routes = [
         path: 'assets',
         loadChildren: () => import('./features/assets/assets.module').then((m) => m.AssetsModule),
       },
+      {
+        path: 'vulnerabilities',
+        loadChildren: () =>
+          import('./features/vulnerabilities/vulnerabilities.module').then(
+            (m) => m.VulnerabilitiesModule,
+          ),
+      },
       // Rotas das próximas entregas, filhas deste mesmo shell:
-      // 'vulnerabilities' para qualquer papel autenticado;
       // 'users' e 'audit' somente para ADMIN, usando roleGuard com data.roles.
     ],
   },
