@@ -35,8 +35,22 @@ public abstract class AbstractIntegrationTest {
     @Autowired
     private DatabaseCleaner databaseCleaner;
 
+    /**
+     * Testcontainers is the default and what CI uses. An already-running PostgreSQL can be
+     * substituted with -Dsecurityhub.test.jdbc-url=... for environments where the Docker
+     * daemon is not reachable; the database must still be PostgreSQL 15, never H2.
+     */
     @DynamicPropertySource
     static void datasourceProperties(DynamicPropertyRegistry registry) {
+        String externalUrl = System.getProperty("securityhub.test.jdbc-url");
+        if (externalUrl != null && !externalUrl.trim().isEmpty()) {
+            registry.add("spring.datasource.url", () -> externalUrl);
+            registry.add("spring.datasource.username",
+                    () -> System.getProperty("securityhub.test.jdbc-user", "securityhub"));
+            registry.add("spring.datasource.password",
+                    () -> System.getProperty("securityhub.test.jdbc-password", "securityhub"));
+            return;
+        }
         registry.add("spring.datasource.url", () -> PostgresContainer.getInstance().getJdbcUrl());
         registry.add("spring.datasource.username", () -> PostgresContainer.getInstance().getUsername());
         registry.add("spring.datasource.password", () -> PostgresContainer.getInstance().getPassword());
