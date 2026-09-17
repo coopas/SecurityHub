@@ -13,7 +13,7 @@ public class ProjectResponse {
     private final String name;
     private final String description;
     private final ProjectStatus status;
-    /** Always 0 until the assets module supplies the real count. */
+    /** Resolved by one grouped count per page, never by initializing the collection. */
     private final long assetCount;
     private final String createdByName;
     private final Instant createdAt;
