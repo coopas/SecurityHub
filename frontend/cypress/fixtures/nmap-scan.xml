@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Relatório de nmap usado por `06-scan-import.cy.ts`. A estrutura é a de
+  `backend/src/test/resources/scan-fixtures/nmap-vuln.xml`, mas o conteúdo é próprio, por
+  dois motivos:
+
+  1. Os alvos são identificadores do seed `demo`, e os do relatório do backend
+     (`web.acme.test`, `10.0.0.11`) só existem no tenant dos testes de integração — contra a
+     pilha do compose eles não casariam com ativo nenhum. Aqui, `api.pagamentos.demo.test` e
+     `10.20.0.11` são os ativos "API de Pagamentos" e "Gateway de Borda" do projeto
+     "Plataforma de Pagamentos", e `host-desconhecido.demo.test` não existe em lugar nenhum:
+     é o achado sem ativo que o teste vincula à mão, que é a metade interessante do fluxo.
+     O casamento é por projeto, então o teste precisa enviar o relatório para esse projeto.
+
+  2. Os `id` dos scripts carregam `__RUN__`, substituído pelo teste por um valor único a cada
+     execução. A impressão digital de um achado é `sha256(scanner:ruleId:target:cve)`, e o
+     índice único parcial da V9 impede que a mesma empresa importe a mesma impressão digital
+     duas vezes. Sem o token, a segunda execução da suíte encontraria as vulnerabilidades
+     criadas pela primeira, marcaria todo achado como "já registrado" e falharia sem que nada
+     no produto tivesse mudado — exatamente o falso vermelho que a regra 3 de
+     `support/e2e.ts` existe para evitar.
+
+  O DOCTYPE é mantido de propósito: todo relatório de nmap traz um, apontando para um DTD
+  remoto, e o interpretador precisa continuar atravessando isso com `SUPPORT_DTD` desligado.
+
+  As portas abertas sem `<script>` também são de propósito. Uma porta aberta não é uma
+  vulnerabilidade, e o teste confere a contagem total para provar que elas não viraram achado.
+-->
+<!DOCTYPE nmaprun PUBLIC "-//IDN nmap.org//DTD Nmap XML 1.04//EN" "https://svn.nmap.org/nmap/docs/nmap.dtd">
+<nmaprun scanner="nmap" args="nmap -sV --script vuln -oX -" start="1700000000" version="7.94">
+  <host starttime="1700000000" endtime="1700000120">
+    <status state="up" reason="echo-reply"/>
+    <address addr="10.20.0.10" addrtype="ipv4"/>
+    <address addr="00:0C:29:11:22:33" addrtype="mac" vendor="VMware"/>
+    <hostnames>
+      <hostname name="api.pagamentos.demo.test" type="PTR"/>
+    </hostnames>
+    <ports>
+      <port protocol="tcp" portid="80">
+        <state state="open" reason="syn-ack"/>
+        <service name="http" product="nginx" version="1.18.0"/>
+      </port>
+      <port protocol="tcp" portid="443">
+        <state state="open" reason="syn-ack"/>
+        <service name="https" product="nginx" version="1.18.0"/>
+        <script id="ssl-heartbleed-__RUN__" output="VULNERABLE: The Heartbleed Bug is a serious vulnerability in OpenSSL. State: VULNERABLE Risk factor: High References: CVE-2014-0160"/>
+      </port>
+    </ports>
+  </host>
+  <host starttime="1700000000" endtime="1700000130">
+    <status state="up" reason="syn-ack"/>
+    <address addr="10.20.0.11" addrtype="ipv4"/>
+    <ports>
+      <port protocol="tcp" portid="22">
+        <state state="open" reason="syn-ack"/>
+        <service name="ssh" product="OpenSSH" version="8.2p1"/>
+      </port>
+    </ports>
+    <hostscript>
+      <script id="smb-vuln-ms17-010-__RUN__" output="VULNERABLE: Remote Code Execution vulnerability in Microsoft SMBv1 servers. IDs: CVE:CVE-2017-0143 Risk factor: HIGH"/>
+    </hostscript>
+  </host>
+  <host starttime="1700000000" endtime="1700000140">
+    <status state="up" reason="reset"/>
+    <address addr="10.20.0.90" addrtype="ipv4"/>
+    <hostnames>
+      <hostname name="host-desconhecido.demo.test" type="PTR"/>
+    </hostnames>
+    <hostscript>
+      <script id="ssl-poodle-__RUN__" output="VULNERABLE: SSL POODLE information leak. State: VULNERABLE Risk factor: Medium"/>
+    </hostscript>
+  </host>
+  <runstats><finished time="1700000200" elapsed="200.00"/></runstats>
+</nmaprun>

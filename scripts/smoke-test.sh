@@ -53,6 +53,35 @@ call() {
   printf '%s' "$payload"
 }
 
+# scan_upload PROJECT_ID FORMAT ARQUIVO TOKEN -> corpo da resposta, falha em não-2xx
+#
+# Multipart, e não JSON: o relatório é um arquivo. `projectId` e `format` viajam como campos
+# do mesmo formulário porque é assim que o cliente os manda — o controller os recebe como
+# parâmetros de requisição, que é o que o contêiner faz com um campo não-arquivo.
+scan_upload() {
+  local project="$1" format="$2" file="$3" token="$4"
+  local raw code payload
+  raw="$(curl -s -w '\n%{http_code}' -X POST "$API/api/v1/scan-imports" \
+    -H "Authorization: Bearer $token" \
+    -F "projectId=$project" -F "format=$format" -F "file=@$file")"
+  code="$(printf '%s' "$raw" | tail -n1)"
+  payload="$(printf '%s' "$raw" | sed '$d')"
+  if [ "${code:0:1}" != "2" ]; then
+    echo "  envio de $file ($format) devolveu $code" >&2
+    echo "  corpo: $payload" >&2
+    return 1
+  fi
+  printf '%s' "$payload"
+}
+
+# scan_upload_status ... -> só o código, para os casos em que a recusa é o esperado
+scan_upload_status() {
+  local project="$1" format="$2" file="$3" token="$4"
+  curl -s -o /dev/null -w '%{http_code}' -X POST "$API/api/v1/scan-imports" \
+    -H "Authorization: Bearer $token" \
+    -F "projectId=$project" -F "format=$format" -F "file=@$file"
+}
+
 step "1. Saúde dos serviços"
 health="$(curl -s "$MGMT/actuator/health" | jq -r '.status' 2>/dev/null || echo DOWN)"
 [ "$health" = "UP" ] || fail "backend não está UP (recebido: $health, via $MGMT)"
@@ -388,5 +417,299 @@ report_code="$(curl -s -o "$REPORT" -w '%{http_code}' -H "Authorization: Bearer 
 [ "$(head -c 5 "$REPORT")" = "%PDF-" ] || fail "o relatório não começa com %PDF-"
 [ "$(wc -c < "$REPORT")" -gt 1000 ] || fail "o relatório tem tamanho implausível"
 pass "relatório executivo é um PDF com conteúdo"
+
+step "16. Importação de relatórios de varredura"
+
+# Um relatório de varredura chega como arquivo e vira **proposta**, não vulnerabilidade: o
+# envio só encena os achados em uma área de staging, e quem cria alguma coisa é a confirmação.
+# Cada formato é enviado duas vezes de propósito. A segunda vez é o que prova, contra o banco
+# de verdade, que a impressão digital de um achado já importado o marca como duplicado em vez
+# de criar uma segunda cópia de algo que alguém já está tratando.
+
+SCAN_DIR="$(mktemp -d -t smoke-scan-XXXXXX)"
+# Substitui o trap da seção 14 e repete o que ele fazia: um trap novo não acumula, ele troca.
+trap 'rm -f "$EVIDENCE" "$DOWNLOADED" "$REPORT"; rm -rf "$SCAN_DIR"' EXIT
+
+# O alvo de um achado é casado com o `identifier` de um ativo **do projeto escolhido**, então
+# os relatórios abaixo apontam para os identificadores criados na seção 4. ZAP e nuclei
+# reportam URL, e é a URL inteira que precisa bater com o identificador — daí este ativo.
+WEB_IDENTIFIER="https://web-$SUFFIX.smoke.test"
+web_asset="$(call POST "$API/api/v1/assets" "$TOKEN_A" "{
+  \"projectId\": $PROJECT_ID,
+  \"name\": \"Portal web\",
+  \"type\": \"WEBSITE\",
+  \"identifier\": \"$WEB_IDENTIFIER\",
+  \"environment\": \"PRODUCTION\",
+  \"criticality\": \"HIGH\"
+}")" || fail "criação do ativo web falhou"
+WEB_ASSET_ID="$(printf '%s' "$web_asset" | jq -r '.id')"
+pass "ativo web $WEB_ASSET_ID criado para os alvos em forma de URL"
+
+backlog_before="$(call GET "$API/api/v1/vulnerabilities?size=1" "$TOKEN_A")" || fail "listagem falhou"
+BACKLOG_BEFORE="$(printf '%s' "$backlog_before" | jq -r '.totalElements')"
+
+# --- nmap: casa um alvo, deixa outro sem ativo, e ignora porta aberta ---------
+cat > "$SCAN_DIR/nmap.xml" <<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun PUBLIC "-//IDN nmap.org//DTD Nmap XML 1.04//EN" "https://svn.nmap.org/nmap/docs/nmap.dtd">
+<nmaprun scanner="nmap" args="nmap -sV --script vuln -oX -" start="1700000000" version="7.94">
+  <host>
+    <status state="up" reason="echo-reply"/>
+    <address addr="10.44.0.10" addrtype="ipv4"/>
+    <hostnames><hostname name="api-$SUFFIX.smoke.test" type="PTR"/></hostnames>
+    <ports>
+      <port protocol="tcp" portid="80">
+        <state state="open" reason="syn-ack"/>
+        <service name="http" product="nginx" version="1.18.0"/>
+      </port>
+      <port protocol="tcp" portid="443">
+        <state state="open" reason="syn-ack"/>
+        <script id="ssl-heartbleed" output="VULNERABLE: The Heartbleed Bug is a serious vulnerability in OpenSSL. References: CVE-2014-0160"/>
+      </port>
+    </ports>
+    <hostscript>
+      <script id="smb-vuln-ms17-010" output="VULNERABLE: Remote Code Execution in Microsoft SMBv1. IDs: CVE:CVE-2017-0143"/>
+    </hostscript>
+  </host>
+  <host>
+    <status state="up" reason="reset"/>
+    <address addr="198.51.100.23" addrtype="ipv4"/>
+    <hostscript>
+      <script id="ssl-poodle" output="VULNERABLE: SSL POODLE information leak"/>
+    </hostscript>
+  </host>
+</nmaprun>
+XML
+
+nmap_import="$(scan_upload "$PROJECT_ID" NMAP_XML "$SCAN_DIR/nmap.xml" "$TOKEN_A")" \
+  || fail "envio do relatório nmap falhou"
+NMAP_ID="$(printf '%s' "$nmap_import" | jq -r '.id')"
+[ "$(printf '%s' "$nmap_import" | jq -r '.status')" = "PENDING" ] || fail "a importação não nasceu PENDING"
+# Três resultados de script e duas portas abertas no arquivo: só os scripts viram achado.
+# Uma porta aberta não é uma vulnerabilidade, e importá-la encheria o backlog de ruído.
+[ "$(printf '%s' "$nmap_import" | jq -r '.totalFindings')" = "3" ] \
+  || fail "o nmap deveria render 3 achados (só resultados de script NSE)"
+[ "$(printf '%s' "$nmap_import" | jq -r '.matchedCount')" = "2" ] || fail "contador de achados com ativo incorreto"
+[ "$(printf '%s' "$nmap_import" | jq -r '.unmatchedCount')" = "1" ] || fail "contador de achados sem ativo incorreto"
+[ "$(printf '%s' "$nmap_import" | jq -r '.duplicateCount')" = "0" ] || fail "importação inédita trouxe duplicados"
+pass "importação $NMAP_ID criada pendente: 3 achados, 2 com ativo, 1 sem ativo"
+
+# O envio não cria nada: é só uma proposta até alguém confirmar.
+backlog_staged="$(call GET "$API/api/v1/vulnerabilities?size=1" "$TOKEN_A")" || fail "listagem falhou"
+[ "$(printf '%s' "$backlog_staged" | jq -r '.totalElements')" = "$BACKLOG_BEFORE" ] \
+  || fail "o envio do relatório criou vulnerabilidade antes da confirmação"
+pass "nada foi criado pelo envio"
+
+# O alvo que não existe no inventário fica esperando uma pessoa: o importador nunca cria ativo.
+FINDING_ID="$(printf '%s' "$nmap_import" | jq -r '[.findings[] | select(.status == "UNMATCHED")][0].id')"
+mapped="$(call PATCH "$API/api/v1/scan-imports/$NMAP_ID/findings/$FINDING_ID" "$TOKEN_A" \
+  "{\"assetId\": $ASSET_ID}")" || fail "mapeamento do achado falhou"
+[ "$(printf '%s' "$mapped" | jq -r '.status')" = "MATCHED" ] || fail "o achado mapeado não ficou MATCHED"
+[ "$(printf '%s' "$mapped" | jq -r '.assetId')" = "$ASSET_ID" ] || fail "o ativo do achado não foi gravado"
+preview="$(call GET "$API/api/v1/scan-imports/$NMAP_ID" "$TOKEN_A")" || fail "prévia falhou"
+[ "$(printf '%s' "$preview" | jq -r '.matchedCount')" = "3" ] || fail "o mapeamento não recontou a importação"
+[ "$(printf '%s' "$preview" | jq -r '.unmatchedCount')" = "0" ] || fail "ainda há achado sem ativo"
+pass "achado $FINDING_ID mapeado à mão e contadores recalculados"
+
+# A trilha recebe uma linha por importação, e não uma por vulnerabilidade criada: é o que
+# mantém a auditoria legível depois de um relatório de quatrocentos achados.
+creates_before="$(call GET "$API/api/v1/audit-logs?size=1&entityType=Vulnerability&action=CREATE" "$TOKEN_A")" \
+  || fail "consulta de auditoria falhou"
+CREATES_BEFORE="$(printf '%s' "$creates_before" | jq -r '.totalElements')"
+
+confirmed="$(call POST "$API/api/v1/scan-imports/$NMAP_ID/confirm" "$TOKEN_A")" || fail "confirmação falhou"
+[ "$(printf '%s' "$confirmed" | jq -r '.status')" = "CONFIRMED" ] || fail "a importação não ficou CONFIRMED"
+[ "$(printf '%s' "$confirmed" | jq -r '.importedCount')" = "3" ] || fail "não foram criadas 3 vulnerabilidades"
+[ "$(printf '%s' "$confirmed" | jq -r '.skippedCount')" = "0" ] || fail "algum achado foi ignorado sem motivo"
+[ "$(printf '%s' "$confirmed" | jq '[.findings[] | select(.status == "IMPORTED" and (.vulnerabilityId | type) == "number")] | length')" = "3" ] \
+  || fail "algum achado importado não aponta para a vulnerabilidade criada"
+backlog_after="$(call GET "$API/api/v1/vulnerabilities?size=1" "$TOKEN_A")" || fail "listagem falhou"
+[ "$(printf '%s' "$backlog_after" | jq -r '.totalElements')" = "$((BACKLOG_BEFORE + 3))" ] \
+  || fail "o backlog não cresceu exatamente 3 vulnerabilidades"
+pass "confirmação criou 3 vulnerabilidades, uma por achado com ativo"
+
+creates_after="$(call GET "$API/api/v1/audit-logs?size=1&entityType=Vulnerability&action=CREATE" "$TOKEN_A")" \
+  || fail "consulta de auditoria falhou"
+[ "$(printf '%s' "$creates_after" | jq -r '.totalElements')" = "$CREATES_BEFORE" ] \
+  || fail "a confirmação escreveu CREATE por vulnerabilidade e enterrou a trilha"
+scan_audit="$(call GET "$API/api/v1/audit-logs?size=20&entityType=ScanImport&action=SCAN_IMPORT" "$TOKEN_A")" \
+  || fail "consulta de auditoria falhou"
+printf '%s' "$scan_audit" | jq -e ".content[] | select(.entityId == $NMAP_ID)" >/dev/null \
+  || fail "a confirmação não deixou linha SCAN_IMPORT na auditoria"
+[ "$(printf '%s' "$scan_audit" | jq "[.content[] | select(.entityId == $NMAP_ID)] | length")" = "1" ] \
+  || fail "a confirmação deixou mais de uma linha de auditoria"
+pass "auditoria tem exatamente uma linha SCAN_IMPORT e nenhum CREATE por achado"
+
+# Uma importação encerrada não volta atrás: os dois caminhos respondem 409 e não 400, porque
+# o pedido está bem formado — o que está errado é o estado da linha.
+code="$(status_of POST "$API/api/v1/scan-imports/$NMAP_ID/confirm" "$TOKEN_A")"
+[ "$code" = "409" ] || fail "segunda confirmação devolveu $code, esperado 409"
+code="$(status_of DELETE "$API/api/v1/scan-imports/$NMAP_ID" "$TOKEN_A")"
+[ "$code" = "409" ] || fail "descarte de importação confirmada devolveu $code, esperado 409"
+pass "só uma importação pendente pode ser confirmada ou descartada"
+
+# O mesmo arquivo de novo: nenhum achado novo, todos marcados como já registrados. O que isso
+# protege é o trabalho humano — a vulnerabilidade da primeira importação pode já ter status,
+# responsável e discussão, e reimportar não pode desfazer nada disso.
+nmap_again="$(scan_upload "$PROJECT_ID" NMAP_XML "$SCAN_DIR/nmap.xml" "$TOKEN_A")" \
+  || fail "segundo envio do relatório nmap falhou"
+NMAP_AGAIN_ID="$(printf '%s' "$nmap_again" | jq -r '.id')"
+[ "$(printf '%s' "$nmap_again" | jq -r '.totalFindings')" = "3" ] || fail "o relatório mudou de tamanho"
+[ "$(printf '%s' "$nmap_again" | jq -r '.duplicateCount')" = "3" ] \
+  || fail "a reimportação não reconheceu todos os achados como duplicados"
+[ "$(printf '%s' "$nmap_again" | jq -r '.matchedCount')" = "0" ] || fail "duplicado deveria vencer sobre com ativo"
+[ "$(printf '%s' "$nmap_again" | jq -r '.unmatchedCount')" = "0" ] || fail "contador de sem ativo incorreto"
+confirmed_again="$(call POST "$API/api/v1/scan-imports/$NMAP_AGAIN_ID/confirm" "$TOKEN_A")" \
+  || fail "confirmação da reimportação falhou"
+[ "$(printf '%s' "$confirmed_again" | jq -r '.importedCount')" = "0" ] || fail "a reimportação criou vulnerabilidade"
+[ "$(printf '%s' "$confirmed_again" | jq -r '.skippedCount')" = "3" ] || fail "os duplicados não foram ignorados"
+backlog_dup="$(call GET "$API/api/v1/vulnerabilities?size=1" "$TOKEN_A")" || fail "listagem falhou"
+[ "$(printf '%s' "$backlog_dup" | jq -r '.totalElements')" = "$((BACKLOG_BEFORE + 3))" ] \
+  || fail "reimportar o mesmo relatório mudou o tamanho do backlog"
+pass "reimportação do mesmo arquivo: 3 duplicados, 0 criados"
+
+# --- ZAP: uma instância por alerta, CVSS arredondado e o primeiro CVE da lista -
+cat > "$SCAN_DIR/zap.json" <<JSON
+{
+  "@programName": "ZAP",
+  "@version": "2.14.0",
+  "site": [
+    {
+      "@name": "$WEB_IDENTIFIER",
+      "@host": "web-$SUFFIX.smoke.test",
+      "@port": "443",
+      "alerts": [
+        {
+          "pluginid": "40012",
+          "name": "Cross Site Scripting (Reflected)",
+          "riskcode": "3",
+          "desc": "<p>O termo pesquisado volta sem escape.</p>",
+          "instances": [{"uri": "$WEB_IDENTIFIER", "method": "GET", "param": "q"}]
+        },
+        {
+          "pluginid": "10038",
+          "name": "Remote Code Execution - Log4Shell",
+          "riskcode": "3",
+          "desc": "<p>Versao vulneravel do Log4j.</p>",
+          "cveid": "CVE-2021-44228, CVE-2021-45046",
+          "cvssScore": "7.53",
+          "instances": [{"uri": "$WEB_IDENTIFIER", "method": "GET"}]
+        }
+      ]
+    }
+  ]
+}
+JSON
+
+zap_import="$(scan_upload "$PROJECT_ID" ZAP_JSON "$SCAN_DIR/zap.json" "$TOKEN_A")" \
+  || fail "envio do relatório ZAP falhou"
+ZAP_ID="$(printf '%s' "$zap_import" | jq -r '.id')"
+[ "$(printf '%s' "$zap_import" | jq -r '.totalFindings')" = "2" ] || fail "o ZAP deveria render 2 achados"
+[ "$(printf '%s' "$zap_import" | jq -r '.matchedCount')" = "2" ] || fail "os dois alertas deveriam achar o ativo web"
+pass "importação $ZAP_ID criada: 2 achados, os dois com ativo"
+
+zap_confirmed="$(call POST "$API/api/v1/scan-imports/$ZAP_ID/confirm" "$TOKEN_A")" \
+  || fail "confirmação do ZAP falhou"
+[ "$(printf '%s' "$zap_confirmed" | jq -r '.importedCount')" = "2" ] || fail "o ZAP não criou 2 vulnerabilidades"
+LOG4SHELL_ID="$(printf '%s' "$zap_confirmed" | jq -r '[.findings[] | select(.ruleId == "10038")][0].vulnerabilityId')"
+log4shell="$(call GET "$API/api/v1/vulnerabilities/$LOG4SHELL_ID" "$TOKEN_A")" || fail "leitura da vulnerabilidade falhou"
+# 7.53 não cabe em NUMERIC(3,1): o normalizador arredonda para 7.5 em vez de deixar o banco
+# recusar a linha inteira na confirmação.
+[ "$(printf '%s' "$log4shell" | jq -r '.cvssScore')" = "7.5" ] || fail "o CVSS do ZAP não foi normalizado para 7.5"
+# Um CVE por achado, e é o primeiro bem formado da lista que o ZAP mandou.
+[ "$(printf '%s' "$log4shell" | jq -r '.cve')" = "CVE-2021-44228" ] || fail "o CVE do ZAP não foi extraído"
+[ "$(printf '%s' "$log4shell" | jq -r '.severity')" = "HIGH" ] || fail "riskcode 3 deveria virar HIGH"
+pass "vulnerabilidade $LOG4SHELL_ID criada com CVSS 7.5, CVE-2021-44228 e severidade HIGH"
+
+zap_again="$(scan_upload "$PROJECT_ID" ZAP_JSON "$SCAN_DIR/zap.json" "$TOKEN_A")" \
+  || fail "segundo envio do relatório ZAP falhou"
+ZAP_AGAIN_ID="$(printf '%s' "$zap_again" | jq -r '.id')"
+[ "$(printf '%s' "$zap_again" | jq -r '.duplicateCount')" = "2" ] \
+  || fail "a reimportação do ZAP não marcou todos os achados como duplicados"
+pass "reimportação do ZAP: 2 duplicados, 0 com ativo"
+
+# O descarte joga a proposta fora; as linhas de achado ficam, e o arquivo em disco some.
+code="$(status_of DELETE "$API/api/v1/scan-imports/$ZAP_AGAIN_ID" "$TOKEN_A")"
+[ "$code" = "204" ] || fail "descarte devolveu $code, esperado 204"
+discarded="$(call GET "$API/api/v1/scan-imports/$ZAP_AGAIN_ID" "$TOKEN_A")" || fail "prévia da descartada falhou"
+[ "$(printf '%s' "$discarded" | jq -r '.status')" = "DISCARDED" ] || fail "a importação não ficou DISCARDED"
+[ "$(printf '%s' "$discarded" | jq '.findings | length')" = "2" ] \
+  || fail "o descarte apagou o que o relatório encontrou"
+pass "importação $ZAP_AGAIN_ID descartada, mantendo o que o relatório encontrou"
+
+# --- nuclei: um JSON por linha, e a linha que não é JSON é pulada -------------
+cat > "$SCAN_DIR/nuclei.jsonl" <<JSONL
+{"template-id":"springboot-actuators","info":{"name":"Spring Boot Actuator Exposure","description":"Actuator exposto sem autenticacao.","severity":"high","classification":{"cvss-score":8.6,"cve-id":["CVE-2023-1234"]}},"host":"$WEB_IDENTIFIER","matched-at":"$WEB_IDENTIFIER","timestamp":"2023-11-13T10:17:00Z"}
+nuclei: connection reset by peer while writing this line
+{"template-id":"tech-detect","info":{"name":"Wappalyzer Technology Detection","description":"Identifica tecnologias expostas.","severity":"info"},"host":"$WEB_IDENTIFIER","matched-at":"$WEB_IDENTIFIER","timestamp":"2023-11-13T10:16:30Z"}
+JSONL
+
+nuclei_import="$(scan_upload "$PROJECT_ID" NUCLEI_JSONL "$SCAN_DIR/nuclei.jsonl" "$TOKEN_A")" \
+  || fail "envio do relatório nuclei falhou"
+NUCLEI_ID="$(printf '%s' "$nuclei_import" | jq -r '.id')"
+# Três linhas no arquivo, duas viram achado: uma linha corrompida no meio do fluxo não pode
+# derrubar o relatório inteiro.
+[ "$(printf '%s' "$nuclei_import" | jq -r '.totalFindings')" = "2" ] \
+  || fail "o nuclei deveria render 2 achados e pular a linha que não é JSON"
+[ "$(printf '%s' "$nuclei_import" | jq -r '.matchedCount')" = "2" ] || fail "os dois achados deveriam achar o ativo web"
+pass "importação $NUCLEI_ID criada: 2 achados, linha corrompida ignorada"
+
+nuclei_confirmed="$(call POST "$API/api/v1/scan-imports/$NUCLEI_ID/confirm" "$TOKEN_A")" \
+  || fail "confirmação do nuclei falhou"
+[ "$(printf '%s' "$nuclei_confirmed" | jq -r '.importedCount')" = "2" ] || fail "o nuclei não criou 2 vulnerabilidades"
+pass "confirmação do nuclei criou 2 vulnerabilidades"
+
+nuclei_again="$(scan_upload "$PROJECT_ID" NUCLEI_JSONL "$SCAN_DIR/nuclei.jsonl" "$TOKEN_A")" \
+  || fail "segundo envio do relatório nuclei falhou"
+NUCLEI_AGAIN_ID="$(printf '%s' "$nuclei_again" | jq -r '.id')"
+[ "$(printf '%s' "$nuclei_again" | jq -r '.duplicateCount')" = "2" ] \
+  || fail "a reimportação do nuclei não marcou todos os achados como duplicados"
+code="$(status_of DELETE "$API/api/v1/scan-imports/$NUCLEI_AGAIN_ID" "$TOKEN_A")"
+[ "$code" = "204" ] || fail "descarte da reimportação do nuclei devolveu $code, esperado 204"
+pass "reimportação do nuclei: 2 duplicados, descartada em seguida"
+
+# --- o teto por arquivo -------------------------------------------------------
+# A importação é síncrona, e é esse teto que a mantém assim: acima dele o envio é recusado
+# antes de qualquer gravação, em vez de a requisição virar um trabalho de minutos.
+awk -v host="$WEB_IDENTIFIER" 'BEGIN {
+  for (i = 1; i <= 2001; i++)
+    printf "{\"template-id\":\"limite-%d\",\"info\":{\"name\":\"Achado %d\",\"severity\":\"low\"},\"matched-at\":\"%s\",\"timestamp\":\"2026-01-01T00:00:00Z\"}\n", i, i, host
+}' > "$SCAN_DIR/nuclei-grande.jsonl"
+
+history_before="$(call GET "$API/api/v1/scan-imports?size=1" "$TOKEN_A")" || fail "histórico falhou"
+HISTORY_BEFORE="$(printf '%s' "$history_before" | jq -r '.totalElements')"
+code="$(scan_upload_status "$PROJECT_ID" NUCLEI_JSONL "$SCAN_DIR/nuclei-grande.jsonl" "$TOKEN_A")"
+[ "$code" = "400" ] || fail "relatório acima do teto devolveu $code, esperado 400"
+history_after="$(call GET "$API/api/v1/scan-imports?size=1" "$TOKEN_A")" || fail "histórico falhou"
+[ "$(printf '%s' "$history_after" | jq -r '.totalElements')" = "$HISTORY_BEFORE" ] \
+  || fail "o relatório recusado deixou uma importação no histórico"
+pass "relatório acima do teto é recusado sem deixar linha nenhuma"
+
+# --- histórico ----------------------------------------------------------------
+history="$(call GET "$API/api/v1/scan-imports?size=50" "$TOKEN_A")" || fail "histórico falhou"
+printf '%s' "$history" | jq -e ".content[] | select(.id == $NMAP_ID and .status == \"CONFIRMED\")" >/dev/null \
+  || fail "a importação confirmada não aparece no histórico"
+printf '%s' "$history" | jq -e ".content[] | select(.id == $ZAP_AGAIN_ID and .status == \"DISCARDED\")" >/dev/null \
+  || fail "a importação descartada não aparece no histórico"
+# A listagem carrega os contadores e não os achados: uma página de vinte importações com todos
+# os achados de cada uma seriam milhares de linhas para desenhar seis números.
+printf '%s' "$history" | jq -e '.content[0] | has("findings")' >/dev/null \
+  && fail "o histórico está carregando os achados de cada importação"
+pass "histórico lista as importações com os contadores, sem os achados"
+
+# --- isolamento entre empresas ------------------------------------------------
+# 404 e nunca 403, como no resto da API: um 403 confirmaria que o id existe.
+for path in "/scan-imports/$NMAP_ID" "/scan-imports/$ZAP_ID"; do
+  code="$(status_of GET "$API/api/v1$path" "$TOKEN_B")"
+  [ "$code" = "404" ] || fail "empresa B leu $path da empresa A (HTTP $code, esperado 404)"
+done
+code="$(status_of DELETE "$API/api/v1/scan-imports/$NMAP_ID" "$TOKEN_B")"
+[ "$code" = "404" ] || fail "empresa B descartou importação da empresa A (HTTP $code, esperado 404)"
+code="$(scan_upload_status "$PROJECT_ID" NMAP_XML "$SCAN_DIR/nmap.xml" "$TOKEN_B")"
+[ "$code" = "404" ] || fail "empresa B importou para um projeto da empresa A (HTTP $code, esperado 404)"
+history_b="$(call GET "$API/api/v1/scan-imports?size=50" "$TOKEN_B")" || fail "histórico da empresa B falhou"
+printf '%s' "$history_b" | jq -e ".content[] | select(.id == $NMAP_ID)" >/dev/null \
+  && fail "o histórico da empresa B expôs uma importação da empresa A"
+pass "importações isoladas entre empresas, com 404"
 
 printf '\n\033[32mSmoke test concluído com sucesso.\033[0m\n'
