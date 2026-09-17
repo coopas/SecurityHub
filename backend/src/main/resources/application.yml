@@ -56,6 +56,14 @@ server:
     enabled: true
 
 management:
+  health:
+    # O envio de e-mail é deliberadamente tolerante a falha (docs/adr/0007): a entrega
+    # acontece fora da transação e fora da thread da requisição, e uma exceção é registrada
+    # em vez de propagada. Um indicador que derruba /actuator/health quando o SMTP está fora
+    # contradiz isso — tiraria a aplicação de rotação por uma dependência que ela foi escrita
+    # para sobreviver.
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:
