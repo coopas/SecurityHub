@@ -38,6 +38,10 @@ services:
       SECURITYHUB_REFRESH_EXPIRATION_DAYS: ${SECURITYHUB_REFRESH_EXPIRATION_DAYS:-14}
       SECURITYHUB_CORS_ALLOWED_ORIGINS: ${SECURITYHUB_CORS_ALLOWED_ORIGINS:-http://localhost:8081}
       SECURITYHUB_ATTACHMENTS_DIR: /var/securityhub/uploads
+      MAIL_HOST: mailhog
+      MAIL_PORT: 1025
+      SECURITYHUB_MAIL_FROM: ${SECURITYHUB_MAIL_FROM:-nao-responda@securityhub.local}
+      SECURITYHUB_APP_BASE_URL: ${SECURITYHUB_APP_BASE_URL:-http://localhost:8081}
       # Senha das contas criadas pelo seed do perfil `demo`. Credencial pública da
       # demonstração local, e não um segredo: o tenant `demo` vive apenas no banco que este
       # compose acabou de subir na máquina de quem clonou o repositório. Sobrescreva em
@@ -71,6 +75,17 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
+    restart: unless-stopped
+
+  # Caixa de entrada local para os links de recuperação de senha e convite: SMTP em 1025,
+  # interface web em 8025. Sem healthcheck e sem depends_on de propósito — a imagem não tem
+  # shell para um healthcheck e o backend tolera SMTP indisponível (ver docs/adr/0007).
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: securityhub-mailhog
+    ports:
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"
+      - "${MAILHOG_WEB_PORT:-8025}:8025"
     restart: unless-stopped
 
 volumes:
