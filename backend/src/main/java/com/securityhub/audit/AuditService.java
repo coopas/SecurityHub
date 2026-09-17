@@ -8,8 +8,6 @@ import javax.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -20,32 +18,47 @@ public class AuditService {
 
     private static final int MAX_JSON_LENGTH = 8000;
 
-    private final AuditLogRepository auditLogRepository;
+    private final AuditLogWriter writer;
     private final ObjectMapper objectMapper;
 
     /**
-     * Runs in its own transaction so the trail survives a rollback of the business
-     * operation — a failed attempt is exactly what an auditor needs to see.
+     * Joins the caller's transaction, which is required whenever the audited rows are being
+     * created by that same transaction: an independent transaction cannot see them yet and
+     * the foreign keys would fail. It also makes the change and its trail commit or roll back
+     * together, so the log never describes something that did not happen.
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void record(AuditEntry entry) {
+        writer.writeInCurrentTransaction(toLog(entry));
+    }
+
+    /**
+     * Commits on its own so the event survives a rollback of the surrounding operation —
+     * used for authentication outcomes, notably a failed login. Only safe when every row it
+     * references is already committed. A failure here is logged and swallowed: losing an
+     * audit line must not turn a valid request into a 500.
+     */
+    public void recordIndependently(AuditEntry entry) {
         try {
-            AuditLog log = new AuditLog();
-            log.setCompanyId(entry.getCompanyId());
-            log.setActorId(entry.getActorId());
-            log.setActorEmail(entry.getActorEmail());
-            log.setAction(entry.getAction());
-            log.setEntityType(entry.getEntityType());
-            log.setEntityId(entry.getEntityId());
-            log.setOldValueJson(toJson(entry.getOldValue()));
-            log.setNewValueJson(toJson(entry.getNewValue()));
-            log.setIpAddress(currentIpAddress());
-            log.setCreatedAt(Instant.now());
-            auditLogRepository.save(log);
+            writer.writeInNewTransaction(toLog(entry));
         } catch (RuntimeException ex) {
-            // Auditing must never take down the operation it is describing.
-            log.error("Falha ao registrar auditoria de {} em {}", entry.getAction(), entry.getEntityType(), ex);
+            log.error("Falha ao registrar auditoria de {} em {}",
+                    entry.getAction(), entry.getEntityType(), ex);
         }
+    }
+
+    private AuditLog toLog(AuditEntry entry) {
+        AuditLog auditLog = new AuditLog();
+        auditLog.setCompanyId(entry.getCompanyId());
+        auditLog.setActorId(entry.getActorId());
+        auditLog.setActorEmail(entry.getActorEmail());
+        auditLog.setAction(entry.getAction());
+        auditLog.setEntityType(entry.getEntityType());
+        auditLog.setEntityId(entry.getEntityId());
+        auditLog.setOldValueJson(toJson(entry.getOldValue()));
+        auditLog.setNewValueJson(toJson(entry.getNewValue()));
+        auditLog.setIpAddress(currentIpAddress());
+        auditLog.setCreatedAt(Instant.now());
+        return auditLog;
     }
 
     private String toJson(Map<String, Object> values) {

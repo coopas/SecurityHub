@@ -3,9 +3,9 @@ package com.securityhub.user;
 import com.securityhub.security.AuthenticatedUser;
 import com.securityhub.user.dto.UserResponse;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,10 +23,10 @@ public class UserService {
     @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('ADMIN','ANALYST')")
     public List<UserResponse> search(AuthenticatedUser current, Role role, Boolean active, String search) {
-        String term = (search == null || search.trim().isEmpty())
-                ? null
-                : "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
-        return userRepository.search(current.getCompanyId(), role, active, term).stream()
+        return userRepository
+                .findAll(UserSpecifications.filter(current.getCompanyId(), role, active, search),
+                        Sort.by(Sort.Direction.ASC, "name"))
+                .stream()
                 .map(UserMapper::toResponse)
                 .collect(Collectors.toList());
     }

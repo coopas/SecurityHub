@@ -15,7 +15,6 @@ import com.securityhub.user.UserRepository;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +57,7 @@ public class ProjectService {
                                         Pageable pageable) {
         Pageable sanitized = PageableSupport.sanitize(pageable, SORTABLE_PROPERTIES, DEFAULT_SORT);
         return projectRepository
-                .search(current.getCompanyId(), likeTerm(search), status, sanitized)
+                .findAll(ProjectSpecifications.filter(current.getCompanyId(), search, status), sanitized)
                 .map(ProjectMapper::toResponse);
     }
 
@@ -145,13 +144,5 @@ public class ProjectService {
         values.put("description", project.getDescription());
         values.put("status", project.getStatus() == null ? null : project.getStatus().name());
         return values;
-    }
-
-    private String likeTerm(String search) {
-        if (search == null) {
-            return null;
-        }
-        String trimmed = search.trim();
-        return trimmed.isEmpty() ? null : "%" + trimmed.toLowerCase(Locale.ROOT) + "%";
     }
 }

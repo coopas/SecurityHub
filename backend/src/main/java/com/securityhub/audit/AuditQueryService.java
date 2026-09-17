@@ -34,7 +34,8 @@ public class AuditQueryService {
         String normalizedEntityType = (entityType == null || entityType.trim().isEmpty())
                 ? null : entityType.trim();
         return auditLogRepository
-                .search(current.getCompanyId(), normalizedEntityType, actorId, action, from, to, sanitized)
+                .findAll(AuditSpecifications.filter(current.getCompanyId(), normalizedEntityType,
+                        actorId, action, from, to), sanitized)
                 .map(log -> AuditMapper.toResponse(log, objectMapper));
     }
 }

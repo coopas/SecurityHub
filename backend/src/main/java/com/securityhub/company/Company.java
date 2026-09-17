@@ -7,11 +7,13 @@ import javax.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 @Getter
 @Setter
 @Entity
 @NoArgsConstructor
+@BatchSize(size = 50)
 @Table(name = "companies")
 public class Company extends BaseEntity {
 

@@ -15,11 +15,13 @@ import javax.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 @Getter
 @Setter
 @Entity
 @NoArgsConstructor
+@BatchSize(size = 50)
 @Table(name = "users")
 public class User extends BaseEntity {
 
