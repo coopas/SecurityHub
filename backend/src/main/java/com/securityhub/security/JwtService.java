@@ -64,6 +64,15 @@ public class JwtService {
         return Duration.ofMinutes(properties.getExpirationMinutes());
     }
 
+    /**
+     * Vida do refresh token. Mora aqui, e não em RefreshTokenService, porque a propriedade que
+     * a define — securityhub.jwt.refresh-expiration-days — já era desta classe; o token em si
+     * é opaco e não passa por nenhum outro método daqui (ADR 0006).
+     */
+    public Duration refreshTokenTtl() {
+        return Duration.ofDays(properties.getRefreshExpirationDays());
+    }
+
     public Optional<JwtPrincipal> parse(String token) {
         try {
             Jws<Claims> jws = Jwts.parserBuilder()
