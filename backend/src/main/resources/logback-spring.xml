@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  O nome do arquivo é parte da configuração: precisa ser `logback-spring.xml`, e não
+  `logback.xml`. O Logback lê `logback.xml` sozinho, antes de o contexto do Spring existir —
+  e nesse momento `<springProfile>` e `<springProperty>` são tags desconhecidas, inertes.
+  Só o sufixo `-spring` faz o Boot assumir a leitura e resolver os perfis; com o outro nome
+  todo mundo cairia no mesmo appender, em silêncio.
+
+  Saída apenas em stdout, sem appender de arquivo: dentro de um contêiner quem coleta o log é
+  o runtime, e um arquivo dentro da imagem é um disco enchendo que ninguém está olhando.
+-->
+<configuration>
+
+  <!--
+    Traz CONSOLE_LOG_PATTERN, os conversores de cor e os níveis padrão do Boot. É o que mantém
+    o padrão humano alimentado por `logging.pattern.console` no application.yml: o formato
+    legível continua definido em um lugar só, e não duplicado aqui.
+  -->
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+  <springProperty scope="context" name="serviceName" source="spring.application.name"
+                  defaultValue="securityhub"/>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+  </appender>
+
+  <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <!-- UTC em todo lugar, como o resto da aplicação (Jackson, Hibernate e o CSV). -->
+      <timeZone>UTC</timeZone>
+
+      <!--
+        Sem as propriedades do contexto do Logback. O <springProperty> acima grava `serviceName`
+        ali, e com includeContext ligado (o padrão) o mesmo valor sairia duas vezes em toda
+        linha — uma como `serviceName`, outra como o `service` declarado logo abaixo. O nome do
+        campo é contrato com o coletor; um só, e explícito.
+      -->
+      <includeContext>false</includeContext>
+
+      <!--
+        O MDC entra por lista de permissão, e não inteiro. `traceId` sobe como campo de
+        primeiro nível, que é como um coletor correlaciona requisições; qualquer chave futura
+        precisa ser adicionada aqui de propósito. Sem isso, a primeira chave de MDC que
+        alguém colocar com um dado sensível seria serializada em toda linha, por acidente.
+      -->
+      <includeMdc>true</includeMdc>
+      <includeMdcKeyName>traceId</includeMdcKeyName>
+
+      <customFields>{"service":"${serviceName}"}</customFields>
+
+      <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+        <rootCauseFirst>true</rootCauseFirst>
+        <maxDepthPerThrowable>30</maxDepthPerThrowable>
+        <maxLength>8192</maxLength>
+      </throwableConverter>
+    </encoder>
+  </appender>
+
+  <!--
+    `demo` fica legível de propósito: quem sobe o compose e roda `docker compose logs backend`
+    para achar as credenciais semeadas precisa conseguir ler a saída. `test` pelo mesmo motivo
+    — um build que quebra com o log em JSON é um build que ninguém diagnostica.
+  -->
+  <springProfile name="dev,test,demo">
+    <root level="INFO">
+      <appender-ref ref="CONSOLE"/>
+    </root>
+  </springProfile>
+
+  <springProfile name="prod">
+    <root level="INFO">
+      <appender-ref ref="JSON"/>
+    </root>
+  </springProfile>
+
+</configuration>

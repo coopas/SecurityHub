@@ -18,6 +18,8 @@ import com.securityhub.user.User;
 import com.securityhub.user.UserMapper;
 import com.securityhub.user.dto.UserResponse;
 import com.securityhub.user.UserRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,12 +35,26 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthService {
 
+    /**
+     * Uma alta de {@code outcome="failure"} é credential stuffing. É a métrica que um produto
+     * de segurança não pode não ter: o LOGIN_FAILED da auditoria prova o que houve depois,
+     * mas não dispara um alerta enquanto está acontecendo.
+     *
+     * <p>Regra que vale para os três medidores desta aplicação: <strong>nunca companyId nem
+     * userId como tag</strong>. A cardinalidade das tags multiplica a contagem de séries
+     * temporais, e uma tag de tenant sem limite superior é a forma clássica de derrubar um
+     * Prometheus — cada empresa nova cria uma série nova, para sempre. A atribuição por
+     * tenant é justamente o que a trilha de auditoria faz, com nome, ator e carimbo de tempo.
+     */
+    private static final String LOGIN_METER = "securityhub.auth.login";
+
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuditService auditService;
     private final RefreshTokenService refreshTokenService;
+    private final MeterRegistry meterRegistry;
 
     /**
      * Hash of an unused random password. Verifying an incoming password against it when the
@@ -80,6 +96,7 @@ public class AuthService {
 
         if (!found.isPresent()) {
             passwordEncoder.matches(request.getPassword(), dummyHash);
+            countLogin("failure");
             throw new UnauthorizedException("Credenciais inválidas");
         }
 
@@ -87,6 +104,7 @@ public class AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash()) || !user.isActive()) {
             auditService.recordIndependently(AuditEntry.ofActor(user.getCompany().getId(), user.getId(),
                     user.getEmail(), AuditAction.LOGIN_FAILED, "User", user.getId()));
+            countLogin("failure");
             throw new UnauthorizedException("Credenciais inválidas");
         }
 
@@ -97,7 +115,16 @@ public class AuthService {
         refreshTokenService.purgeExpiredFor(user.getId());
         auditService.record(AuditEntry.ofActor(user.getCompany().getId(), user.getId(), user.getEmail(),
                 AuditAction.LOGIN, "User", user.getId()));
+        countLogin("success");
         return buildResponse(user, refreshTokenService.issue(user));
+    }
+
+    private void countLogin(String outcome) {
+        Counter.builder(LOGIN_METER)
+                .description("Tentativas de login por desfecho")
+                .tag("outcome", outcome)
+                .register(meterRegistry)
+                .increment();
     }
 
     /**

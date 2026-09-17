@@ -49,10 +49,16 @@ services:
       SECURITYHUB_DEMO_PASSWORD: ${SECURITYHUB_DEMO_PASSWORD:-Demo@SecurityHub2026}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
+      # Porta de gestão (actuator). O bind em 127.0.0.1 não é cosmético. O contexto filho da
+      # porta de gestão herda a cadeia de segurança da aplicação, então /actuator aqui exige um
+      # token — mas o de qualquer usuário de qualquer papel, inclusive VIEWER, porque a regra
+      # é o mesmo `anyRequest().authenticated()` da API. Publicar esta porta em 0.0.0.0
+      # devolveria o vazamento que a mudança fechou, bastando uma conta comum para lê-lo.
+      - "127.0.0.1:${MANAGEMENT_PORT:-9090}:9090"
     volumes:
       - attachments-data:/var/securityhub/uploads
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/actuator/health/readiness"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/actuator/health/readiness"]
       interval: 10s
       timeout: 5s
       retries: 20

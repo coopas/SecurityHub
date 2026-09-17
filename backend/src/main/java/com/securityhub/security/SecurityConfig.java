@@ -31,9 +31,27 @@ public class SecurityConfig {
             "/api/v1/auth/logout",
             "/api/v1/auth/password-reset/**",
             "/api/v1/invitations/accept",
+            // Só a saúde, e ela precisa continuar aqui.
+            //
+            // Os endpoints de gestão mudaram para a porta própria de `management.server.port`,
+            // e é tentador concluir que estes matchers viraram letra morta — que o contexto
+            // filho da porta de gestão não passa por esta cadeia. Não é o que acontece no Boot
+            // 2.7: o contexto filho herda o `springSecurityFilterChain` do pai, e esta cadeia
+            // vale nas duas portas. Verificado na pilha do compose: sem esta entrada,
+            // /actuator/health/readiness na porta 9090 responde 401, o healthcheck do contêiner
+            // nunca fica saudável e o frontend, que depende dele, nunca sobe.
+            //
+            // `/actuator/info` e `/actuator/metrics` ficam de fora: caem em
+            // `anyRequest().authenticated()`. Isso não é o controle — qualquer usuário de
+            // qualquer papel tem um token válido. O controle é o bind em loopback da porta de
+            // gestão no docker-compose.yml. O que esta cadeia garante é a outra metade, e a que
+            // fechou o vazamento: na porta do tenant não existe handler nenhum de /actuator, de
+            // modo que mesmo autenticado a resposta é 404.
+            //
+            // A saúde ser pública não reabre nada: `show-details: never` faz o corpo ser apenas
+            // UP ou DOWN, e na porta do tenant não há handler para servi-la.
             "/actuator/health",
             "/actuator/health/**",
-            "/actuator/info",
             "/v3/api-docs",
             "/v3/api-docs/**",
             "/swagger-ui.html",

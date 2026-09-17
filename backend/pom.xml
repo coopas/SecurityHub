@@ -36,6 +36,16 @@
     <!-- docs/adr/0008: OpenPDF é o fork LGPL/MPL mantido do último iText permissivo. -->
     <openpdf.version>1.3.30</openpdf.version>
 
+    <!--
+      7.2 é a última linha compatível com logback 1.2.x, que é o que o Boot 2.7.18 gerencia
+      (1.2.12). Da 7.3 em diante o encoder compila contra logback 1.3 e chama
+      ILoggingEvent.getInstant(), método que não existe na 1.2.x — e a falha não aparece no
+      build nem na subida: ela é um NoSuchMethodError lançado ao formatar o primeiro evento,
+      ou seja, no primeiro log de produção. Verificado rodando a imagem com o perfil `prod`.
+      JsonLoggingTest existe exatamente para que essa incompatibilidade quebre no `mvn test`.
+    -->
+    <logstash.encoder.version>7.2</logstash.encoder.version>
+
     <jjwt.version>0.11.5</jjwt.version>
     <springdoc.version>1.7.0</springdoc.version>
     <testcontainers.version>1.19.8</testcontainers.version>
@@ -74,6 +84,25 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <!--
+      Declarado sem versão: o BOM do Boot gerencia a linha do Micrometer. O actuator já o traz
+      transitivamente, mas o código da aplicação compila contra MeterRegistry, Counter e
+      DistributionSummary — e compilar contra uma transitiva é exatamente a fragilidade que o
+      resto deste pom evita.
+    -->
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.logstash.logback</groupId>
+      <artifactId>logstash-logback-encoder</artifactId>
+      <version>${logstash.encoder.version}</version>
     </dependency>
 
     <dependency>

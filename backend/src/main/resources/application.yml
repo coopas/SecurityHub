@@ -56,6 +56,29 @@ server:
     enabled: true
 
 management:
+  # Tráfego de gestão não é tráfego de tenant.
+  #
+  # Até aqui os endpoints do actuator viviam na porta da aplicação, e `/actuator/metrics` não
+  # está em SecurityConfig.PUBLIC_ENDPOINTS — caía em `anyRequest().authenticated()`. Qualquer
+  # usuário autenticado, de qualquer papel, inclusive VIEWER, lia dali todos os templates de
+  # URI do servidor, a contagem por endpoint, o estado do pool de conexões e a versão da JVM.
+  #
+  # Restringir `/actuator/**` a hasRole('ADMIN') seria a correção errada: o ADMIN deste produto
+  # é o administrador de um cliente, não um operador — não existe papel de operador. As métricas
+  # da JVM não são dele. Por isso a gestão sai da porta do tenant e passa a ter porta própria.
+  #
+  # ATENÇÃO: o que protege esta porta é ISOLAMENTO DE REDE, e não a autenticação.
+  #
+  # O contexto filho criado por `management.server.port` herda o springSecurityFilterChain do
+  # contexto pai no Boot 2.7 — verificado na pilha do compose —, então /actuator aqui até pede
+  # um token. Mas o token que ele aceita é o de qualquer usuário de qualquer papel, inclusive
+  # VIEWER: é a mesma cadeia da aplicação, com o mesmo `anyRequest().authenticated()`. Isso não
+  # é uma autorização de operador, é só uma tranca a mais.
+  #
+  # O controle de verdade é o bind em loopback declarado no docker-compose.yml
+  # (`127.0.0.1:9090:9090`). É ele que precisa sobreviver a qualquer mudança nesta configuração.
+  server:
+    port: ${SECURITYHUB_MANAGEMENT_PORT:9090}
   health:
     # O envio de e-mail é deliberadamente tolerante a falha (docs/adr/0007): a entrega
     # acontece fora da transação e fora da thread da requisição, e uma exceção é registrada
@@ -67,7 +90,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       probes:

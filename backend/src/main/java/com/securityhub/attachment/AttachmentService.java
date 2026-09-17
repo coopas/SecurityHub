@@ -14,6 +14,8 @@ import com.securityhub.user.User;
 import com.securityhub.user.UserRepository;
 import com.securityhub.vulnerability.Vulnerability;
 import com.securityhub.vulnerability.VulnerabilityRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -53,12 +55,21 @@ public class AttachmentService {
      */
     static final int MAX_ATTACHMENTS = 20;
 
+    /**
+     * O volume de anexos enchendo é uma indisponibilidade sem nenhum outro sinal: nada mais
+     * nesta aplicação sabe quanto disco os uploads consomem, e a falha aparece só quando o
+     * próximo upload quebra. Contador em bytes, sem tag de companyId nem de userId — ver
+     * {@code AuthService}.
+     */
+    private static final String BYTES_STORED_METER = "securityhub.attachments.bytes.stored";
+
     private final AttachmentRepository attachmentRepository;
     private final VulnerabilityRepository vulnerabilityRepository;
     private final UserRepository userRepository;
     private final AttachmentStorage attachmentStorage;
     private final AttachmentProperties attachmentProperties;
     private final AuditService auditService;
+    private final MeterRegistry meterRegistry;
 
     /** Reading is open to every role, like the vulnerability itself (docs/permissions.md). */
     @Transactional(readOnly = true)
@@ -143,6 +154,12 @@ public class AttachmentService {
         Attachment attachment = new Attachment(vulnerability.getCompany(), vulnerability, uploader,
                 originalFilename, storedFilename, contentType, content.length, checksum);
         attachmentRepository.save(attachment);
+
+        Counter.builder(BYTES_STORED_METER)
+                .description("Bytes de anexo gravados em disco")
+                .baseUnit("bytes")
+                .register(meterRegistry)
+                .increment(content.length);
 
         auditService.record(AuditEntry.created(current, ENTITY_TYPE, attachment.getId(),
                 snapshot(attachment)));

@@ -21,6 +21,7 @@ import com.securityhub.shared.error.UnauthorizedException;
 import com.securityhub.user.Role;
 import com.securityhub.user.User;
 import com.securityhub.user.UserRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,7 +58,7 @@ class AuthServiceTest {
         JwtService jwtService = TestJwtServiceFactory.create();
 
         authService = new AuthService(companyRepository, userRepository, passwordEncoder, jwtService,
-                auditService, refreshTokenService);
+                auditService, refreshTokenService, new SimpleMeterRegistry());
         authService.init();
     }
 
