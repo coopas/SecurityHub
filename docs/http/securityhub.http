@@ -4,7 +4,7 @@
 ###
 ### O arquivo é um fluxo: executado de cima para baixo contra uma pilha com o perfil `demo`
 ### (docker compose up), cada bloco alimenta o seguinte através das variáveis capturadas.
-### A seção 11 reúne os casos negativos e a 12 desfaz o que foi criado.
+### A seção 12 reúne os casos negativos e a 13 desfaz o que foi criado.
 ### Resposta detalhada de cada endpoint: docs/api-examples.md
 
 @baseUrl = http://localhost:8080/api/v1
@@ -336,29 +336,183 @@ GET {{baseUrl}}/dashboard/trend?days=365
 Authorization: Bearer {{token}}
 
 ############################################################
-### 10. Comportamentos silenciosos que vale ver
+### 10. Importação de scans
 ############################################################
 
-### 10.1 sort fora da allowlist é descartado — confira "sort" na resposta: "createdAt,desc"
+### O arquivo enviado é o scan-nmap-exemplo.xml ao lado deste. Ele aponta para
+### `api.pagamentos.acme.test` — o identificador do ativo criado em 3.2, que o achado encontra
+### sozinho — e para um endereço da faixa de documentação, que não existe no inventário e por
+### isso fica sem ativo. As portas abertas sem script não viram achado.
+
+### 10.1 Enviar o relatório (ADMIN ou ANALYST) — nada é criado ainda, é só uma proposta
+# @name uploadScan
+POST {{baseUrl}}/scan-imports
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=ScanBoundary
+
+--ScanBoundary
+Content-Disposition: form-data; name="projectId"
+
+{{projectId}}
+--ScanBoundary
+Content-Disposition: form-data; name="format"
+
+NMAP_XML
+--ScanBoundary
+Content-Disposition: form-data; name="file"; filename="scan-nmap-exemplo.xml"
+Content-Type: application/xml
+
+< ./scan-nmap-exemplo.xml
+--ScanBoundary--
+
+@scanImportId = {{uploadScan.response.body.id}}
+### Índice de array precisa de JSONPath (o `$.`), ao contrário das capturas escalares acima.
+### A ordem dos achados é a do relatório: primeiro o host que casou, depois o que não casou.
+@matchedFindingId = {{uploadScan.response.body.$.findings[0].id}}
+@unmatchedFindingId = {{uploadScan.response.body.$.findings[1].id}}
+
+### 10.2 Prévia — a importação com todos os achados; confira status PENDING e os contadores
+### (totalFindings 2, matchedCount 1, unmatchedCount 1)
+GET {{baseUrl}}/scan-imports/{{scanImportId}}
+Authorization: Bearer {{token}}
+
+### 10.3 Vincular o achado sem ativo (ADMIN ou ANALYST) — o ativo só precisa ser da empresa
+PATCH {{baseUrl}}/scan-imports/{{scanImportId}}/findings/{{unmatchedFindingId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "assetId": {{assetId}}
+}
+
+### 10.4 Vincular um achado que já tem ativo — esperado 409, não há o que mudar
+PATCH {{baseUrl}}/scan-imports/{{scanImportId}}/findings/{{matchedFindingId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "assetId": {{assetId}}
+}
+
+### 10.5 Confirmar — cria uma vulnerabilidade por achado com ativo, em um lote só,
+### e deixa **uma** linha SCAN_IMPORT na auditoria (não uma CREATE por achado)
+# @name confirmScan
+POST {{baseUrl}}/scan-imports/{{scanImportId}}/confirm
+Authorization: Bearer {{token}}
+
+@importedVulnerabilityA = {{confirmScan.response.body.$.findings[0].vulnerabilityId}}
+@importedVulnerabilityB = {{confirmScan.response.body.$.findings[1].vulnerabilityId}}
+
+### 10.6 Confirmar de novo — esperado 409: a primeira confirmação criou linhas, e um 200 aqui
+### diria a quem repetiu a chamada que ela também criou
+POST {{baseUrl}}/scan-imports/{{scanImportId}}/confirm
+Authorization: Bearer {{token}}
+
+### 10.7 Descartar uma importação já confirmada — esperado 409; o arquivo dela sustenta
+### vulnerabilidades que existem
+DELETE {{baseUrl}}/scan-imports/{{scanImportId}}
+Authorization: Bearer {{token}}
+
+### 10.8 Reenviar o mesmo arquivo — duplicateCount igual a totalFindings e matchedCount zero.
+### Reimportar nunca mescla nem reabre: a vulnerabilidade da primeira importação pode já ter
+### status, responsável e discussão, e nada disso pode ser desfeito por um arquivo.
+# @name uploadScanAgain
+POST {{baseUrl}}/scan-imports
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=ScanBoundary
+
+--ScanBoundary
+Content-Disposition: form-data; name="projectId"
+
+{{projectId}}
+--ScanBoundary
+Content-Disposition: form-data; name="format"
+
+NMAP_XML
+--ScanBoundary
+Content-Disposition: form-data; name="file"; filename="scan-nmap-exemplo.xml"
+Content-Type: application/xml
+
+< ./scan-nmap-exemplo.xml
+--ScanBoundary--
+
+@scanImportAgainId = {{uploadScanAgain.response.body.id}}
+
+### 10.9 Descartar a reimportação — 204. O arquivo em disco some; as linhas de achado ficam,
+### e é assim que alguém responde depois "varremos, e escolhemos não importar"
+DELETE {{baseUrl}}/scan-imports/{{scanImportAgainId}}
+Authorization: Bearer {{token}}
+
+### 10.10 A descartada continua no histórico, agora com status DISCARDED
+GET {{baseUrl}}/scan-imports/{{scanImportAgainId}}
+Authorization: Bearer {{token}}
+
+### 10.11 Histórico paginado — os contadores de cada importação, sem os achados
+GET {{baseUrl}}/scan-imports?page=0&size=20&sort=createdAt,desc
+Authorization: Bearer {{token}}
+
+### 10.12 Formato fora do enum — esperado 400 BAD_REQUEST, na conversão do parâmetro
+POST {{baseUrl}}/scan-imports?projectId={{projectId}}&format=NESSUS_XML
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=ScanBoundary
+
+--ScanBoundary
+Content-Disposition: form-data; name="file"; filename="scan-nmap-exemplo.xml"
+Content-Type: application/xml
+
+< ./scan-nmap-exemplo.xml
+--ScanBoundary--
+
+### 10.13 VIEWER enviando relatório — esperado 403. O multipart vai completo de propósito:
+### projectId e format são resolvidos antes do controle de papel, e um corpo incompleto
+### devolveria 400 sem que a regra de permissão chegasse a rodar.
+POST {{baseUrl}}/scan-imports
+Authorization: Bearer {{viewerToken}}
+Content-Type: multipart/form-data; boundary=ScanBoundary
+
+--ScanBoundary
+Content-Disposition: form-data; name="projectId"
+
+{{projectId}}
+--ScanBoundary
+Content-Disposition: form-data; name="format"
+
+NMAP_XML
+--ScanBoundary
+Content-Disposition: form-data; name="file"; filename="scan-nmap-exemplo.xml"
+Content-Type: application/xml
+
+< ./scan-nmap-exemplo.xml
+--ScanBoundary--
+
+### 10.14 Importação de outra empresa — esperado 404, nunca 403
+GET {{baseUrl}}/scan-imports/{{scanImportId}}
+Authorization: Bearer {{otherToken}}
+
+############################################################
+### 11. Comportamentos silenciosos que vale ver
+############################################################
+
+### 11.1 sort fora da allowlist é descartado — confira "sort" na resposta: "createdAt,desc"
 GET {{baseUrl}}/projects?sort=passwordHash,asc&size=5
 Authorization: Bearer {{token}}
 
-### 10.2 size acima do máximo é limitado a 100 — confira "size" na resposta
+### 11.2 size acima do máximo é limitado a 100 — confira "size" na resposta
 GET {{baseUrl}}/vulnerabilities?size=500
 Authorization: Bearer {{token}}
 
 ############################################################
-### 11. Casos negativos
+### 12. Casos negativos
 ############################################################
 
-### 11.1 Endpoint protegido sem token — esperado 401 UNAUTHORIZED
+### 12.1 Endpoint protegido sem token — esperado 401 UNAUTHORIZED
 GET {{baseUrl}}/projects
 
-### 11.2 Token inválido — esperado 401 UNAUTHORIZED (mesmo corpo do caso anterior)
+### 12.2 Token inválido — esperado 401 UNAUTHORIZED (mesmo corpo do caso anterior)
 GET {{baseUrl}}/projects
 Authorization: Bearer token-invalido-qualquer
 
-### 11.3 Credenciais erradas — esperado 401 com "Credenciais inválidas"
+### 12.3 Credenciais erradas — esperado 401 com "Credenciais inválidas"
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
@@ -367,7 +521,7 @@ Content-Type: application/json
   "password": "senha-obviamente-errada"
 }
 
-### 11.4 DEVELOPER criando projeto — esperado 403 FORBIDDEN ("Acesso negado")
+### 12.4 DEVELOPER criando projeto — esperado 403 FORBIDDEN ("Acesso negado")
 POST {{baseUrl}}/projects
 Content-Type: application/json
 Authorization: Bearer {{devToken}}
@@ -376,7 +530,7 @@ Authorization: Bearer {{devToken}}
   "name": "Projeto que o developer não pode criar"
 }
 
-### 11.5 DEVELOPER alterando status de item atribuído a outra pessoa
+### 12.5 DEVELOPER alterando status de item atribuído a outra pessoa
 ### Esperado 403 com "Você só pode alterar o status de vulnerabilidades atribuídas a você"
 ### (execute 4.4 antes: o item precisa estar atribuído ao ADMIN)
 PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/status
@@ -387,7 +541,7 @@ Authorization: Bearer {{devToken}}
   "status": "RESOLVED"
 }
 
-### 11.6 VIEWER comentando — esperado 403 FORBIDDEN, o papel é somente leitura
+### 12.6 VIEWER comentando — esperado 403 FORBIDDEN, o papel é somente leitura
 POST {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/comments
 Content-Type: application/json
 Authorization: Bearer {{viewerToken}}
@@ -396,20 +550,20 @@ Authorization: Bearer {{viewerToken}}
   "content": "Comentário que o viewer não pode escrever"
 }
 
-### 11.7 DEVELOPER consultando auditoria — esperado 403 FORBIDDEN (só ADMIN)
+### 12.7 DEVELOPER consultando auditoria — esperado 403 FORBIDDEN (só ADMIN)
 GET {{baseUrl}}/audit-logs
 Authorization: Bearer {{devToken}}
 
-### 11.8 Projeto de outra empresa — esperado 404 NOT_FOUND, nunca 403
+### 12.8 Projeto de outra empresa — esperado 404 NOT_FOUND, nunca 403
 ### Um 403 confirmaria que a linha existe e transformaria a API em um oráculo de enumeração
 GET {{baseUrl}}/projects/{{projectId}}
 Authorization: Bearer {{otherToken}}
 
-### 11.9 Excluir recurso de outra empresa — esperado 404 NOT_FOUND
+### 12.9 Excluir recurso de outra empresa — esperado 404 NOT_FOUND
 DELETE {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}
 Authorization: Bearer {{otherToken}}
 
-### 11.10 Referência a um projeto inexistente no corpo — esperado 404 ("Projeto ... não encontrado")
+### 12.10 Referência a um projeto inexistente no corpo — esperado 404 ("Projeto ... não encontrado")
 POST {{baseUrl}}/assets
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -422,7 +576,7 @@ Authorization: Bearer {{token}}
   "criticality": "LOW"
 }
 
-### 11.11 Responsável desconhecido, inativo ou de outra empresa — esperado 404 ("Usuário ... não encontrado")
+### 12.11 Responsável desconhecido, inativo ou de outra empresa — esperado 404 ("Usuário ... não encontrado")
 PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/assignee
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -431,7 +585,7 @@ Authorization: Bearer {{token}}
   "userId": 999999
 }
 
-### 11.12 Nome de projeto duplicado — esperado 409 CONFLICT
+### 12.12 Nome de projeto duplicado — esperado 409 CONFLICT
 POST {{baseUrl}}/projects
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -440,7 +594,7 @@ Authorization: Bearer {{token}}
   "name": "Portal do Cliente"
 }
 
-### 11.13 Identificador de ativo duplicado no mesmo projeto — esperado 409 CONFLICT
+### 12.13 Identificador de ativo duplicado no mesmo projeto — esperado 409 CONFLICT
 POST {{baseUrl}}/assets
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -454,7 +608,7 @@ Authorization: Bearer {{token}}
   "criticality": "LOW"
 }
 
-### 11.14 E-mail já cadastrado — esperado 409 CONFLICT (unicidade é global, não por empresa)
+### 12.14 E-mail já cadastrado — esperado 409 CONFLICT (unicidade é global, não por empresa)
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
@@ -465,15 +619,15 @@ Content-Type: application/json
   "password": "uma-senha-suficientemente-longa"
 }
 
-### 11.15 Excluir projeto que ainda tem ativos — esperado 409 CONFLICT com a contagem
+### 12.15 Excluir projeto que ainda tem ativos — esperado 409 CONFLICT com a contagem
 DELETE {{baseUrl}}/projects/{{projectId}}
 Authorization: Bearer {{token}}
 
-### 11.16 Excluir ativo que ainda tem vulnerabilidades — esperado 409 CONFLICT com a contagem
+### 12.16 Excluir ativo que ainda tem vulnerabilidades — esperado 409 CONFLICT com a contagem
 DELETE {{baseUrl}}/assets/{{assetId}}
 Authorization: Bearer {{token}}
 
-### 11.17 Payload inválido — esperado 400 VALIDATION_ERROR com fieldErrors
+### 12.17 Payload inválido — esperado 400 VALIDATION_ERROR com fieldErrors
 POST {{baseUrl}}/projects
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -482,7 +636,7 @@ Authorization: Bearer {{token}}
   "name": ""
 }
 
-### 11.18 Vários campos inválidos de uma vez — esperado 400 com quatro fieldErrors
+### 12.18 Vários campos inválidos de uma vez — esperado 400 com quatro fieldErrors
 POST {{baseUrl}}/vulnerabilities
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -492,7 +646,7 @@ Authorization: Bearer {{token}}
   "cvssScore": 12.5
 }
 
-### 11.19 Valor de enum inexistente — esperado 400 BAD_REQUEST, sem fieldErrors
+### 12.19 Valor de enum inexistente — esperado 400 BAD_REQUEST, sem fieldErrors
 ### A falha é de desserialização e acontece antes da validação rodar
 POST {{baseUrl}}/vulnerabilities
 Content-Type: application/json
@@ -504,22 +658,37 @@ Authorization: Bearer {{token}}
   "severity": "URGENTE"
 }
 
-### 11.20 Tipo incompatível na query — esperado 400 BAD_REQUEST
+### 12.20 Tipo incompatível na query — esperado 400 BAD_REQUEST
 GET {{baseUrl}}/vulnerabilities?projectId=abc
 Authorization: Bearer {{token}}
 
 ############################################################
-### 12. Limpeza — na ordem que respeita a regra de filhos
+### 13. Limpeza — na ordem que respeita a regra de filhos
 ############################################################
 
-### 12.1 Excluir a vulnerabilidade (somente ADMIN); os comentários vão junto
+### 13.1 Excluir a vulnerabilidade (somente ADMIN); os comentários vão junto
 DELETE {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}
 Authorization: Bearer {{token}}
 
-### 12.2 Excluir o ativo, agora sem filhos
+### 13.2 Excluir a primeira vulnerabilidade criada pela importação da seção 10.
+### Sem estas duas o ativo não sai: ele volta a ter filhos, e a exclusão responde 409 com a contagem.
+### Quem pulou a seção 10 pula 13.2 e 13.3.
+###
+### Atenção: hoje as duas respondem 409 ("A operação conflita com dados existentes"), porque
+### scan_findings.vulnerability_id referencia a linha e VulnerabilityService.delete só trata
+### comentários e anexos. Enquanto for assim, uma vulnerabilidade importada não pode ser
+### excluída pela API, e 13.4 e 13.5 falham em seguida pela regra de filhos.
+DELETE {{baseUrl}}/vulnerabilities/{{importedVulnerabilityA}}
+Authorization: Bearer {{token}}
+
+### 13.3 Excluir a segunda vulnerabilidade criada pela importação
+DELETE {{baseUrl}}/vulnerabilities/{{importedVulnerabilityB}}
+Authorization: Bearer {{token}}
+
+### 13.4 Excluir o ativo, agora sem filhos
 DELETE {{baseUrl}}/assets/{{assetId}}
 Authorization: Bearer {{token}}
 
-### 12.3 Excluir o projeto, agora sem filhos
+### 13.5 Excluir o projeto, agora sem filhos
 DELETE {{baseUrl}}/projects/{{projectId}}
 Authorization: Bearer {{token}}

@@ -37,7 +37,7 @@ No lado da requisição, `null` é significativo em um único lugar: `PATCH /vul
 ### Envelope de listagem paginada
 
 Todas as listagens paginadas (`/projects`, `/assets`, `/vulnerabilities`, `/vulnerabilities/{id}/comments`,
-`/audit-logs`) devolvem `PageResponse`:
+`/audit-logs`, `/scan-imports`) devolvem `PageResponse`:
 
 ```json
 {
@@ -108,6 +108,7 @@ silencioso, **confira a chave `sort` da resposta** para saber o que o servidor r
 | Vulnerabilidades | `title`, `severity`, `status`, `cvssScore`, `discoveredAt`, `dueDate`, `resolvedAt`, `createdAt`, `updatedAt` | `createdAt,desc` |
 | Comentários | `createdAt` | `createdAt,asc;id,asc` |
 | Auditoria | `createdAt`, `action`, `entityType` | `createdAt,desc` |
+| Importações | `createdAt`, `updatedAt`, `status`, `format`, `sizeBytes`, `totalFindings` | `createdAt,desc` |
 | Usuários | — (sem paginação e sem `sort`) | sempre `name,asc` |
 
 A ordenação ascendente dos comentários é deliberada: uma discussão se lê do mais antigo para o mais novo,
@@ -125,6 +126,9 @@ microssegundo não alternem de página entre duas leituras.
 | `Criticality` | `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` |
 | `Severity` | `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` |
 | `VulnerabilityStatus` | `OPEN`, `IN_PROGRESS`, `RESOLVED`, `ACCEPTED_RISK` |
+| `ScanFormat` | `NMAP_XML`, `ZAP_JSON`, `NUCLEI_JSONL` |
+| `ScanImportStatus` | `PENDING`, `CONFIRMED`, `DISCARDED` |
+| `ScanFindingStatus` | `MATCHED`, `UNMATCHED`, `DUPLICATE`, `IMPORTED`, `SKIPPED` |
 | `AuditAction` | `LOGIN`, `LOGIN_FAILED`, `REGISTER`, `CREATE`, `UPDATE`, `DELETE`, `STATUS_CHANGE`, `ASSIGN`, `COMMENT`, `PASSWORD_RESET`, `USER_INVITED`, `USER_UPDATED`, `EXPORT`, `SCAN_IMPORT` |
 
 `Severity` e `Criticality` listam os mesmos quatro níveis mas são enums distintos: criticidade descreve o
@@ -1021,6 +1025,380 @@ Authorization: Bearer {{accessToken}}
   ]
 }
 ```
+
+---
+
+## Importação de scans
+
+| Método | Endpoint | Acesso |
+| --- | --- | --- |
+| POST | `/scan-imports` | `ADMIN`, `ANALYST` |
+| GET | `/scan-imports/{id}` | qualquer papel autenticado |
+| PATCH | `/scan-imports/{id}/findings/{findingId}` | `ADMIN`, `ANALYST` |
+| POST | `/scan-imports/{id}/confirm` | `ADMIN`, `ANALYST` |
+| DELETE | `/scan-imports/{id}` | `ADMIN`, `ANALYST` |
+| GET | `/scan-imports` | qualquer papel autenticado |
+
+O fluxo é **enviar, revisar, e então confirmar ou descartar**. O envio não cria nada: ele lê o
+relatório, procura para cada achado um ativo do projeto escolhido, marca os achados que a
+empresa já registrou e grava tudo isso como proposta. Só a confirmação cria vulnerabilidades, e
+só para os achados que ainda estejam com ativo naquele momento.
+
+Três regras explicam quase todo o resto:
+
+- **Nenhum ativo é criado.** O alvo de um achado é comparado com o `identifier` dos ativos **do
+  projeto escolhido**, sem distinguir maiúsculas e ignorando espaços nas pontas. Sem
+  correspondência, o achado fica `UNMATCHED` e espera alguém dizer que ativo é aquele — inventar
+  um ativo a partir de um hostname encheria o inventário de linhas sem dono.
+- **Duplicado é ignorado e contado, nunca mesclado.** A impressão digital de um achado é
+  `sha256(scanner:ruleId:target:cve)` — severidade e CVSS ficam de fora de propósito, porque
+  mudam entre versões do scanner sem o achado ser outro. Um achado cuja impressão digital a
+  empresa já carrega vira `DUPLICATE` e é ignorado na confirmação: atualizar ou reabrir a
+  vulnerabilidade existente desfaria, em silêncio, o status, o responsável e a discussão que
+  alguém pôs ali.
+- **A importação é síncrona, com teto.** `securityhub.scan.max-findings` (padrão 2000) limita
+  quantos achados um arquivo pode encenar; acima disso o envio é recusado com 400 **antes de
+  qualquer gravação**, e não existe endpoint de status para consultar depois.
+
+O que cada formato lê:
+
+| `format` | Origem | O que vira achado | Alvo |
+| --- | --- | --- | --- |
+| `NMAP_XML` | `nmap -oX` | **Apenas resultado de script NSE.** Uma porta aberta não é uma vulnerabilidade, e um banner de serviço também não | hostname do host quando o nmap resolveu um, senão o endereço (nunca o MAC) |
+| `ZAP_JSON` | relatório JSON do OWASP ZAP | um achado por **instância** de cada alerta; um alerta sem instâncias fica com o site | a `uri` da instância, inteira |
+| `NUCLEI_JSONL` | `nuclei -jsonl` | um achado por linha; uma linha que não é JSON é pulada e o resto do arquivo continua | `matched-at`, com `host` como reserva |
+
+O formato é **declarado por quem envia** e nunca deduzido dos bytes: os três são texto UTF-8, e
+adivinhar acertaria "isto é XML" sem acertar "isto é um relatório de nmap".
+
+### POST /scan-imports
+
+`multipart/form-data` com três partes: `file`, `projectId` e `format`. `projectId` e `format`
+são lidos como parâmetros de requisição, então também funcionam na query string.
+
+```http
+POST /api/v1/scan-imports
+Authorization: Bearer {{accessToken}}
+Content-Type: multipart/form-data; boundary=----exemplo
+
+------exemplo
+Content-Disposition: form-data; name="projectId"
+
+7
+------exemplo
+Content-Disposition: form-data; name="format"
+
+NMAP_XML
+------exemplo
+Content-Disposition: form-data; name="file"; filename="varredura-portal.xml"
+Content-Type: application/xml
+
+<?xml version="1.0"?><nmaprun>…</nmaprun>
+------exemplo--
+```
+
+`201 Created` com a importação **e todos os seus achados** — o cliente acabou de enviar o
+arquivo e precisa mostrar a prévia, não fazer uma segunda chamada para buscá-la:
+
+```json
+{
+  "id": 12,
+  "projectId": 7,
+  "projectName": "Portal do Cliente",
+  "format": "NMAP_XML",
+  "originalFilename": "varredura-portal.xml",
+  "sizeBytes": 18432,
+  "status": "PENDING",
+  "totalFindings": 3,
+  "matchedCount": 1,
+  "unmatchedCount": 1,
+  "duplicateCount": 1,
+  "importedCount": 0,
+  "skippedCount": 0,
+  "importedByName": "Bruno Carvalho",
+  "createdAt": "2026-09-17T12:00:00Z",
+  "updatedAt": "2026-09-17T12:00:00Z",
+  "findings": [
+    {
+      "id": 41,
+      "ruleId": "ssl-heartbleed",
+      "title": "ssl-heartbleed",
+      "description": "VULNERABLE: The Heartbleed Bug is a serious vulnerability in OpenSSL.",
+      "severity": "HIGH",
+      "cve": "CVE-2014-0160",
+      "target": "portal.demo.test",
+      "discoveredAt": "2023-11-14T22:13:20Z",
+      "status": "MATCHED",
+      "assetId": 4,
+      "assetName": "Portal do Cliente"
+    },
+    {
+      "id": 42,
+      "ruleId": "smb-vuln-ms17-010",
+      "title": "smb-vuln-ms17-010",
+      "description": "VULNERABLE: Remote Code Execution vulnerability in Microsoft SMBv1 servers.",
+      "severity": "HIGH",
+      "cve": "CVE-2017-0143",
+      "target": "10.0.0.11",
+      "discoveredAt": "2023-11-14T22:13:20Z",
+      "status": "UNMATCHED"
+    },
+    {
+      "id": 43,
+      "ruleId": "http-csrf",
+      "title": "http-csrf",
+      "severity": "MEDIUM",
+      "target": "portal.demo.test",
+      "discoveredAt": "2023-11-14T22:13:20Z",
+      "status": "DUPLICATE",
+      "assetId": 4,
+      "assetName": "Portal do Cliente"
+    }
+  ]
+}
+```
+
+Repare no que **não** está lá: o achado 42 não tem `assetId` nem `assetName` (a regra
+`non_null` tira a chave), nenhum achado tem `vulnerabilityId` enquanto a importação está
+pendente, e o achado 41 não tem `cvssScore` porque o nmap não dá nota — a severidade dele é
+derivada do texto do script (citar um CVE ou a palavra `VULNERABLE` é `HIGH`, o resto é
+`MEDIUM`; `CRITICAL` nunca é inventado). O nome do arquivo em disco nunca é exposto.
+
+O achado 43 chegou como `DUPLICATE` mesmo tendo encontrado o ativo: duplicado vence sobre "com
+ativo", porque um duplicado com ativo continua sendo algo que a empresa já registrou.
+
+Erros específicos:
+
+- Arquivo vazio, ou ilegível para o interpretador do formato escolhido: `400 BAD_REQUEST` —
+  "O relatório nmap enviado não é um XML válido".
+- Acima de `securityhub.scan.max-findings`: `400 BAD_REQUEST` — "O relatório contém 5120 achados
+  e o limite por importação é 2000; filtre o relatório no scanner (por severidade ou por host)
+  ou divida-o em arquivos menores e envie um de cada vez". Nada é gravado e nenhum arquivo fica
+  em disco.
+- Acima de `securityhub.scan.max-upload-bytes` (padrão 10 MiB): `413 PAYLOAD_TOO_LARGE`.
+- `format` fora do enum: `400 BAD_REQUEST`, na desserialização, antes de o serviço rodar.
+- `projectId` de outra empresa ou inexistente: `404 NOT_FOUND` — "Projeto 999 não encontrado".
+- Papel `DEVELOPER` ou `VIEWER`: `403 FORBIDDEN`.
+
+### GET /scan-imports/{id}
+
+A prévia: a mesma estrutura do envio, com os achados no estado em que estão agora. Os achados
+não são paginados — a quantidade já está limitada por `max-findings`, e paginar a tela de
+revisão pediria ao operador que mapeasse vinte de cada vez.
+
+```http
+GET /api/v1/scan-imports/12
+Authorization: Bearer {{accessToken}}
+```
+
+Aberto a qualquer papel da empresa. Uma importação de outra empresa é `404`, nunca `403`.
+
+### PATCH /scan-imports/{id}/findings/{findingId}
+
+Dá a um achado `UNMATCHED` o ativo que o alvo dele não resolveu sozinho.
+
+```http
+PATCH /api/v1/scan-imports/12/findings/42
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "assetId": 9
+}
+```
+
+`200 OK` com o achado atualizado — e só ele, porque é a única linha que mudou de estado:
+
+```json
+{
+  "id": 42,
+  "ruleId": "smb-vuln-ms17-010",
+  "title": "smb-vuln-ms17-010",
+  "description": "VULNERABLE: Remote Code Execution vulnerability in Microsoft SMBv1 servers.",
+  "severity": "HIGH",
+  "cve": "CVE-2017-0143",
+  "target": "10.0.0.11",
+  "discoveredAt": "2023-11-14T22:13:20Z",
+  "status": "MATCHED",
+  "assetId": 9,
+  "assetName": "Gateway de Borda"
+}
+```
+
+Os contadores da importação são recalculados na mesma transação, então o próximo `GET` já traz
+`matchedCount` maior e `unmatchedCount` menor.
+
+O ativo precisa ser **da empresa**, e não necessariamente do projeto da importação: uma
+varredura que reportou `10.0.0.11` pode ter acertado um ativo registrado em outro projeto do
+mesmo tenant, e recusar isso deixaria o operador com um achado que ele sabe de quem é e não
+consegue importar. (A tela oferece apenas os ativos do projeto da importação, que é o caso
+comum; a API aceita os demais.)
+
+Erros específicos:
+
+- Achado que não é `UNMATCHED`: `409 CONFLICT` — "Somente um achado sem ativo pode ser mapeado;
+  este está MATCHED". Um achado já resolvido não tem o que mudar, e um `DUPLICATE` não seria
+  importado de todo jeito.
+- Importação já confirmada ou descartada: `409 CONFLICT`.
+- `assetId` de outra empresa ou inexistente: `404 NOT_FOUND` — "Ativo 999 não encontrado".
+- `findingId` que não pertence a esta importação: `404 NOT_FOUND`.
+
+### POST /scan-imports/{id}/confirm
+
+Cria uma vulnerabilidade por achado `MATCHED`, em um único lote, e encerra a importação. Sem
+corpo.
+
+```http
+POST /api/v1/scan-imports/12/confirm
+Authorization: Bearer {{accessToken}}
+```
+
+`200 OK` com a importação já em `CONFIRMED`:
+
+```json
+{
+  "id": 12,
+  "projectId": 7,
+  "projectName": "Portal do Cliente",
+  "format": "NMAP_XML",
+  "originalFilename": "varredura-portal.xml",
+  "sizeBytes": 18432,
+  "status": "CONFIRMED",
+  "totalFindings": 3,
+  "matchedCount": 0,
+  "unmatchedCount": 0,
+  "duplicateCount": 0,
+  "importedCount": 2,
+  "skippedCount": 1,
+  "importedByName": "Bruno Carvalho",
+  "createdAt": "2026-09-17T12:00:00Z",
+  "updatedAt": "2026-09-17T12:07:41Z",
+  "findings": [
+    {
+      "id": 41,
+      "ruleId": "ssl-heartbleed",
+      "title": "ssl-heartbleed",
+      "severity": "HIGH",
+      "cve": "CVE-2014-0160",
+      "target": "portal.demo.test",
+      "discoveredAt": "2023-11-14T22:13:20Z",
+      "status": "IMPORTED",
+      "assetId": 4,
+      "assetName": "Portal do Cliente",
+      "vulnerabilityId": 87
+    },
+    {
+      "id": 42,
+      "ruleId": "smb-vuln-ms17-010",
+      "title": "smb-vuln-ms17-010",
+      "severity": "HIGH",
+      "cve": "CVE-2017-0143",
+      "target": "10.0.0.11",
+      "discoveredAt": "2023-11-14T22:13:20Z",
+      "status": "IMPORTED",
+      "assetId": 9,
+      "assetName": "Gateway de Borda",
+      "vulnerabilityId": 88
+    },
+    {
+      "id": 43,
+      "ruleId": "http-csrf",
+      "title": "http-csrf",
+      "severity": "MEDIUM",
+      "target": "portal.demo.test",
+      "discoveredAt": "2023-11-14T22:13:20Z",
+      "status": "SKIPPED",
+      "assetId": 4,
+      "assetName": "Portal do Cliente"
+    }
+  ]
+}
+```
+
+**Os contadores viram outra coisa depois da confirmação**: as cinco situações são exclusivas,
+então `matchedCount` cai a zero e o que era `MATCHED` aparece em `importedCount`. Tudo que não
+era `MATCHED` — o que ninguém mapeou e o que a empresa já tinha — vira `SKIPPED`.
+
+A duplicidade é verificada **de novo** aqui, e não reaproveitada do envio: uma importação
+encenada ontem pode ser confirmada depois de outra já ter criado o mesmo achado. Por isso um
+achado que estava `MATCHED` na prévia pode terminar `SKIPPED`.
+
+Cada vulnerabilidade criada nasce `OPEN`, sem responsável, com `createdBy` de quem confirmou,
+e carrega a impressão digital do achado — é ela que faz a próxima importação do mesmo relatório
+não criar nada.
+
+Na trilha de auditoria isso aparece como **uma** entrada `SCAN_IMPORT` sobre `ScanImport`,
+carregando os contadores, o projeto, o formato e o nome do arquivo. Não há uma `CREATE` por
+vulnerabilidade: centenas de linhas idênticas enterrariam a trilha, e a rastreabilidade por
+achado está em `scan_findings.vulnerability_id`, que a prévia devolve como `vulnerabilityId`.
+
+Erros específicos:
+
+- Importação que não está `PENDING`: `409 CONFLICT` — "Não é possível confirmar uma importação
+  com status CONFIRMED; apenas importações pendentes podem ser alteradas". Uma segunda
+  confirmação **não** é um sucesso idempotente: a primeira criou linhas, e responder 200 diria a
+  um cliente que repetiu a chamada que ela também criou.
+
+### DELETE /scan-imports/{id}
+
+Descarta uma importação pendente. `204 No Content`.
+
+```http
+DELETE /api/v1/scan-imports/12
+Authorization: Bearer {{accessToken}}
+```
+
+Apesar do verbo, **nada é excluído do histórico**: a importação passa a `DISCARDED` e continua
+listada, com os achados que o relatório trouxe. O que some é o arquivo em disco, removido
+depois do commit — os contadores de uma importação descartada são como alguém responde, meses
+depois, "sim, varremos aquele host, e escolhemos não importar".
+
+Uma importação confirmada responde `409 CONFLICT`: o arquivo dela sustenta vulnerabilidades que
+existem, e é o único desta funcionalidade que ganhou o direito de ficar.
+
+### GET /scan-imports
+
+Histórico paginado da empresa, mais novo primeiro. **Sem os achados** — uma página de vinte
+importações carregando todos os achados de cada uma seriam milhares de linhas para desenhar
+seis números.
+
+```http
+GET /api/v1/scan-imports?page=0&size=20&sort=createdAt,desc
+Authorization: Bearer {{accessToken}}
+```
+
+```json
+{
+  "content": [
+    {
+      "id": 12,
+      "projectId": 7,
+      "projectName": "Portal do Cliente",
+      "format": "NMAP_XML",
+      "originalFilename": "varredura-portal.xml",
+      "sizeBytes": 18432,
+      "status": "CONFIRMED",
+      "totalFindings": 3,
+      "matchedCount": 0,
+      "unmatchedCount": 0,
+      "duplicateCount": 0,
+      "importedCount": 2,
+      "skippedCount": 1,
+      "importedByName": "Bruno Carvalho",
+      "createdAt": "2026-09-17T12:00:00Z",
+      "updatedAt": "2026-09-17T12:07:41Z"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 1,
+  "totalPages": 1,
+  "sort": "createdAt,desc"
+}
+```
+
+`importedByName` é o nome de quem importou, nunca o id nem o e-mail. Os seis contadores são
+primitivos e por isso aparecem sempre, inclusive zerados.
 
 ---
 

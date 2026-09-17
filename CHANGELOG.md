@@ -3,6 +3,49 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento conforme [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.2.0] — 2026-09-17
+
+Importação de relatórios de scanner, que era a última lacuna funcional registrada no README.
+
+### Adicionado
+
+**Importação**
+- Leitura de relatórios do **Nmap (XML)**, **OWASP ZAP (JSON)** e **Nuclei (JSONL)**. Do Nmap
+  entram apenas os resultados de script NSE: uma porta aberta não é uma vulnerabilidade, e
+  importá-la encheria o backlog de ruído.
+- Revisão antes de gravar. O arquivo é lido uma vez e fica em estado pendente; a tela mostra
+  achado por achado com o ativo correspondente, e nada vira vulnerabilidade até alguém
+  confirmar.
+- Ligação do achado ao ativo pelo `identifier` do projeto, sem diferenciar maiúsculas e
+  ignorando espaços nas pontas. O que não casa fica para ser escolhido na tela — **nenhum
+  ativo é criado automaticamente.**
+- Deduplicação por impressão digital `sha256(scanner:ruleId:alvo:cve)`, garantida por índice
+  único parcial `(company_id, fingerprint)`. Severidade e CVSS ficam de fora de propósito:
+  mudam entre versões do scanner sem que o achado seja outro.
+- Histórico paginado das importações, com os contadores de cada uma.
+- Uma única linha de auditoria `SCAN_IMPORT` por importação confirmada, com o resumo. A
+  rastreabilidade por achado fica em `scan_findings`, que é o lugar certo para ela.
+
+### Decisões
+
+- **Reimportar o mesmo relatório não cria nada e não altera nada.** Um achado repetido é
+  contado e ignorado, nunca reaberto ou sobrescrito: quem mudou um status, assumiu um achado
+  ou escreveu um comentário não perde esse trabalho por causa de uma nova varredura.
+- **A importação é síncrona, com teto** (`securityhub.scan.max-findings`, 2000 por padrão).
+  Acima disso o arquivo é recusado com 400 antes de qualquer gravação. Um job assíncrono
+  resolveria um problema que este produto não tem.
+- Só uma importação pendente pode ser confirmada ou descartada. Descartar apaga o arquivo;
+  confirmar o mantém, porque ele é o documento por trás das vulnerabilidades criadas.
+
+### Segurança
+
+- O parser de XML recusa DTD e entidades externas, o que fecha XXE no formato que o Nmap
+  emite com DOCTYPE. O teste afirma a recusa do documento, e não a ausência do conteúdo:
+  o JDK já bloqueia entidade em valor de atributo por conta própria, então um teste escrito
+  sobre atributos continuaria verde com a proteção removida.
+- Enviar, mapear, confirmar e descartar exigem ADMIN ou ANALISTA; o histórico e a revisão são
+  leitura para qualquer membro da empresa. Recurso de outra empresa continua respondendo 404.
+
 ## [1.1.0] — 2026-09-17
 
 Fecha as lacunas de identidade e acrescenta os entregáveis que faltavam.

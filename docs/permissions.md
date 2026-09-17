@@ -38,6 +38,11 @@ e isso é testado.
 | Consultar auditoria | ✓ | — | — | — | `AuditQueryService.search` |
 | Exportar vulnerabilidades em CSV | ✓ | ✓ | — | — | `VulnerabilityExportService.exportCsv` |
 | Gerar relatório executivo em PDF | ✓ | ✓ | — | — | `ReportService.generateExecutivePdf` |
+| Ver histórico e prévia de importações | ✓ | ✓ | ✓ | ✓ | `SecurityConfig` (autenticado); `ScanImportService.{history,preview}` |
+| Enviar relatório de varredura | ✓ | ✓ | — | — | `ScanImportService.upload` |
+| Vincular um achado a um ativo | ✓ | ✓ | — | — | `ScanImportService.mapFinding` |
+| Confirmar uma importação | ✓ | ✓ | — | — | `ScanImportService.confirm` |
+| Descartar uma importação pendente | ✓ | ✓ | — | — | `ScanImportService.discard` |
 | Anexar arquivo a uma vulnerabilidade | ✓ | ✓ | ✓ | — | `AttachmentService.upload` |
 | Listar e baixar anexos | ✓ | ✓ | ✓ | ✓ | `SecurityConfig` (autenticado) |
 | Excluir anexo (autor ou ADMIN) | ✓ | autor | autor | — | `AttachmentService.ensureCanDelete` |
@@ -137,6 +142,30 @@ O access token já morre sozinho, porque `JwtAuthenticationFilter` relê o usuá
 requisição e rejeita papel divergente ou conta inativa. Mas o refresh token sobreviveria à
 decisão administrativa e emitiria um access token novo, então ele é revogado explicitamente.
 
+### A importação de scan segue a licença de criar vulnerabilidade
+
+Enviar um relatório, vincular um achado a um ativo, confirmar e descartar são todos
+`hasAnyRole('ADMIN','ANALYST')`, declarados nos métodos de `ScanImportService` — o controller
+não tem nenhuma anotação de papel. O critério é simples: uma importação confirmada **é** a
+criação de um lote de vulnerabilidades, e quem pode criar uma por formulário pode criar um
+lote por arquivo. Um `DEVELOPER` e um `VIEWER` recebem 403 nas quatro.
+
+Ler é aberto a qualquer membro autenticado da empresa, como as vulnerabilidades que a
+importação vai gerar: `preview` e `history` não têm `@PreAuthorize`, e a tela mostra ao papel
+sem permissão a mesma prévia, sem os botões, com o aviso de que ele pode acompanhar a revisão
+mas não decidir.
+
+**`DELETE /scan-imports/{id}` não é ADMIN-only, ao contrário de `DELETE /vulnerabilities/{id}`,
+e a diferença não é um descuido.** Ali se apaga uma linha do backlog, que pode ter histórico,
+responsável e discussão. Aqui se descarta uma *proposta*: uma importação pendente não criou
+nada, e desistir dela é o passo normal de quem enviou o arquivo errado. Só uma importação
+`PENDING` pode ser descartada — uma já confirmada responde 409 —, então este endpoint nunca
+alcança uma vulnerabilidade existente.
+
+No Angular, `/imports/novo` é a única rota da funcionalidade com `roleGuard`; `/imports` e
+`/imports/:id` ficam abertas. É a aplicação do mesmo princípio do topo deste documento: o
+guard é conveniência, e a recusa de verdade acontece de novo no backend a cada chamada.
+
 ### O DEVELOPER e o anexo
 
 Anexar é liberado para DEVELOPER porque anexar a evidência de uma correção é o mesmo ato que
@@ -160,3 +189,11 @@ pendente não contando como administrador ativo, autodesativação (409), últim
 (409), tentativa de alterar e-mail por reflexão, exportação por papel sem permissão (403 com
 corpo JSON), upload declarando um tipo e enviando outro (415), e travessia de caminho no nome
 do arquivo.
+
+Acrescentados com a importação de scans: `DEVELOPER` e `VIEWER` enviando relatório, vinculando
+achado, confirmando e descartando (403 nos quatro, com o multipart completo — um corpo
+incompleto daria 400 antes de a regra de papel rodar), importação de outra empresa em todos os
+endpoints (404, inclusive no `DELETE`), projeto de outra empresa no envio (404), ativo de outra
+empresa no vínculo (404), confirmação e descarte de importação já encerrada (409), vínculo em
+achado que já tem ativo (409) e histórico de uma empresa não listando as importações da
+outra.

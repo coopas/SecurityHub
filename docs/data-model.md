@@ -14,6 +14,7 @@ entre entidade e schema derruba a aplicação no boot em vez de corrigir silenci
 | `V6__dashboard_indexes.sql` | índices das agregações do dashboard |
 | `V7__identity_core.sql` | `refresh_tokens`, `password_reset_tokens`, `invitations` |
 | `V8__vulnerability_attachments.sql` | `vulnerability_attachments` |
+| `V9__scan_imports.sql` | `scan_imports`, `scan_findings`, `vulnerabilities.fingerprint` |
 
 ## DER
 
@@ -30,6 +31,12 @@ erDiagram
     USERS ||--o{ REFRESH_TOKENS : "abre sessão"
     USERS ||--o| PASSWORD_RESET_TOKENS : "redefine"
     VULNERABILITIES ||--o{ VULNERABILITY_ATTACHMENTS : "documenta"
+    COMPANIES ||--o{ SCAN_IMPORTS : "possui"
+    PROJECTS ||--o{ SCAN_IMPORTS : "recebe"
+    SCAN_IMPORTS ||--o{ SCAN_FINDINGS : "encena"
+    ASSETS ||--o{ SCAN_FINDINGS : "corresponde"
+    SCAN_FINDINGS ||--o| VULNERABILITIES : "origina"
+    USERS ||--o{ SCAN_IMPORTS : "imported_by"
 
     PROJECTS ||--o{ ASSETS : "agrupa"
     ASSETS   ||--o{ VULNERABILITIES : "expõe"
@@ -88,6 +95,7 @@ erDiagram
         timestamptz discovered_at
         timestamptz due_date
         timestamptz resolved_at "preenchido sse status = RESOLVED"
+        varchar   fingerprint "sha256 do achado que a originou; nulo quando criada à mão"
         bigint    assigned_to FK
         bigint    created_by FK
     }
@@ -134,6 +142,38 @@ erDiagram
         varchar   content_type "detectado por magic number"
         bigint    size_bytes
         char      checksum_sha256
+    }
+    SCAN_IMPORTS {
+        bigserial id PK
+        bigint    company_id FK
+        bigint    project_id FK "escolhido no envio; é o escopo em que o alvo vira ativo"
+        varchar   format "NMAP_XML|ZAP_JSON|NUCLEI_JSONL"
+        varchar   original_filename "sanitizado; só rótulo, nenhum caminho sai dele"
+        varchar   stored_filename UK "32 hex gerados pelo servidor"
+        bigint    size_bytes
+        varchar   status "PENDING|CONFIRMED|DISCARDED"
+        integer   total_findings "cache de seis GROUP BY, recalculado na mesma transação"
+        integer   matched_count
+        integer   unmatched_count
+        integer   duplicate_count
+        integer   imported_count
+        integer   skipped_count
+        bigint    imported_by FK "anulável: remover quem importou não apaga o registro"
+    }
+    SCAN_FINDINGS {
+        bigserial id PK
+        bigint    company_id FK
+        bigint    import_id FK
+        varchar   rule_id "script NSE, pluginid do ZAP, template-id do nuclei"
+        varchar   title
+        varchar   severity "LOW|MEDIUM|HIGH|CRITICAL"
+        numeric   cvss_score "0.0 a 10.0"
+        varchar   cve "CVE-AAAA-NNNN+"
+        varchar   target "host, IP ou URL reportado; 2000, maior que assets.identifier"
+        varchar   fingerprint "sha256 hex, NOT NULL: todo achado veio de um scanner"
+        bigint    asset_id FK "nulo enquanto ninguém disse que ativo é esse"
+        varchar   status "MATCHED|UNMATCHED|DUPLICATE|IMPORTED|SKIPPED"
+        bigint    vulnerability_id FK "preenchido sse status = IMPORTED"
     }
     AUDIT_LOGS {
         bigserial id PK
@@ -188,9 +228,11 @@ aplicada no serviço, mas um defeito futuro não consegue persistir uma linha in
 
 ### Índices sempre começam por `company_id`
 É o predicado presente em 100% das consultas de domínio, então lidera todo índice composto.
-Dois índices são parciais por refletirem exatamente o predicado que servem:
-`(company_id, assigned_to) WHERE assigned_to IS NOT NULL` e
-`(company_id, due_date) WHERE status IN ('OPEN','IN_PROGRESS')`.
+Três índices são parciais por refletirem exatamente o predicado que servem:
+`(company_id, assigned_to) WHERE assigned_to IS NOT NULL`,
+`(company_id, due_date) WHERE status IN ('OPEN','IN_PROGRESS')` e, desde a V9,
+`(company_id, fingerprint) WHERE fingerprint IS NOT NULL` — este último único, e explicado
+adiante.
 
 ### Unicidade case-insensitive por expressão
 `projects (company_id, lower(name))` e `assets (project_id, lower(identifier)) WHERE identifier IS NOT NULL`.
@@ -235,6 +277,65 @@ queimaria o endereço contra o único global sem forma de liberar.
 `stored_filename` é gerado e validado por regex no próprio banco; `original_filename` é
 sanitizado e serve apenas para anunciar no download. São duas camadas independentes, e nenhuma
 depende da outra para impedir travessia de caminho.
+
+### A deduplicação de achados é um índice, não uma promessa do serviço
+
+`vulnerabilities.fingerprint` guarda `sha256hex(scanner:ruleId:target:cve)` do achado que
+originou a linha, e
+
+```sql
+CREATE UNIQUE INDEX uk_vulnerabilities_company_fingerprint
+    ON vulnerabilities (company_id, fingerprint)
+    WHERE fingerprint IS NOT NULL;
+```
+
+é o que torna "a mesma empresa nunca importa o mesmo achado duas vezes" uma garantia do banco.
+`ScanImportService` também pula duplicados — e checa de novo na confirmação, porque uma
+importação encenada ontem pode ser confirmada depois de outra já ter criado a mesma linha —,
+mas essa é a camada que um segundo importador, um endpoint em lote futuro ou duas confirmações
+concorrentes esqueceriam. A segunda inserção falha, e falha para quem quer que a escreva.
+
+O índice é **parcial** porque a coluna é nula em toda vulnerabilidade criada à mão: sem o
+`WHERE`, a segunda vulnerabilidade manual de uma empresa colidiria com a primeira num NULL
+compartilhado nos motores que tratam nulos como iguais, e inflaria o índice com linhas que
+nunca serão consultadas nos que não tratam.
+
+### A impressão digital não inclui severidade nem CVSS
+
+O que entra nela é o que faz um achado ser o mesmo achado na varredura seguinte: qual scanner
+falou, que regra disparou, onde, e sobre qual CVE. Severidade e nota **não** entram, e a
+omissão é a decisão: fabricantes re-pontuam as próprias regras entre versões, e um template que
+dizia `medium` no mês passado diz `high` hoje para o mesmo defeito no mesmo host. Incluí-las
+faria cada re-scan depois de uma mudança dessas importar uma segunda cópia de algo que já tem
+dono, status e discussão — e a primeira cópia nunca fecharia.
+
+Um componente nulo contribui vazio mas mantém o separador, então um achado sem CVE continua
+distinguível de um cujo CVE é a string vazia.
+
+### `project_id` **é** denormalizado em `scan_imports`
+
+É o oposto da decisão sobre `vulnerabilities`, e pelo mesmo critério. O projeto de um ativo
+muda — por isso não é copiado para a vulnerabilidade. O projeto de uma importação não muda:
+é o projeto que o operador escolheu no envio, e é o escopo em que cada alvo foi procurado.
+Isso é um fato histórico, não uma cópia que pode ficar obsoleta.
+
+### Os seis contadores de `scan_imports` são cache, e são recalculados
+
+`total_findings` e os cinco contadores por situação são a agregação de `scan_findings`. Existem
+porque o histórico mostra os seis em toda linha, e lê-los dos achados faria de uma página de
+vinte importações vinte consultas agregadas. O serviço os **recalcula** a partir das linhas —
+nunca incrementa — dentro da mesma transação que muda a situação de um achado, então o cache e
+os dados que ele resume commitam juntos ou não commitam. Um `CHECK` recusa contador negativo,
+que é como um defeito no recálculo aparece cedo em vez de virar "-1 achados duplicados" na tela.
+
+### O achado guarda a rastreabilidade que a auditoria não guarda
+
+A confirmação escreve **uma** linha de auditoria (`SCAN_IMPORT`) com os contadores, e não uma
+`CREATE` por vulnerabilidade: centenas de linhas idênticas enterrariam a trilha da empresa, e
+`AuditService` trunca o JSON em 8000 caracteres, então um resumo que crescesse com o tamanho do
+relatório seria cortado no meio. A pergunta "de onde veio esta vulnerabilidade" é respondida por
+`scan_findings.vulnerability_id`, que é consultável, junta com o resto e está escopado à
+importação.
 
 ### `users.email` é único globalmente
 Decisão registrada em `docs/adr/0004`: o modelo de domínio pede unicidade por empresa, mas o contrato de login

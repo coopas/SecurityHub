@@ -2,7 +2,7 @@
   "info": {
     "name": "SecurityHub API",
     "_postman_id": "9f2c41d6-7b3e-4a58-9d0c-5e6a1b8f4c37",
-    "description": "Coleção completa da API do SecurityHub (/api/v1), organizada por módulo.\n\nComo usar:\n1. Suba a pilha (docker compose up) — o perfil demo semeia dois tenants.\n2. Ajuste a variável baseUrl se o backend não estiver em localhost:8080.\n3. Rode \"Login (ADMIN)\" na pasta 1: o script de teste guarda accessToken e userId nas variáveis da coleção, e todo o resto herda o Bearer daí. Nenhuma cópia manual de token.\n4. Rode as pastas 2 a 5 na ordem: cada criação guarda o id que a próxima usa.\n\nNenhum segredo nesta coleção. demoPassword é a credencial pública da demonstração local (backend/src/main/resources/application-demo.yml), que só existe em um banco criado na própria máquina; qualquer implantação exposta deve sobrescrever SECURITYHUB_DEMO_PASSWORD. accessToken, devToken, viewerToken e otherToken nascem vazios e são preenchidos em tempo de execução.\n\nRespostas comentadas de cada endpoint: docs/api-examples.md. Contrato navegável: http://localhost:8080/swagger-ui.html",
+    "description": "Coleção completa da API do SecurityHub (/api/v1), organizada por módulo.\n\nComo usar:\n1. Suba a pilha (docker compose up) — o perfil demo semeia dois tenants.\n2. Ajuste a variável baseUrl se o backend não estiver em localhost:8080.\n3. Rode \"Login (ADMIN)\" na pasta 1: o script de teste guarda accessToken e userId nas variáveis da coleção, e todo o resto herda o Bearer daí. Nenhuma cópia manual de token.\n4. Rode as pastas 2 a 5 na ordem: cada criação guarda o id que a próxima usa.\n5. A pasta 9 envia um arquivo: o Postman guarda o caminho do arquivo e não o conteúdo, então reaponte o campo file para docs/http/scan-nmap-exemplo.xml antes de rodá-la.\n\nNenhum segredo nesta coleção. demoPassword é a credencial pública da demonstração local (backend/src/main/resources/application-demo.yml), que só existe em um banco criado na própria máquina; qualquer implantação exposta deve sobrescrever SECURITYHUB_DEMO_PASSWORD. accessToken, devToken, viewerToken e otherToken nascem vazios e são preenchidos em tempo de execução.\n\nRespostas comentadas de cada endpoint: docs/api-examples.md. Contrato navegável: http://localhost:8080/swagger-ui.html",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -93,6 +93,42 @@
       "value": "",
       "type": "string",
       "description": "Guardado pela criação de comentário."
+    },
+    {
+      "key": "scanImportId",
+      "value": "",
+      "type": "string",
+      "description": "Preenchido pelo envio do relatório na pasta 9."
+    },
+    {
+      "key": "scanImportAgainId",
+      "value": "",
+      "type": "string",
+      "description": "Preenchido pelo reenvio do mesmo relatório na pasta 9."
+    },
+    {
+      "key": "matchedFindingId",
+      "value": "",
+      "type": "string",
+      "description": "Achado que encontrou o ativo sozinho."
+    },
+    {
+      "key": "unmatchedFindingId",
+      "value": "",
+      "type": "string",
+      "description": "Achado sem ativo, vinculado à mão na pasta 9."
+    },
+    {
+      "key": "importedVulnerabilityA",
+      "value": "",
+      "type": "string",
+      "description": "Vulnerabilidade criada pela confirmação; apagada na limpeza."
+    },
+    {
+      "key": "importedVulnerabilityB",
+      "value": "",
+      "type": "string",
+      "description": "A outra vulnerabilidade criada pela confirmação."
     }
   ],
   "item": [
@@ -1418,7 +1454,523 @@
       ]
     },
     {
-      "name": "9. Casos negativos",
+      "name": "9. Importação de scans",
+      "description": "Enviar, revisar, e então confirmar ou descartar. O envio não cria nada — só a confirmação cria vulnerabilidades, e só para os achados que ainda tenham ativo naquele momento. Execute as pastas 1 a 3 antes: a importação usa o projeto e o ativo criados lá. O arquivo enviado é docs/http/scan-nmap-exemplo.xml, que aponta para o identificador do ativo de 3 e para um endereço que não existe no inventário.",
+      "item": [
+        {
+          "name": "Enviar relatório (ADMIN/ANALYST)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/scan-imports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan-imports"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "type": "text",
+                  "description": "Campo de formulário; o backend o lê como parâmetro de requisição, então a query string também funciona."
+                },
+                {
+                  "key": "format",
+                  "value": "NMAP_XML",
+                  "type": "text",
+                  "description": "NMAP_XML | ZAP_JSON | NUCLEI_JSONL. Declarado por quem envia, nunca deduzido dos bytes."
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "scan-nmap-exemplo.xml",
+                  "description": "Aponte para docs/http/scan-nmap-exemplo.xml na sua máquina: o Postman guarda o caminho do arquivo, não o conteúdo."
+                }
+              ]
+            },
+            "description": "multipart/form-data com file, projectId e format. Nada é criado: o envio lê o relatório, procura para cada achado um ativo do projeto escolhido (casamento por identifier, sem distinguir maiúsculas e ignorando espaços nas pontas), marca como duplicado o que a empresa já registrou, e grava tudo como proposta. Guarda scanImportId e os ids do primeiro e do segundo achado."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"resposta 201\", function () { pm.response.to.have.status(201); });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"nasce pendente\", function () { pm.expect(body.status).to.eql(\"PENDING\"); });",
+                  "pm.test(\"porta aberta não vira achado\", function () { pm.expect(body.totalFindings).to.eql(2); });",
+                  "pm.collectionVariables.set(\"scanImportId\", body.id);",
+                  "pm.collectionVariables.set(\"matchedFindingId\", body.findings[0].id);",
+                  "pm.collectionVariables.set(\"unmatchedFindingId\", body.findings[1].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Prévia da importação",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/scan-imports/{{scanImportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan-imports",
+                "{{scanImportId}}"
+              ]
+            },
+            "description": "A importação com todos os achados, no estado atual. Leitura aberta a qualquer papel da empresa. Os achados não são paginados: a quantidade já está limitada por securityhub.scan.max-findings."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"resposta 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vincular achado a um ativo (ADMIN/ANALYST)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/scan-imports/{{scanImportId}}/findings/{{unmatchedFindingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan-imports",
+                "{{scanImportId}}",
+                "findings",
+                "{{unmatchedFindingId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": {{assetId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Só um achado UNMATCHED pode ser vinculado. O ativo precisa ser da empresa, não necessariamente do projeto da importação: uma varredura pode ter acertado um ativo registrado em outro projeto do mesmo tenant. Os contadores da importação são recalculados na mesma transação."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"resposta 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"o achado passou a ter ativo\", function () { pm.expect(pm.response.json().status).to.eql(\"MATCHED\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "409 — vincular achado que já tem ativo",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/scan-imports/{{scanImportId}}/findings/{{matchedFindingId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan-imports",
+                "{{scanImportId}}",
+                "findings",
+                "{{matchedFindingId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": {{assetId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Um achado já resolvido não tem o que mudar, e um DUPLICATE não seria importado de todo jeito: oferecer a alteração seria oferecer uma mudança sem efeito."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 409\", function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirmar importação (ADMIN/ANALYST)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/scan-imports/{{scanImportId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan-imports",
+                "{{scanImportId}}",
+                "confirm"
+              ]
+            },
+            "description": "Cria uma vulnerabilidade por achado MATCHED, em um lote só, e encerra a importação. Tudo que não era MATCHED vira SKIPPED. A duplicidade é verificada de novo aqui, porque outra importação pode ter sido confirmada no meio. A trilha recebe UMA entrada SCAN_IMPORT com os contadores — não uma CREATE por achado. Guarda os ids das vulnerabilidades criadas."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"resposta 200\", function () { pm.response.to.have.status(200); });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"encerrada\", function () { pm.expect(body.status).to.eql(\"CONFIRMED\"); });",
+                  "pm.test(\"duas vulnerabilidades criadas\", function () { pm.expect(body.importedCount).to.eql(2); });",
+                  "pm.collectionVariables.set(\"importedVulnerabilityA\", body.findings[0].vulnerabilityId);",
+                  "pm.collectionVariables.set(\"importedVulnerabilityB\", body.findings[1].vulnerabilityId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "409 — confirmar de novo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/scan-imports/{{scanImportId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan-imports",
+                "{{scanImportId}}",
+                "confirm"
+              ]
+            },
+            "description": "Não é um sucesso idempotente: a primeira confirmação criou linhas, e responder 200 aqui diria a um cliente que repetiu a chamada que ela também criou."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 409\", function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "409 — descartar importação confirmada",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/scan-imports/{{scanImportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan-imports",
+                "{{scanImportId}}"
+              ]
+            },
+            "description": "Só uma importação PENDING pode ser descartada. Descartar uma confirmada apagaria o relatório que sustenta vulnerabilidades que existem."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 409\", function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reenviar o mesmo relatório — tudo duplicado",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/scan-imports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan-imports"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "type": "text",
+                  "description": "Campo de formulário; o backend o lê como parâmetro de requisição, então a query string também funciona."
+                },
+                {
+                  "key": "format",
+                  "value": "NMAP_XML",
+                  "type": "text",
+                  "description": "NMAP_XML | ZAP_JSON | NUCLEI_JSONL. Declarado por quem envia, nunca deduzido dos bytes."
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "scan-nmap-exemplo.xml",
+                  "description": "Aponte para docs/http/scan-nmap-exemplo.xml na sua máquina: o Postman guarda o caminho do arquivo, não o conteúdo."
+                }
+              ]
+            },
+            "description": "O mesmo arquivo de novo: nenhum achado novo. A impressão digital é sha256(scanner:ruleId:target:cve) — severidade e CVSS ficam de fora porque mudam entre versões do scanner sem o achado ser outro. Duplicado é ignorado e contado, nunca mesclado: a vulnerabilidade da primeira importação pode já ter status, responsável e discussão."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"resposta 201\", function () { pm.response.to.have.status(201); });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"todo achado é duplicado\", function () { pm.expect(body.duplicateCount).to.eql(body.totalFindings); });",
+                  "pm.test(\"duplicado vence sobre com ativo\", function () { pm.expect(body.matchedCount).to.eql(0); });",
+                  "pm.collectionVariables.set(\"scanImportAgainId\", body.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Descartar a reimportação",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/scan-imports/{{scanImportAgainId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan-imports",
+                "{{scanImportAgainId}}"
+              ]
+            },
+            "description": "204 sem corpo. Apesar do verbo, nada sai do histórico: a importação passa a DISCARDED e os achados continuam lá. O que some é o arquivo em disco, removido depois do commit."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Histórico de importações",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/scan-imports?page=0&size=20&sort=createdAt,desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan-imports"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt,desc"
+                }
+              ]
+            },
+            "description": "PageResponse com os contadores de cada importação e sem os achados: uma página de vinte importações carregando todos os achados de cada uma seriam milhares de linhas para desenhar seis números. Ordenáveis: createdAt, updatedAt, status, format, sizeBytes, totalFindings."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"resposta 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"a listagem não carrega os achados\", function () { pm.expect(pm.response.json().content[0]).to.not.have.property(\"findings\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "403 — VIEWER enviando relatório",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/scan-imports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan-imports"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "type": "text",
+                  "description": "Campo de formulário; o backend o lê como parâmetro de requisição, então a query string também funciona."
+                },
+                {
+                  "key": "format",
+                  "value": "NMAP_XML",
+                  "type": "text",
+                  "description": "NMAP_XML | ZAP_JSON | NUCLEI_JSONL. Declarado por quem envia, nunca deduzido dos bytes."
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "scan-nmap-exemplo.xml",
+                  "description": "Aponte para docs/http/scan-nmap-exemplo.xml na sua máquina: o Postman guarda o caminho do arquivo, não o conteúdo."
+                }
+              ]
+            },
+            "description": "Enviar, vincular, confirmar e descartar são ADMIN ou ANALYST: quem pode criar uma vulnerabilidade por formulário pode criar um lote por arquivo. O multipart vai completo de propósito — projectId e format são resolvidos antes do controle de papel, e um corpo incompleto devolveria 400 sem que a regra chegasse a rodar.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{viewerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 403\", function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 — importação de outra empresa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/scan-imports/{{scanImportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan-imports",
+                "{{scanImportId}}"
+              ]
+            },
+            "description": "404 e nunca 403, como no resto da API: um 403 confirmaria que o id existe. Vale para os cinco endpoints que recebem um id.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{otherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10. Casos negativos",
       "description": "Todos respondem o envelope ApiError. Execute as pastas 1 a 5 antes: estes casos dependem das variáveis capturadas.",
       "item": [
         {
@@ -2275,7 +2827,7 @@
       ]
     },
     {
-      "name": "10. Comportamentos silenciosos",
+      "name": "11. Comportamentos silenciosos",
       "description": "Dois clamps que respondem 200 em vez de erro. Ambos ecoam na resposta o valor efetivamente usado, que é o que os mantém visíveis em vez de escondidos.",
       "item": [
         {
@@ -2361,8 +2913,8 @@
       ]
     },
     {
-      "name": "11. Limpeza",
-      "description": "Na ordem que respeita a regra de filhos: vulnerabilidade, ativo, projeto. Todos respondem 204 sem corpo.",
+      "name": "12. Limpeza",
+      "description": "Na ordem que respeita a regra de filhos: vulnerabilidades (a criada à mão e as duas que a importação criou), ativo, projeto. Todos respondem 204 sem corpo.",
       "item": [
         {
           "name": "Excluir vulnerabilidade (ADMIN)",
@@ -2380,6 +2932,66 @@
               ]
             },
             "description": "Exceção deliberada à regra de filhos: os comentários são apagados junto, porque não há endpoint que apague um comentário isoladamente. Quantos foram removidos vai para a trilha (commentCount no oldValue)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Excluir a primeira vulnerabilidade da importação (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{importedVulnerabilityA}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{importedVulnerabilityA}}"
+              ]
+            },
+            "description": "Sem estas duas o ativo não sai: ele volta a ter filhos e a exclusão responde 409 com a contagem. Quem pulou a pasta 9 pula esta requisição. Atenção: hoje responde 409, porque scan_findings.vulnerability_id referencia a linha e VulnerabilityService.delete só trata comentários e anexos; enquanto for assim, as exclusões seguintes (ativo e projeto) também falham."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Excluir a segunda vulnerabilidade da importação (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{importedVulnerabilityB}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{importedVulnerabilityB}}"
+              ]
+            },
+            "description": "Sem estas duas o ativo não sai: ele volta a ter filhos e a exclusão responde 409 com a contagem. Quem pulou a pasta 9 pula esta requisição. Atenção: hoje responde 409, porque scan_findings.vulnerability_id referencia a linha e VulnerabilityService.delete só trata comentários e anexos; enquanto for assim, as exclusões seguintes (ativo e projeto) também falham."
           },
           "response": [],
           "event": [

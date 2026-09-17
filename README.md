@@ -25,6 +25,14 @@ Cada achado aceita anexos, para guardar a evidência junto do registro: um PDF d
 varredura, uma captura de tela, um log. A lista pode ser exportada em CSV com os mesmos
 filtros que estão na tela.
 
+Relatório de scanner entra pela tela de importação: Nmap em XML, OWASP ZAP em JSON e
+Nuclei em JSONL. O arquivo é lido uma vez e fica pendente de revisão — a tela mostra cada
+achado com o ativo que ele casou pelo identificador, você escolhe à mão o que não casou, e
+só então confirma. Nada vira vulnerabilidade sem alguém confirmar, e nenhum ativo é criado
+sozinho. Reimportar o mesmo relatório não duplica nem reabre nada: o achado repetido é
+contado e ignorado, para que uma varredura nova não apague o status, o responsável ou o
+comentário que alguém colocou ali.
+
 O dashboard resume a situação: quantas vulnerabilidades existem, quantas continuam
 abertas, quantas passaram do prazo, como se distribuem por severidade e status, e como
 isso evoluiu nos últimos 30 dias. Dali sai também um relatório executivo em PDF, com os
@@ -127,6 +135,13 @@ nome de campo, não por valor. Se alguém colar uma credencial num comentário, 
 :param`, quebra no PostgreSQL quando o filtro chega vazio, porque ele não infere o tipo de
 um parâmetro nulo nessa posição.
 
+**Reimportar um relatório não pode desfazer trabalho humano.** O achado repetido é
+reconhecido por `sha256(scanner:regra:alvo:cve)` e ignorado. Severidade e CVSS ficam de fora
+do hash de propósito: mudam quando o scanner é atualizado, e o achado continua sendo o
+mesmo. A garantia é um índice único parcial `(company_id, fingerprint)`, não só a regra no
+serviço — e ela é reconferida na confirmação, porque entre enviar e confirmar outra
+importação pode ter criado o mesmo achado.
+
 **Vulnerabilidade não guarda `project_id`.** Um ativo pode ser movido de projeto, então a
 coluna ficaria desatualizada. O projeto é lido pelo ativo, e a listagem já faz esse join
 para mostrar o nome.
@@ -137,8 +152,8 @@ Mais contexto em [`docs/architecture.md`](docs/architecture.md) e nos
 ## Testes
 
 ```bash
-cd backend  && ./mvnw verify      # 243 testes
-cd frontend && npm ci && npm run lint && npm run test:ci && npm run build   # 300 testes
+cd backend  && ./mvnw verify      # 517 testes
+cd frontend && npm ci && npm run lint && npm run test:ci && npm run build   # 468 testes
 ./scripts/smoke-test.sh           # fluxo completo, com a aplicação no ar
 ```
 
@@ -183,8 +198,12 @@ O Flyway cria o schema na primeira execução contra um banco vazio. As variáve
 
 ## O que ainda não tem
 
-Não há importação de relatórios de scanner: Nmap, OWASP ZAP e Nuclei ainda são trabalho
-manual. Também não há SSO corporativo nem aplicativo móvel.
+Não há SSO corporativo nem aplicativo móvel. A importação de scanner cobre Nmap, ZAP e
+Nuclei; outros formatos exigem um parser novo.
+
+A importação é síncrona e recusa relatórios acima de 2000 achados, o que é bastante para
+uma varredura comum e pouco para um inventário inteiro. Acima disso o arquivo é rejeitado
+antes de qualquer gravação, em vez de a tela ficar pendurada.
 
 A listagem de usuários e as distribuições do dashboard devolvem um array simples em vez
 do envelope paginado, porque são agregados de tamanho fixo. A decisão está registrada no

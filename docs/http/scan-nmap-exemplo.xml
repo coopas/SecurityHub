@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Relatório de nmap de exemplo, usado pela seção 10 de securityhub.http e pela pasta
+  "10. Importação de scans" da coleção do Postman.
+
+  Dois alvos, de propósito:
+
+  - `api.pagamentos.acme.test` é o identificador do ativo criado em 3.2, então o achado
+    encontra o ativo sozinho e chega MATCHED;
+  - `198.51.100.23` é da faixa de documentação (RFC 5737): não existe no inventário, chega
+    UNMATCHED, e é o achado que a requisição 10.3 vincula à mão.
+
+  As portas abertas sem `<script>` também são de propósito: elas não viram achado. O
+  importador de nmap lê apenas resultado de script NSE, porque uma porta aberta não é uma
+  vulnerabilidade.
+
+  O DOCTYPE é o que todo relatório de nmap traz. O interpretador o atravessa com
+  SUPPORT_DTD desligado, então nenhuma entidade externa é resolvida.
+-->
+<!DOCTYPE nmaprun PUBLIC "-//IDN nmap.org//DTD Nmap XML 1.04//EN" "https://svn.nmap.org/nmap/docs/nmap.dtd">
+<nmaprun scanner="nmap" args="nmap -sV --script vuln -oX -" start="1700000000" version="7.94">
+  <host starttime="1700000000" endtime="1700000120">
+    <status state="up" reason="echo-reply"/>
+    <address addr="10.44.0.10" addrtype="ipv4"/>
+    <hostnames>
+      <hostname name="api.pagamentos.acme.test" type="PTR"/>
+    </hostnames>
+    <ports>
+      <port protocol="tcp" portid="80">
+        <state state="open" reason="syn-ack"/>
+        <service name="http" product="nginx" version="1.18.0"/>
+      </port>
+      <port protocol="tcp" portid="443">
+        <state state="open" reason="syn-ack"/>
+        <service name="https" product="nginx" version="1.18.0"/>
+        <script id="ssl-heartbleed" output="VULNERABLE: The Heartbleed Bug is a serious vulnerability in OpenSSL. State: VULNERABLE Risk factor: High References: CVE-2014-0160"/>
+      </port>
+    </ports>
+  </host>
+  <host starttime="1700000000" endtime="1700000130">
+    <status state="up" reason="reset"/>
+    <address addr="198.51.100.23" addrtype="ipv4"/>
+    <hostscript>
+      <script id="smb-vuln-ms17-010" output="VULNERABLE: Remote Code Execution vulnerability in Microsoft SMBv1 servers. IDs: CVE:CVE-2017-0143 Risk factor: HIGH"/>
+    </hostscript>
+  </host>
+  <runstats><finished time="1700000200" elapsed="200.00"/></runstats>
+</nmaprun>
