@@ -3,6 +3,51 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento conforme [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.3.0] — 2026-09-17
+
+Redesenho da interface inteira, da tela de entrada às listagens, e tema escuro.
+
+### Adicionado
+
+- **Tema escuro**, com alternador na barra superior. Na primeira visita segue a preferência
+  do sistema; depois vale a escolha, guardada por navegador. O tema é aplicado antes do
+  primeiro quadro, para não piscar branco a cada visita de quem usa o escuro.
+- `scripts/capture-screenshots.sh` regera as imagens do README nos dois temas.
+
+### Alterado
+
+- Sistema de design próprio: cor, espaçamento, tipografia, forma, elevação e movimento
+  viraram tokens, e as telas pararam de repetir valor solto. Tipografia Plus Jakarta Sans,
+  com pilha de reserva para rede fechada.
+- A barra superior deixou de ser uma faixa cheia da cor da marca. Num painel, 64px de cor
+  forte no topo competem com o conteúdo, que é o produto.
+- Tela de entrada redesenhada em duas colunas, com painel de marca que recolhe em telas
+  estreitas. As cinco telas públicas compartilham a mesma casca — telas de credencial que
+  destoam entre si são o que um phishing imita.
+- Selos de severidade, situação e criticidade unificados num componente só, com ícone e
+  rótulo além da cor.
+
+### Acessibilidade
+
+- Toda combinação de texto e fundo foi medida contra a WCAG antes de entrar. A medição
+  reprovou o verde da identidade com texto branco (3.77:1) e os selos de fundo translúcido,
+  que caíam a 3.90:1 sobre a linha realçada pelo cursor; ambos foram trocados.
+- As paletas do Material passaram a ser distintas por tema: o azul-cofre sobre a superfície
+  escura dava 1.2:1, e o botão principal praticamente sumia.
+- Alvos de toque de 44px, `prefers-reduced-motion` respeitado, e foco visível que deixou de
+  deformar o elemento que circunda.
+
+### Corrigido
+
+- Vulnerabilidade criada por importação não podia ser excluída: a linha de `scan_findings`
+  segurava a exclusão e o ativo e o projeto ficavam presos junto (migration `V10`).
+- Primeiro envio de relatório falhava em instalação nova, porque o diretório montado pelo
+  Compose nascia como root enquanto a aplicação roda como `securityhub`.
+- Achado sem CVSS imprimia "CVSS" sem número: a API omite o campo nulo em vez de enviá-lo.
+- Tabelas equivalentes dos gráficos, invisíveis, empurravam rolagem horizontal na área de
+  conteúdo.
+- A fileira de cartões do dashboard transbordava o contêiner entre 1160px e 1400px.
+
 ## [1.2.0] — 2026-09-17
 
 Importação de relatórios de scanner, que era a última lacuna funcional registrada no README.

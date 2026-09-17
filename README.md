@@ -45,10 +45,17 @@ derrubar quem está no meio de uma tarefa.
 
 | | |
 | --- | --- |
-| ![Vulnerabilidades](docs/screenshots/vulnerabilities.png) | ![Auditoria](docs/screenshots/audit.png) |
-| Lista de vulnerabilidades com filtros | Auditoria com comparação antes/depois |
-| ![Ativos](docs/screenshots/assets.png) | ![Login](docs/screenshots/login.png) |
-| Ativos por projeto, tipo e criticidade | Autenticação |
+| ![Vulnerabilidades](docs/screenshots/vulnerabilities.png) | ![Importações](docs/screenshots/imports.png) |
+| Lista de vulnerabilidades com filtros | Importação de relatórios de scanner |
+| ![Ativos](docs/screenshots/assets.png) | ![Auditoria](docs/screenshots/audit.png) |
+| Ativos por projeto, tipo e criticidade | Auditoria com comparação antes/depois |
+| ![Login](docs/screenshots/login.png) | ![Login no tema escuro](docs/screenshots/login-dark.png) |
+| Autenticação | A mesma tela no tema escuro |
+
+Tem tema claro e escuro, com alternador na barra superior. Quem nunca escolheu segue a
+preferência do sistema, e a escolha fica salva no navegador. O tema é pintado antes do
+primeiro quadro, então não há o lampejo branco a cada visita — que é justamente o que
+incomoda quem usa o escuro.
 
 O layout funciona em desktop e tablet ([mesmo dashboard em 834px](docs/screenshots/dashboard-tablet.png)).
 
@@ -135,6 +142,15 @@ nome de campo, não por valor. Se alguém colar uma credencial num comentário, 
 :param`, quebra no PostgreSQL quando o filtro chega vazio, porque ele não infere o tipo de
 um parâmetro nulo nessa posição.
 
+**As cores foram medidas, não escolhidas no olho.** Cada par de texto e fundo passou por um
+verificador de contraste antes de entrar. Isso reprovou escolhas que pareciam boas: o verde
+da identidade dá 3.77:1 com texto branco, abaixo do mínimo de 4.5, então ele só preenche e
+um tom mais fechado carrega texto. Os selos de severidade usam fundo opaco porque tinta
+translúcida soma com o realce da linha sob o cursor — "média sobre média" caía para 3.90 ao
+passar o mouse. Severidade e status nunca dependem só da cor: levam ícone e rótulo, já que
+cerca de 8% dos homens não distinguem vermelho de verde, e severidade é exatamente a
+informação que não pode se perder aí.
+
 **Reimportar um relatório não pode desfazer trabalho humano.** O achado repetido é
 reconhecido por `sha256(scanner:regra:alvo:cve)` e ignorado. Severidade e CVSS ficam de fora
 do hash de propósito: mudam quando o scanner é atualizado, e o achado continua sendo o
@@ -152,8 +168,8 @@ Mais contexto em [`docs/architecture.md`](docs/architecture.md) e nos
 ## Testes
 
 ```bash
-cd backend  && ./mvnw verify      # 517 testes
-cd frontend && npm ci && npm run lint && npm run test:ci && npm run build   # 468 testes
+cd backend  && ./mvnw verify      # 518 testes
+cd frontend && npm ci && npm run lint && npm run test:ci && npm run build   # 477 testes
 ./scripts/smoke-test.sh           # fluxo completo, com a aplicação no ar
 ```
 
@@ -164,6 +180,11 @@ diferente não provaria que as constraints e os índices parciais funcionam.
 O `smoke-test.sh` percorre o caminho inteiro contra a pilha rodando, incluindo cadastro,
 login, o fluxo de correção, a auditoria e uma verificação de que uma empresa não alcança
 os dados da outra.
+
+As imagens deste README são refeitas por `./scripts/capture-screenshots.sh`, com a pilha no
+ar. Ele não roda na CI nem conta como teste: existe para que as capturas possam ser
+regeradas por um comando, nos dois temas, em vez de alguém precisar lembrar quais telas
+fotografar e em que largura.
 
 Se `./mvnw test` reclamar que não encontrou um ambiente Docker, provavelmente seu usuário
 não está no grupo `docker`. Em engines anteriores à 25.0, rode com
