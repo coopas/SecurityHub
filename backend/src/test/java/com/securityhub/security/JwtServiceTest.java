@@ -10,6 +10,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
@@ -113,6 +114,22 @@ class JwtServiceTest {
                 .compact();
 
         assertThat(jwtService.parse(otherIssuer)).isEmpty();
+    }
+
+    @Test
+    void refreshTokenTtlComesFromItsOwnProperty() {
+        JwtProperties properties = new JwtProperties();
+        properties.setSecret(SECRET);
+        properties.setExpirationMinutes(60);
+        properties.setRefreshExpirationDays(14);
+        JwtService service = new JwtService(properties);
+        service.init();
+
+        assertThat(service.refreshTokenTtl()).isEqualTo(Duration.ofDays(14));
+        // A vida do refresh é independente da do access token: é o que permite que um seja
+        // curto o bastante para não precisar de revogação e o outro longo o bastante para
+        // valer a pena revogar.
+        assertThat(service.accessTokenTtl()).isEqualTo(Duration.ofHours(1));
     }
 
     @Test

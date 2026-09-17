@@ -4,10 +4,14 @@ securityhub:
   jwt:
     secret: test-only-secret-value-used-exclusively-by-the-automated-test-suite
     expiration-minutes: 60
+    refresh-expiration-days: 14
   cors:
     allowed-origins: http://localhost:4200
   demo:
     seed-enabled: false
+  mail:
+    from: nao-responda@securityhub.test
+    app-base-url: http://localhost:4200
 
 spring:
   jpa:
@@ -17,5 +21,9 @@ spring:
 logging:
   level:
     com.securityhub: INFO
+    # Não há SMTP na suíte: toda entrega falha e seria um WARN por envio. O conteúdo das
+    # mensagens é coberto por MailTemplatesTest, e o efeito colateral que importa — a linha
+    # do token — é verificado no banco.
+    com.securityhub.mail: ERROR
     org.testcontainers: WARN
     com.github.dockerjava: WARN

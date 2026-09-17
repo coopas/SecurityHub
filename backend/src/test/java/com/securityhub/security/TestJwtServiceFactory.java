@@ -12,6 +12,9 @@ public final class TestJwtServiceFactory {
         JwtProperties properties = new JwtProperties();
         properties.setSecret(SECRET);
         properties.setExpirationMinutes(60);
+        // Explícito: sem isso o refresh token nasceria com o padrão de JwtProperties e um teste
+        // que dependesse da janela estaria medindo outra coisa sem avisar.
+        properties.setRefreshExpirationDays(14);
         JwtService service = new JwtService(properties);
         service.init();
         return service;

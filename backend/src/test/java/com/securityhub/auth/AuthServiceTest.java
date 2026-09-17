@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.securityhub.audit.AuditService;
 import com.securityhub.auth.dto.LoginRequest;
+import com.securityhub.auth.dto.RefreshTokenRequest;
 import com.securityhub.auth.dto.RegisterRequest;
 import com.securityhub.company.Company;
 import com.securityhub.company.CompanyRepository;
@@ -43,6 +44,9 @@ class AuthServiceTest {
     @Mock
     private AuditService auditService;
 
+    @Mock
+    private RefreshTokenService refreshTokenService;
+
     private PasswordEncoder passwordEncoder;
     private AuthService authService;
 
@@ -52,7 +56,8 @@ class AuthServiceTest {
 
         JwtService jwtService = TestJwtServiceFactory.create();
 
-        authService = new AuthService(companyRepository, userRepository, passwordEncoder, jwtService, auditService);
+        authService = new AuthService(companyRepository, userRepository, passwordEncoder, jwtService,
+                auditService, refreshTokenService);
         authService.init();
     }
 
@@ -160,6 +165,59 @@ class AuthServiceTest {
         authService.login(request);
 
         assertThat(user.getLastLoginAt()).isNotNull();
+    }
+
+    @Test
+    void loginIssuesARefreshTokenAndCollectsTheExpiredOnesOfThatUser() {
+        User user = activeUser("senha-correta");
+        when(userRepository.findByEmail("ana@acme.com")).thenReturn(Optional.of(user));
+        when(refreshTokenService.issue(user)).thenReturn("token-opaco");
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("ana@acme.com");
+        request.setPassword("senha-correta");
+
+        assertThat(authService.login(request).getRefreshToken()).isEqualTo("token-opaco");
+        verify(refreshTokenService).purgeExpiredFor(2L);
+    }
+
+    @Test
+    void aFailedLoginOpensNoSession() {
+        when(userRepository.findByEmail("ana@acme.com")).thenReturn(Optional.of(activeUser("certa")));
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("ana@acme.com");
+        request.setPassword("errada");
+
+        assertThatThrownBy(() -> authService.login(request)).isInstanceOf(UnauthorizedException.class);
+        verify(refreshTokenService, never()).issue(any());
+        verify(refreshTokenService, never()).purgeExpiredFor(any());
+    }
+
+    @Test
+    void refreshRejectsWhenTheRotatedRowPointsAtAUserThatIsGone() {
+        RefreshTokenRequest request = new RefreshTokenRequest();
+        request.setRefreshToken("qualquer");
+        when(refreshTokenService.rotate("qualquer"))
+                .thenReturn(new RefreshTokenService.Rotation(2L, "novo"));
+        when(userRepository.findWithCompanyById(2L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.refresh(request))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessage("Sessão inválida");
+    }
+
+    @Test
+    void refreshHandsBackTheNewlyIssuedToken() {
+        User user = activeUser("senha-correta");
+        RefreshTokenRequest request = new RefreshTokenRequest();
+        request.setRefreshToken("antigo");
+        when(refreshTokenService.rotate("antigo"))
+                .thenReturn(new RefreshTokenService.Rotation(2L, "novo"));
+        when(userRepository.findWithCompanyById(2L)).thenReturn(Optional.of(user));
+
+        assertThat(authService.refresh(request).getRefreshToken()).isEqualTo("novo");
+        assertThat(authService.refresh(request).getAccessToken()).isNotBlank();
     }
 
     private String catchMessage(LoginRequest request) {
