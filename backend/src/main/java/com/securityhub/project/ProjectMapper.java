@@ -7,19 +7,17 @@ import com.securityhub.user.User;
 /** Hand-written per ADR 0003; no MapStruct in this project. */
 public final class ProjectMapper {
 
-    /**
-     * The assets table does not exist yet. The field is part of the contract from
-     * the start so the Angular list does not have to change shape later; the assets module
-     * replaces this constant with a real projection.
-     */
-    static final long ASSET_COUNT_PLACEHOLDER = 0L;
-
     private ProjectMapper() {
     }
 
-    public static ProjectResponse toResponse(Project project) {
+    /**
+     * The asset count is passed in rather than read from the entity: a mapped collection
+     * would make every listed row initialize its assets, so the service supplies the value
+     * from a single grouped count query.
+     */
+    public static ProjectResponse toResponse(Project project, long assetCount) {
         return new ProjectResponse(project.getId(), project.getName(), project.getDescription(),
-                project.getStatus(), ASSET_COUNT_PLACEHOLDER, createdByName(project.getCreatedBy()),
+                project.getStatus(), assetCount, createdByName(project.getCreatedBy()),
                 project.getCreatedAt(), project.getUpdatedAt());
     }
 

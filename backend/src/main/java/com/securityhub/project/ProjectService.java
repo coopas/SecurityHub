@@ -12,9 +12,12 @@ import com.securityhub.shared.error.NotFoundException;
 import com.securityhub.shared.web.PageableSupport;
 import com.securityhub.user.User;
 import com.securityhub.user.UserRepository;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -56,14 +59,17 @@ public class ProjectService {
     public Page<ProjectResponse> search(AuthenticatedUser current, String search, ProjectStatus status,
                                         Pageable pageable) {
         Pageable sanitized = PageableSupport.sanitize(pageable, SORTABLE_PROPERTIES, DEFAULT_SORT);
-        return projectRepository
-                .findAll(ProjectSpecifications.filter(current.getCompanyId(), search, status), sanitized)
-                .map(ProjectMapper::toResponse);
+        Page<Project> page = projectRepository
+                .findAll(ProjectSpecifications.filter(current.getCompanyId(), search, status), sanitized);
+        Map<Long, Long> assetCounts = assetCounts(current.getCompanyId(), page.getContent());
+        return page.map(project -> ProjectMapper.toResponse(project,
+                assetCounts.getOrDefault(project.getId(), 0L)));
     }
 
     @Transactional(readOnly = true)
     public ProjectResponse get(AuthenticatedUser current, Long id) {
-        return ProjectMapper.toResponse(require(current, id));
+        Project project = require(current, id);
+        return ProjectMapper.toResponse(project, projectRepository.countAssetsByProjectId(id));
     }
 
     @Transactional
@@ -85,7 +91,8 @@ public class ProjectService {
 
         auditService.record(AuditEntry.created(current, ENTITY_TYPE, project.getId(), snapshot(project)));
         log.info("Projeto {} criado na empresa {}", project.getId(), current.getCompanyId());
-        return ProjectMapper.toResponse(project);
+        // A brand new project cannot have assets yet, so the count is known without a query.
+        return ProjectMapper.toResponse(project, 0L);
     }
 
     @Transactional
@@ -102,7 +109,7 @@ public class ProjectService {
         projectRepository.save(project);
 
         auditService.record(AuditEntry.updated(current, ENTITY_TYPE, project.getId(), before, snapshot(project)));
-        return ProjectMapper.toResponse(project);
+        return ProjectMapper.toResponse(project, projectRepository.countAssetsByProjectId(id));
     }
 
     @Transactional
@@ -120,13 +127,15 @@ public class ProjectService {
 
     /**
      * Single place where the "não apagar filhos em cascata silenciosamente" rule of
-     * docs/permissions.md will be enforced. The assets table does not exist yet, so there is
-     * nothing to count;  fills this in with a ConflictException when the project
-     * still has assets. Kept as a named step so the rule is impossible to miss.
+     * docs/permissions.md is enforced. The foreign key has no ON DELETE CASCADE, so the
+     * alternative would be a raw integrity violation instead of a readable conflict.
      */
     private void ensureNoChildren(Project project) {
-        // reject the deletion with ConflictException when assetRepository
-        // reports assets for this project.
+        long assets = projectRepository.countAssetsByProjectId(project.getId());
+        if (assets > 0) {
+            throw new ConflictException(
+                    "O projeto possui " + assets + " ativo(s) e não pode ser excluído");
+        }
     }
 
     /**
@@ -136,6 +145,25 @@ public class ProjectService {
     private Project require(AuthenticatedUser current, Long id) {
         return projectRepository.findByIdAndCompanyId(id, current.getCompanyId())
                 .orElseThrow(() -> NotFoundException.of("Projeto", id));
+    }
+
+    /**
+     * One grouped query for the whole page: mapping the assets as a collection would make
+     * every listed project initialize it, and counting per row would be an N+1.
+     */
+    private Map<Long, Long> assetCounts(Long companyId, List<Project> projects) {
+        if (projects.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<Long> ids = new ArrayList<>(projects.size());
+        for (Project project : projects) {
+            ids.add(project.getId());
+        }
+        Map<Long, Long> counts = new HashMap<>();
+        for (Object[] row : projectRepository.countAssetsByProject(companyId, ids)) {
+            counts.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+        }
+        return counts;
     }
 
     private Map<String, Object> snapshot(Project project) {
