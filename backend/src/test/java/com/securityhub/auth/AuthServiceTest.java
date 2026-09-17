@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.securityhub.audit.AuditService;
 import com.securityhub.auth.dto.LoginRequest;
 import com.securityhub.auth.dto.RegisterRequest;
 import com.securityhub.company.Company;
@@ -39,6 +40,9 @@ class AuthServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private AuditService auditService;
+
     private PasswordEncoder passwordEncoder;
     private AuthService authService;
 
@@ -48,7 +52,7 @@ class AuthServiceTest {
 
         JwtService jwtService = TestJwtServiceFactory.create();
 
-        authService = new AuthService(companyRepository, userRepository, passwordEncoder, jwtService);
+        authService = new AuthService(companyRepository, userRepository, passwordEncoder, jwtService, auditService);
         authService.init();
     }
 

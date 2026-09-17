@@ -1,5 +1,8 @@
 package com.securityhub.auth;
 
+import com.securityhub.audit.AuditAction;
+import com.securityhub.audit.AuditEntry;
+import com.securityhub.audit.AuditService;
 import com.securityhub.auth.dto.AuthResponse;
 import com.securityhub.auth.dto.LoginRequest;
 import com.securityhub.auth.dto.RegisterRequest;
@@ -32,6 +35,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final AuditService auditService;
 
     /**
      * Hash of an unused random password. Verifying an incoming password against it when the
@@ -60,6 +64,8 @@ public class AuthService {
                 passwordEncoder.encode(request.getPassword()), Role.ADMIN);
         userRepository.save(admin);
 
+        auditService.record(AuditEntry.ofActor(company.getId(), admin.getId(), admin.getEmail(),
+                AuditAction.REGISTER, "Company", company.getId()));
         log.info("Empresa {} criada com administrador {}", company.getId(), admin.getId());
         return buildResponse(admin);
     }
@@ -75,14 +81,15 @@ public class AuthService {
         }
 
         User user = found.get();
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new UnauthorizedException("Credenciais inválidas");
-        }
-        if (!user.isActive()) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash()) || !user.isActive()) {
+            auditService.record(AuditEntry.ofActor(user.getCompany().getId(), user.getId(), user.getEmail(),
+                    AuditAction.LOGIN_FAILED, "User", user.getId()));
             throw new UnauthorizedException("Credenciais inválidas");
         }
 
         user.setLastLoginAt(Instant.now());
+        auditService.record(AuditEntry.ofActor(user.getCompany().getId(), user.getId(), user.getEmail(),
+                AuditAction.LOGIN, "User", user.getId()));
         return buildResponse(user);
     }
 
