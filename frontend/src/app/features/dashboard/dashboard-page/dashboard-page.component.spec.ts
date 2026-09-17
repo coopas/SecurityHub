@@ -5,6 +5,9 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { NgChartsModule } from 'ng2-charts';
 
 import { environment } from '../../../../environments/environment';
+import { Role } from '../../../core/models';
+import { ACCESS_TOKEN_STORAGE_KEY, CURRENT_USER_STORAGE_KEY } from '../../../core/services/auth.service';
+import { makeJwt, makeUser } from '../../../core/testing/auth-test-utils';
 import { SharedModule } from '../../../shared/shared.module';
 import {
   makeVulnerability,
@@ -25,9 +28,16 @@ import { DashboardPageComponent } from './dashboard-page.component';
 describe('DashboardPageComponent', () => {
   const dashboardUrl = `${environment.apiUrl}/dashboard`;
   let fixture: ComponentFixture<DashboardPageComponent>;
+  let component: DashboardPageComponent;
   let httpMock: HttpTestingController;
 
-  beforeEach(() => {
+  /** Sem papel não há sessão, que é o estado dos testes de layout desta tela. */
+  const setup = (role?: Role): void => {
+    if (role) {
+      localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, makeJwt(3600));
+      localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(makeUser(role)));
+    }
+
     TestBed.configureTestingModule({
       declarations: [
         DashboardPageComponent,
@@ -46,10 +56,30 @@ describe('DashboardPageComponent', () => {
     });
 
     fixture = TestBed.createComponent(DashboardPageComponent);
+    component = fixture.componentInstance;
     httpMock = TestBed.inject(HttpTestingController);
-  });
+  };
 
-  afterEach(() => httpMock.verify());
+  /** As quatro chamadas do dashboard mais a listagem dos recentes, que sempre disparam. */
+  const flushDashboard = (): void => {
+    httpMock.expectOne(`${dashboardUrl}/summary`).flush(makeDashboardSummary());
+    httpMock
+      .expectOne(`${dashboardUrl}/severity-distribution`)
+      .flush(makeSeverityDistribution([1, 0, 0, 0]));
+    httpMock
+      .expectOne(`${dashboardUrl}/status-distribution`)
+      .flush(makeStatusDistribution([1, 0, 0, 0]));
+    trendRequest().flush(makeTrend([[1, 0]]));
+    recentRequest().flush(makeVulnerabilityPage([makeVulnerability()]));
+  };
+
+  beforeEach(() => localStorage.clear());
+
+  afterEach(() => {
+    httpMock.verify();
+    localStorage.clear();
+    TestBed.resetTestingModule();
+  });
 
   const element = (): HTMLElement => fixture.nativeElement as HTMLElement;
 
@@ -60,6 +90,7 @@ describe('DashboardPageComponent', () => {
     httpMock.expectOne((request) => request.url === `${environment.apiUrl}/vulnerabilities`);
 
   it('dispara as quatro chamadas do dashboard mais a listagem dos itens recentes', () => {
+    setup();
     fixture.detectChanges();
 
     httpMock.expectOne(`${dashboardUrl}/summary`).flush(makeDashboardSummary());
@@ -89,6 +120,7 @@ describe('DashboardPageComponent', () => {
   });
 
   it('isola as regiões: uma tendência que falha não apaga os cards nem os outros painéis', () => {
+    setup();
     fixture.detectChanges();
 
     httpMock.expectOne(`${dashboardUrl}/summary`).flush(makeDashboardSummary());
@@ -109,5 +141,70 @@ describe('DashboardPageComponent', () => {
       'Não foi possível carregar os dados.',
     );
     expect(element().querySelectorAll('.dashboard-recent__item').length).toBe(1);
+  });
+
+  it('oferece o relatório executivo a ADMIN e ANALYST, e o baixa pelo nome do servidor', () => {
+    setup('ANALYST');
+    const click = spyOn(HTMLAnchorElement.prototype, 'click');
+    spyOn(URL, 'createObjectURL').and.returnValue('blob:objeto');
+    spyOn(URL, 'revokeObjectURL');
+    fixture.detectChanges();
+    flushDashboard();
+    fixture.detectChanges();
+
+    const button = element().querySelector<HTMLButtonElement>('[data-testid="report-export"]');
+    expect(button).not.toBeNull();
+    button?.click();
+
+    const request = httpMock.expectOne(`${environment.apiUrl}/reports/executive`);
+    expect(request.request.method).toBe('GET');
+    expect(request.request.responseType).toBe('blob');
+    request.flush(new Blob(['%PDF-1.4'], { type: 'application/pdf' }), {
+      headers: { 'Content-Disposition': "attachment; filename*=UTF-8''relatorio-executivo.pdf" },
+    });
+    fixture.detectChanges();
+
+    expect(click).toHaveBeenCalledTimes(1);
+    expect(component.exportError).toBeNull();
+    expect(component.exporting).toBeFalse();
+  });
+
+  it('esconde o relatório do VIEWER, que o servidor recusaria', () => {
+    setup('VIEWER');
+    fixture.detectChanges();
+    flushDashboard();
+    fixture.detectChanges();
+
+    expect(component.canExportReport).toBeFalse();
+    expect(element().querySelector('[data-testid="report-export"]')).toBeNull();
+  });
+
+  it('esconde o relatório do DEVELOPER, que o servidor também recusaria', () => {
+    setup('DEVELOPER');
+    fixture.detectChanges();
+    flushDashboard();
+    fixture.detectChanges();
+
+    expect(component.canExportReport).toBeFalse();
+    expect(element().querySelector('[data-testid="report-export"]')).toBeNull();
+  });
+
+  it('mostra a falha do relatório sem apagar painel algum', () => {
+    setup('ADMIN');
+    fixture.detectChanges();
+    flushDashboard();
+    fixture.detectChanges();
+
+    element().querySelector<HTMLButtonElement>('[data-testid="report-export"]')?.click();
+    httpMock
+      .expectOne(`${environment.apiUrl}/reports/executive`)
+      .flush(new Blob(['erro'], { type: 'application/json' }), {
+        status: 500,
+        statusText: 'Server Error',
+      });
+    fixture.detectChanges();
+
+    expect(component.exportError).toBe('Não foi possível gerar o relatório.');
+    expect(element().querySelectorAll('.dashboard-card').length).toBe(7);
   });
 });

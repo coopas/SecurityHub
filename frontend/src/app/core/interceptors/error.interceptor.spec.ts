@@ -84,6 +84,26 @@ describe('ErrorInterceptor', () => {
       .flush(apiError(401, 'UNAUTHORIZED', 'Não autenticado'), { status: 401, statusText: 'Unauthorized' });
   });
 
+  it('não notifica genericamente quando a resposta é um blob', (done) => {
+    http
+      .get(`${environment.apiUrl}/vulnerabilities/export`, { responseType: 'blob' })
+      .subscribe({
+        error: () => {
+          // O corpo de erro também é um Blob, então a mensagem real só existe depois que o
+          // chamador o lê. Notificar aqui daria dois avisos para o mesmo evento.
+          expect(notifications.error).not.toHaveBeenCalled();
+          done();
+        },
+      });
+
+    httpMock
+      .expectOne(`${environment.apiUrl}/vulnerabilities/export`)
+      .flush(new Blob(['{"message":"refine os filtros"}']), {
+        status: 400,
+        statusText: 'Bad Request',
+      });
+  });
+
   it('em 403 redireciona para a página de acesso negado', (done) => {
     http.get(`${environment.apiUrl}/users`).subscribe({
       error: () => {

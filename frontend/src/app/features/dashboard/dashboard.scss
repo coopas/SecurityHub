@@ -264,3 +264,13 @@
 .dashboard-status--accepted-risk {
   color: var(--sh-accepted-risk);
 }
+
+/* Falha do relatório: fica no cabeçalho, sem apagar painel algum. */
+.dashboard-alert {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--sh-high);
+  background: rgba(179, 38, 30, 0.08);
+  color: var(--sh-high);
+}

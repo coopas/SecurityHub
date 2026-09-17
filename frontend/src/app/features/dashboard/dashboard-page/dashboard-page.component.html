@@ -7,7 +7,28 @@
         severidade e por status, tendência diária e os últimos achados registrados.
       </p>
     </div>
+
+    <button
+      *ngIf="canExportReport"
+      mat-raised-button
+      color="primary"
+      type="button"
+      [disabled]="exporting"
+      (click)="exportReport()"
+      data-testid="report-export"
+    >
+      <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>
+      <span>{{ exporting ? 'Gerando...' : 'Relatório executivo' }}</span>
+    </button>
   </header>
+
+  <mat-progress-bar
+    *ngIf="exporting"
+    mode="indeterminate"
+    aria-label="Gerando o relatório executivo"
+  ></mat-progress-bar>
+
+  <p class="dashboard-alert" role="alert" *ngIf="exportError">{{ exportError }}</p>
 
   <div class="dashboard-sections">
     <app-summary-cards></app-summary-cards>

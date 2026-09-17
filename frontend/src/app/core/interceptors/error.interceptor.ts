@@ -143,6 +143,14 @@ export class ErrorInterceptor implements HttpInterceptor {
       return;
     }
 
+    // Numa requisição `responseType: 'blob'` o corpo de erro também chega como Blob, que
+    // `asApiError` não consegue ler — o snackbar aqui seria sempre a mensagem genérica, ao
+    // lado da mensagem real que o chamador extrai do blob e mostra inline. Mesmo princípio
+    // do ramo acima: quem sabe apresentar o erro é quem fez a chamada.
+    if (request.responseType === 'blob') {
+      return;
+    }
+
     this.notifications.error(apiError?.message ?? GENERIC_ERROR_MESSAGE);
   }
 
