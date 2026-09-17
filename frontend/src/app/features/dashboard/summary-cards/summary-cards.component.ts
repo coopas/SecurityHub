@@ -44,7 +44,7 @@ const SINGLE_STATUS_HINT = 'A listagem filtra um status por vez: o link abre as 
 @Component({
   selector: 'app-summary-cards',
   templateUrl: './summary-cards.component.html',
-  styleUrls: ['../dashboard.scss'],
+  styleUrls: ['../dashboard.scss', './summary-cards.component.scss'],
 })
 export class SummaryCardsComponent implements OnInit {
   state: ViewState | null = 'loading';
@@ -129,7 +129,7 @@ export class SummaryCardsComponent implements OnInit {
         value: summary.openVulnerabilities,
         icon: 'error_outline',
         tone: 'high',
-        hint: 'Status Aberta e Em andamento, as que ainda exigem ação.',
+        hint: 'Abertas e em andamento.',
         routerLink: '/vulnerabilities',
         queryParams: { status: 'OPEN' },
         linkHint: SINGLE_STATUS_HINT,
@@ -140,7 +140,7 @@ export class SummaryCardsComponent implements OnInit {
         value: summary.criticalOpenVulnerabilities,
         icon: 'priority_high',
         tone: 'critical',
-        hint: 'Severidade Crítica ainda em aberto ou em andamento.',
+        hint: 'Críticas pendentes de correção.',
         routerLink: '/vulnerabilities',
         queryParams: { severity: 'CRITICAL', status: 'OPEN' },
         linkHint: SINGLE_STATUS_HINT,

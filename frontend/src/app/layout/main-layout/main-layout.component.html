@@ -1,90 +1,104 @@
 <a class="sh-skip-link" href="#main-content">Pular para o conteúdo principal</a>
 
 <div class="layout" *ngIf="currentUser$ | async as user">
-  <mat-toolbar class="layout__toolbar">
-    <button
-      *ngIf="isHandset"
-      mat-icon-button
-      type="button"
-      aria-label="Abrir menu de navegação"
-      (click)="drawer.toggle()"
-    >
-      <mat-icon aria-hidden="true">menu</mat-icon>
-    </button>
-
-    <span class="layout__brand">
-      <mat-icon class="layout__brand-mark" aria-hidden="true">shield</mat-icon>
-      <span>SecurityHub</span>
-    </span>
-    <span class="sh-toolbar-spacer"></span>
-
-    <!--
-      The label says what the button does, and not what state the screen is in: a screen
-      reader announces the action, and "modo escuro" on its own would leave the person not
-      knowing whether they are turning it on or off.
-    -->
-    <button
-      *ngIf="theme$ | async as theme"
-      mat-icon-button
-      type="button"
-      class="layout__theme-toggle"
-      [attr.aria-label]="theme === 'dark' ? 'Mudar para o tema claro' : 'Mudar para o tema escuro'"
-      [matTooltip]="theme === 'dark' ? 'Tema claro' : 'Tema escuro'"
-      (click)="toggleTheme()"
-    >
-      <mat-icon aria-hidden="true">{{ theme === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
-    </button>
-
-    <button
-      mat-button
-      type="button"
-      class="layout__user-trigger"
-      [matMenuTriggerFor]="userMenu"
-      [attr.aria-label]="'Menu do usuário ' + user.name"
-    >
-      <mat-icon aria-hidden="true">account_circle</mat-icon>
-      <span class="layout__user-name">{{ user.name }}</span>
-      <mat-icon aria-hidden="true">arrow_drop_down</mat-icon>
-    </button>
-
-    <mat-menu #userMenu="matMenu">
-      <div class="layout__user-info" mat-menu-item [disabled]="true">
-        <span class="layout__user-info-name">{{ user.name }}</span>
-        <span class="layout__user-info-meta">{{ roleLabel(user.role) }} · {{ user.companyName }}</span>
-      </div>
-      <mat-divider></mat-divider>
-      <button mat-menu-item type="button" (click)="logout()">
-        <mat-icon aria-hidden="true">logout</mat-icon>
-        <span>Sair</span>
-      </button>
-    </mat-menu>
-  </mat-toolbar>
-
   <mat-sidenav-container class="layout__container">
     <mat-sidenav
       #drawer
       class="layout__sidenav"
+      id="main-navigation"
       [mode]="isHandset ? 'over' : 'side'"
       [opened]="!isHandset"
       [fixedInViewport]="isHandset"
     >
+      <a class="layout__brand" routerLink="/dashboard" aria-label="SecurityHub — Dashboard" (click)="isHandset && drawer.close()">
+        <span class="layout__brand-symbol" aria-hidden="true"><mat-icon>shield</mat-icon></span>
+        <span>SecurityHub<span class="layout__brand-caption">GESTÃO DE VULNERABILIDADES</span></span>
+      </a>
+      <p class="layout__nav-heading">Operação</p>
       <mat-nav-list aria-label="Navegação principal">
-        <a
-          mat-list-item
-          *ngFor="let item of visibleNavItems(user)"
-          [routerLink]="item.route"
-          routerLinkActive="layout__link--active"
-          #link="routerLinkActive"
-          [attr.aria-current]="link.isActive ? 'page' : null"
-          (click)="isHandset && drawer.close()"
-        >
-          <mat-icon matListItemIcon aria-hidden="true">{{ item.icon }}</mat-icon>
-          <span matListItemTitle>{{ item.label }}</span>
-        </a>
+        <ng-container *ngFor="let item of visibleNavItems(user)">
+          <p class="layout__nav-heading" *ngIf="item.route === '/users'">Administração</p>
+          <a
+            mat-list-item
+            [routerLink]="item.route"
+            routerLinkActive="layout__link--active"
+            #link="routerLinkActive"
+            [attr.aria-current]="link.isActive ? 'page' : null"
+            (click)="isHandset && drawer.close()"
+          >
+            <mat-icon matListItemIcon aria-hidden="true">{{ item.icon }}</mat-icon>
+            <span matListItemTitle>{{ item.label }}</span>
+          </a>
+        </ng-container>
       </mat-nav-list>
+      <div class="layout__workspace">
+        <span class="layout__workspace-avatar" aria-hidden="true">{{ user.companyName.slice(0, 1).toUpperCase() }}</span>
+        <div><strong>{{ user.companyName }}</strong><span>{{ roleLabel(user.role) }}</span></div>
+      </div>
     </mat-sidenav>
 
     <mat-sidenav-content>
+      <mat-toolbar class="layout__toolbar">
+        <button
+          *ngIf="isHandset"
+          mat-icon-button
+          type="button"
+          aria-label="Abrir menu de navegação"
+          [attr.aria-expanded]="drawer.opened"
+          aria-controls="main-navigation"
+          (click)="drawer.toggle()"
+        >
+          <mat-icon aria-hidden="true">menu</mat-icon>
+        </button>
+
+        <div class="layout__breadcrumb">
+          <span class="layout__workspace-name">{{ user.companyName }}</span>
+          <span class="layout__breadcrumb-divider" aria-hidden="true">/</span>
+          <span class="layout__section">{{ currentSection }}</span>
+        </div>
+        <span class="sh-toolbar-spacer"></span>
+
+        <!--
+          The label says what the button does, and not what state the screen is in: a screen
+          reader announces the action, and "modo escuro" on its own would leave the person not
+          knowing whether they are turning it on or off.
+        -->
+        <button
+          *ngIf="theme$ | async as theme"
+          mat-icon-button
+          type="button"
+          class="layout__theme-toggle"
+          [attr.aria-label]="theme === 'dark' ? 'Mudar para o tema claro' : 'Mudar para o tema escuro'"
+          [matTooltip]="theme === 'dark' ? 'Tema claro' : 'Tema escuro'"
+          (click)="toggleTheme()"
+        >
+          <mat-icon aria-hidden="true">{{ theme === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
+
+        <button
+          mat-button
+          type="button"
+          class="layout__user-trigger"
+          [matMenuTriggerFor]="userMenu"
+          [attr.aria-label]="'Menu do usuário ' + user.name"
+        >
+          <mat-icon aria-hidden="true">account_circle</mat-icon>
+          <span class="layout__user-name">{{ user.name }}</span>
+          <span class="layout__user-chevron material-icons" aria-hidden="true">expand_more</span>
+        </button>
+
+        <mat-menu #userMenu="matMenu">
+          <div class="layout__user-info" mat-menu-item [disabled]="true">
+            <span class="layout__user-info-name">{{ user.name }}</span>
+            <span class="layout__user-info-meta">{{ roleLabel(user.role) }} · {{ user.companyName }}</span>
+          </div>
+          <mat-divider></mat-divider>
+          <button mat-menu-item type="button" (click)="logout()">
+            <mat-icon aria-hidden="true">logout</mat-icon>
+            <span>Sair</span>
+          </button>
+        </mat-menu>
+      </mat-toolbar>
       <main id="main-content" tabindex="-1" class="layout__content">
         <router-outlet></router-outlet>
       </main>

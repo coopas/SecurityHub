@@ -1,128 +1,74 @@
-// Single stylesheet for the five public screens (login, register, forgot, reset and invite).
-// All five share the same shell on purpose: whoever arrives through an invitation or through a
-// reset link has to recognise at once that they are in the same product they logged into
-// yesterday — credential screens that clash with one another are exactly what phishing imitates.
-
-// The brand panel is the only large area of color in the application, and it is where the two
-// themes ask for different treatments: in light, the flat vault blue is the identity; in dark
-// the same token turns light blue and half a screen of it would dazzle. Hence the local alias,
-// swapped once per theme, instead of repeating the decision in every rule below.
 .auth-shell {
-  --auth-brand-bg: linear-gradient(155deg, var(--sh-primary), var(--sh-primary-hover));
-  --auth-brand-fg: var(--sh-on-primary);
-  // Color of the geometric strokes and of the glow; the opacity lives on the layer, never on
-  // the color, because an rgba() here would freeze one theme inside the other.
-  --auth-brand-ink: var(--sh-on-primary);
-  --auth-brand-grid-opacity: 0.1;
-  --auth-brand-glow-opacity: 0.16;
-
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   grid-template-columns: 1fr;
   background: var(--sh-surface);
   color: var(--sh-text);
 }
-
-// `:host-context` and not `:root[data-theme]`: emulated encapsulation prefixes the component
-// attribute onto the first compound selector, and `[_ngcontent]:root` would never match the
-// <html>, which is precisely where the theme is marked.
-:host-context([data-theme='dark']) .auth-shell {
-  // In dark the brand is not a lit block: the panel falls back to the sunken surfaces and the
-  // identity blue returns only in the strokes and the glow, which is what still makes it
-  // recognisable.
-  --auth-brand-bg: linear-gradient(155deg, var(--sh-surface-sunken), var(--sh-background));
-  --auth-brand-fg: var(--sh-text);
-  --auth-brand-ink: var(--sh-primary);
-  --auth-brand-grid-opacity: 0.16;
-  --auth-brand-glow-opacity: 0.22;
-
-  // In light the junction of the two columns is already a switch from blue to white; in dark
-  // the two surfaces are neighbours and the seam needs the border in order to exist at all.
-  .auth-brand {
-    border-right: 1px solid var(--sh-border);
-  }
-}
-
-// --- brand panel ----------------------------------------------------------
-
 .auth-brand {
-  position: relative;
   display: none;
   flex-direction: column;
   justify-content: space-between;
-  gap: var(--sh-space-7);
-  overflow: hidden;
-  padding: var(--sh-space-7);
-  background: var(--auth-brand-bg);
-  color: var(--auth-brand-fg);
+  gap: 64px;
+  padding: clamp(40px, 5vw, 80px);
+  background: var(--sh-nav);
+  color: #eef4ef;
 }
-
-// Thin concentric rings radiating out of the top corner: the geometry is that of a scan, which
-// is what the product does. It sits on its own layer so that the opacity can dim the drawing
-// without taking the text running over it along with it.
-.auth-brand__grid {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background-image: repeating-radial-gradient(
-    circle at 14% 16%,
-    var(--auth-brand-ink) 0 1px,
-    transparent 1px 96px
-  );
-  opacity: var(--auth-brand-grid-opacity);
-}
-
-.auth-brand__glow {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: radial-gradient(circle at 14% 16%, var(--auth-brand-ink), transparent 58%);
-  opacity: var(--auth-brand-glow-opacity);
-}
-
-.auth-brand__mark,
-.auth-brand__statement {
-  position: relative;
-  z-index: 1;
-}
-
 .auth-brand__mark {
   display: flex;
   align-items: center;
-  gap: var(--sh-space-2);
+  gap: 12px;
   margin: 0;
-  font-size: var(--sh-text-xl);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-
-  .mat-icon {
-    width: 28px;
-    height: 28px;
-    font-size: 28px;
-    line-height: 28px;
-  }
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: -.03em;
 }
-
+.auth-brand__mark .mat-icon {
+  color: #9fceae;
+}
+.auth-brand__eyebrow {
+  color: var(--sh-nav-muted);
+  font-size: .6875rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  margin: 0 0 24px;
+}
 .auth-brand__tagline {
+  font-size: clamp(2.5rem, 3.6vw, 3.75rem);
+  line-height: 1.08;
+  letter-spacing: -.045em;
+  font-weight: 400;
+  max-width: 14ch;
   margin: 0;
-  max-width: 16ch;
-  font-size: var(--sh-text-2xl);
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
 }
-
 .auth-brand__support {
-  margin: var(--sh-space-4) 0 0;
-  max-width: 42ch;
-  font-size: var(--sh-text-md);
-  line-height: 1.6;
-  // Hierarchy without a second color: over a brand background there is only one legible tone,
-  // and dimming the whole layer keeps the contrast predictable in both themes.
-  opacity: 0.78;
+  color: #b5c4ba;
+  font-size: .9375rem;
+  line-height: 1.7;
+  max-width: 37ch;
+  margin: 24px 0 0;
 }
-
-// --- form column ----------------------------------------------------------
+.auth-brand__index {
+  display: grid;
+  gap: 0;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.auth-brand__index li {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  padding: 16px 0;
+  border-top: 1px solid #ffffff25;
+  font-size: .8125rem;
+}
+.auth-brand__index span {
+  color: #9fceae;
+  font-size: .75rem;
+  font-variant-numeric: tabular-nums;
+}
 
 .auth-panel {
   display: flex;
@@ -131,16 +77,10 @@
   padding: var(--sh-space-7) var(--sh-space-5);
   background: var(--sh-surface);
 }
-
-// Short measure: a credential form with fields that are too wide forces the eye to travel
-// back from the end of one field to the start of the next.
 .auth-panel__inner {
   width: 100%;
   max-width: 400px;
 }
-
-// The mark shows up exactly once per width: in the panel when it exists, here when it does not.
-// `display: none` and not `visibility`, so that the screen reader also hears only one.
 .auth-mark {
   display: flex;
   align-items: center;
@@ -154,7 +94,7 @@
 
 .auth-title {
   margin: 0;
-  font-size: var(--sh-text-2xl);
+  font-size: 2rem;
   line-height: 1.15;
   letter-spacing: -0.02em;
 }
@@ -170,9 +110,6 @@
     font-weight: 600;
   }
 }
-
-// Two support paragraphs in a row (the invitation summary, for instance) must not inherit the
-// wide bottom margin of the first: between them the distance is a paragraph, not a block.
 .auth-subtitle + .auth-subtitle {
   margin-top: calc(var(--sh-space-4) * -1);
 }
@@ -189,15 +126,10 @@
   justify-content: center;
   gap: var(--sh-space-2);
   width: 100%;
-  // The theme's -1 density shrinks the button below the minimum touch target; here it is the
-  // primary action of the screen and goes back to full size.
   min-height: 48px;
   margin-top: var(--sh-space-3);
   font-size: var(--sh-text-base);
 }
-
-// An alert or a loading state right below the title takes the place of the support line, and
-// needs the same distance that line would have given — without it, it butts into the uppercase.
 .auth-title + .auth-alert,
 .auth-title + app-state-message {
   display: block;
@@ -214,8 +146,6 @@
   font-size: var(--sh-text-md);
   line-height: 1.5;
 }
-
-// --- support footer -------------------------------------------------------
 
 .auth-foot {
   display: flex;
@@ -234,8 +164,6 @@
   align-items: center;
   gap: var(--sh-space-1);
   margin: 0;
-
-  // The link's touch target is the whole line, not the height of the letter.
   a {
     display: inline-flex;
     align-items: center;
@@ -251,7 +179,7 @@
 
 @media (min-width: 960px) {
   .auth-shell {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
   }
 
   .auth-brand {

@@ -1,6 +1,7 @@
 <section class="sh-page">
   <header class="sh-page__header">
     <div>
+      <p class="sh-eyebrow">Workspace / Projetos</p>
       <h1>{{ project ? project.name : 'Projeto' }}</h1>
       <p class="sh-page__subtitle" *ngIf="project">
         {{ statusLabels[project.status] }} · {{ project.assetCount }}

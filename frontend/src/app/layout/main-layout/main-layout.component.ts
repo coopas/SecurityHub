@@ -40,6 +40,10 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     { label: 'Auditoria', icon: 'history', route: '/audit', roles: ['ADMIN'] },
   ];
 
+  get currentSection(): string {
+    return this.navItems.find((item) => this.router.url.split('?')[0].startsWith(item.route))?.label ?? 'Workspace';
+  }
+
   isHandset = false;
 
   constructor(

@@ -1,144 +1,225 @@
 .layout {
-  display: flex;
-  flex-direction: column;
   height: 100vh;
-}
-
-.layout__toolbar {
+  height: 100dvh;
   position: relative;
+}
+.layout__toolbar {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 64px;
   z-index: 3;
-  gap: var(--sh-space-2);
-  padding-inline: var(--sh-space-4);
-
-  // The bar does not use the full brand color. A 64px dark band at the top of every screen
-  // competes with the content for attention, and in a panel the content is the product. It
-  // stays on the surface, separated by a line, and the brand shows through the symbol.
+  gap: 8px;
+  padding-inline: 32px;
   background: var(--sh-surface);
   color: var(--sh-text);
   border-bottom: 1px solid var(--sh-border);
-  box-shadow: none;
 }
-
-.layout__brand {
-  display: inline-flex;
+.layout__breadcrumb {
+  display: flex;
   align-items: center;
-  gap: var(--sh-space-2);
-  font-weight: 800;
-  font-size: var(--sh-text-lg);
-  letter-spacing: -0.01em;
-  color: var(--sh-text);
+  gap: 14px;
+  min-width: 0;
+  font-size: .8125rem;
+  font-weight: 400;
 }
-
-.layout__brand-mark {
-  color: var(--sh-primary);
-}
-
-.layout__theme-toggle {
+.layout__workspace-name {
   color: var(--sh-text-muted);
-}
-
-.layout__user-trigger {
-  color: var(--sh-text);
-  border-radius: var(--sh-radius-pill);
-}
-
-.layout__user-name {
-  margin: 0 var(--sh-space-1);
-  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 600;
+  max-width: 240px;
 }
-
+.layout__breadcrumb-divider {
+  color: var(--sh-text-subtle);
+}
+.layout__section {
+  font-weight: 500;
+}
+.layout__container {
+  height: 100%;
+  background: var(--sh-background);
+}
+.layout__sidenav {
+  width: 232px;
+  border: 0;
+  background: var(--sh-nav);
+  padding: 28px 14px 112px;
+}
+.layout__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #f1f6f3;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1.125rem;
+  letter-spacing: -.03em;
+  padding: 0 8px 32px;
+}
+.layout__brand-symbol {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 36px;
+  color: #9fceae;
+}
+.layout__brand-caption {
+  display: block;
+  font-size: .5rem;
+  letter-spacing: .11em;
+  color: var(--sh-nav-muted);
+  margin-top: 2px;
+}
+.layout__nav-heading {
+  color: var(--sh-nav-muted);
+  font-size: .6875rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  margin: 16px 14px 10px;
+}
+.layout__sidenav .mat-mdc-list-item {
+  --mdc-list-list-item-label-text-color: var(--sh-nav-text);
+  --mdc-list-list-item-hover-label-text-color: #fff;
+  --mdc-list-list-item-focus-label-text-color: #fff;
+  --mdc-list-list-item-leading-icon-color: var(--sh-nav-muted);
+  --mdc-list-list-item-label-text-size: 14px;
+  --mdc-list-list-item-one-line-container-height: 46px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  transition: background-color var(--sh-dur-fast);
+}
+.layout__sidenav .mat-mdc-list-item .mat-icon {
+  color: var(--sh-nav-muted);
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  margin-inline: 12px 14px;
+}
+.layout__sidenav .mat-mdc-list-item:hover {
+  background: #ffffff0a;
+}
+.layout__sidenav .layout__link--active {
+  background: var(--sh-nav-active);
+  --mdc-list-list-item-label-text-color: #fff;
+  border-left: 2px solid #9fceae;
+}
+.layout__sidenav .layout__link--active .mat-icon {
+  color: #b5ddc1;
+}
+.layout__sidenav a:focus-visible {
+  outline-color: #9fceae;
+  outline-offset: -2px;
+}
+.layout__workspace {
+  position: absolute;
+  bottom: 24px;
+  left: 22px;
+  right: 22px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 20px;
+  border-top: 1px solid #ffffff20;
+  color: var(--sh-nav-text);
+}
+.layout__workspace-avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: 1px solid #ffffff30;
+  border-radius: 4px;
+  font-size: .875rem;
+}
+.layout__workspace > div {
+  min-width: 0;
+}
+.layout__workspace strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .8125rem;
+  font-weight: 500;
+}
+.layout__workspace div > span {
+  display: block;
+  color: var(--sh-nav-muted);
+  font-size: .75rem;
+}
+.layout__content {
+  display: block;
+  min-height: calc(100% - 64px);
+}
+.layout__content:focus {
+  outline: none;
+}
+.layout__theme-toggle {
+  color: var(--sh-text-muted);
+}
+.layout__user-trigger {
+  color: var(--sh-text);
+}
+.layout__user-name {
+  display: inline-block;
+  vertical-align: middle;
+  margin-inline: 4px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
 .layout__user-info {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  line-height: 1.3;
+  line-height: 1.4;
   height: auto;
-  padding-top: var(--sh-space-2);
-  padding-bottom: var(--sh-space-2);
+  padding-block: 12px;
 }
-
 .layout__user-info-name {
-  font-weight: 700;
+  font-weight: 600;
 }
-
 .layout__user-info-meta {
-  font-size: var(--sh-text-sm);
+  font-size: .75rem;
   color: var(--sh-text-muted);
 }
-
-.layout__container {
-  flex: 1 1 auto;
-  background: var(--sh-background);
-}
-
-.layout__sidenav {
-  width: 248px;
-  border-right: 1px solid var(--sh-border);
-  background: var(--sh-surface);
-  padding: var(--sh-space-3) var(--sh-space-2);
-}
-
-.layout__sidenav .mat-mdc-list-item {
-  border-radius: var(--sh-radius-sm);
-  margin-bottom: var(--sh-space-1);
-  color: var(--sh-text-muted);
-  transition: background-color var(--sh-dur-fast) var(--sh-ease),
-    color var(--sh-dur-fast) var(--sh-ease);
-
-  .mat-icon {
-    color: var(--sh-text-subtle);
-    transition: color var(--sh-dur-fast) var(--sh-ease);
+@media (max-width: 959px) {
+  .layout__toolbar {
+    padding-inline: 16px;
   }
-
-  &:hover {
-    background: var(--sh-surface-hover);
-    color: var(--sh-text);
+  .layout__sidenav {
+    padding-top: max(28px, env(safe-area-inset-top));
   }
 }
-
-// The active item gets color, weight and a bar on the left. The colored background alone
-// would be a distinction by color only — it vanishes for whoever cannot see it and vanishes
-// again in bright light on a low-brightness screen.
-.layout__link--active {
-  background: var(--sh-primary-soft);
-  color: var(--sh-primary);
-  font-weight: 700;
-  position: relative;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset-block: 6px;
-    inset-inline-start: 0;
-    width: 3px;
-    border-radius: var(--sh-radius-pill);
-    background: var(--sh-primary);
-  }
-
-  .mat-icon {
-    color: var(--sh-primary);
-  }
-}
-
-.layout__content {
-  display: block;
-  min-height: 100%;
-
-  &:focus {
-    outline: none;
-  }
-}
-
 @media (max-width: 599px) {
-  .layout__user-name {
+  .layout__user-name, .layout__workspace-name, .layout__breadcrumb-divider {
     display: none;
   }
-
   .layout__toolbar {
-    padding-inline: var(--sh-space-2);
+    padding-inline: 8px;
+    gap: 0;
   }
+  .layout__section {
+    font-size: .8125rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .layout__workspace {
+    position: static;
+    margin: 32px 8px 0;
+  }
+  .layout__sidenav {
+    padding-bottom: 24px;
+  }
+}
+
+.layout__user-chevron {
+  font-size: 18px;
+  vertical-align: middle;
+  color: var(--sh-text-muted);
 }

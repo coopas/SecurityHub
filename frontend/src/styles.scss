@@ -1,234 +1,66 @@
 @use '@angular/material' as mat;
-
 @include mat.core();
 
-// Custom palettes instead of Material's ready-made ones: the identity is vault blue with a
-// safe green, and no built-in palette comes close. The contrast tints of every band were
-// measured, not picked by eye — see the token block below.
-$sh-blue: (
-  50: #eef2f7,
-  100: #d3dde9,
-  200: #b5c5d9,
-  300: #94a9c6,
-  400: #7591b5,
-  500: #4f74a0,
-  600: #395c85,
-  700: #1e3a5f,
-  800: #182f4d,
-  900: #112035,
-  contrast: (
-    50: #112035,
-    100: #112035,
-    200: #112035,
-    300: #112035,
-    400: #112035,
-    500: #ffffff,
-    600: #ffffff,
-    700: #ffffff,
-    800: #ffffff,
-    900: #ffffff,
-  ),
-);
-
-$sh-green: (
-  50: #e7f5ef,
-  100: #c2e6d6,
-  200: #99d5bb,
-  300: #6bc49f,
-  400: #34d399,
-  500: #059669,
-  600: #047857,
-  700: #036445,
-  800: #024f36,
-  900: #013a27,
-  contrast: (
-    50: #013a27,
-    100: #013a27,
-    200: #013a27,
-    300: #013a27,
-    400: #013a27,
-    // 500 (#059669) does not reach 4.5:1 with either tint: 3.77 with white, 3.41 with dark.
-    // It stays declared for the sake of a complete ramp and is never picked as a theme's hue
-    // — it is the same reason `--sh-accent-fill` exists separately from `--sh-accent`.
-    500: #ffffff,
-    600: #ffffff,
-    700: #ffffff,
-    800: #ffffff,
-    900: #ffffff,
-  ),
-);
-
-$sh-red: (
-  50: #fdeced,
-  100: #f9cfd1,
-  200: #f0a8ab,
-  300: #fca5a5,
-  400: #d95d63,
-  500: #c62f37,
-  600: #b91c1c,
-  700: #9f1239,
-  800: #86102f,
-  900: #6b0c25,
-  contrast: (
-    50: #6b0c25,
-    100: #6b0c25,
-    200: #6b0c25,
-    300: #6b0c25,
-    // 400 (#d95d63) also lands between the two tints (3.69 / 3.34) and, like green 500, is
-    // not picked by any theme.
-    400: #ffffff,
-    500: #ffffff,
-    600: #ffffff,
-    700: #ffffff,
-    800: #ffffff,
-    900: #ffffff,
-  ),
-);
-
-// Vault blue is the brand in light and vanishes in dark: #1e3a5f over #192134 gives 1.2:1. The
-// dark theme needs that same identity in a band that holds up over a dark background, and that
-// is what this ramp gives — hue 300 is exactly the dark `--sh-primary`, so that the Material
-// button and the token tell the same story instead of two lookalike blues.
-$sh-sky: (
-  50: #f0f9ff,
-  100: #e0f2fe,
-  200: #bae6fd,
-  300: #7dd3fc,
-  400: #38bdf8,
-  500: #0ea5e9,
-  600: #0284c7,
-  700: #0369a1,
-  800: #075985,
-  900: #0c4a6e,
-  contrast: (
-    50: #0f172a,
-    100: #0f172a,
-    200: #0f172a,
-    300: #0f172a,
-    400: #0f172a,
-    500: #0f172a,
-    // 600 (#0284c7) does not close 4.5:1 with either tint (4.10 / 4.36). Declared so the ramp
-    // stays complete, never picked as a hue.
-    600: #ffffff,
-    700: #ffffff,
-    800: #ffffff,
-    900: #ffffff,
-  ),
-);
-
-$sh-primary: mat.define-palette($sh-blue, 700, 400, 900);
-$sh-accent: mat.define-palette($sh-green, 600, 400, 800);
-$sh-warn: mat.define-palette($sh-red, 600, 400, 800);
-
-// The family comes from Google Fonts, just as Roboto already did. The fallback stack is what
-// keeps the panel readable on a closed network: there the external font simply never arrives,
-// and with no fallback declared the browser would drop to some serif or other.
-$sh-font-family: 'Plus Jakarta Sans', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-
-$sh-typography: mat.define-typography-config(
-  $font-family: $sh-font-family,
-  $headline-5: mat.define-typography-level(1.75rem, 2.125rem, 700, $letter-spacing: -0.02em),
-  $headline-6: mat.define-typography-level(1.375rem, 1.75rem, 700, $letter-spacing: -0.01em),
-  $subtitle-1: mat.define-typography-level(1.125rem, 1.5rem, 600),
-  $subtitle-2: mat.define-typography-level(1rem, 1.5rem, 600),
+$font: 'IBM Plex Sans', 'Segoe UI', Arial, sans-serif;
+$typography: mat.define-typography-config(
+  $font-family: $font,
+  $headline-5: mat.define-typography-level(1.75rem, 2.25rem, 600),
+  $headline-6: mat.define-typography-level(1.25rem, 1.75rem, 600),
   $body-1: mat.define-typography-level(1rem, 1.6, 400),
-  $body-2: mat.define-typography-level(0.9375rem, 1.55, 400),
-  $caption: mat.define-typography-level(0.8125rem, 1.4, 500),
-  $button: mat.define-typography-level(0.9375rem, 1.25rem, 600, $letter-spacing: 0.01em),
+  $body-2: mat.define-typography-level(.875rem, 1.5, 400),
+  $button: mat.define-typography-level(.875rem, 1.25rem, 500),
 );
-
-$sh-light-theme: mat.define-light-theme((
-  color: (primary: $sh-primary, accent: $sh-accent, warn: $sh-warn),
-  typography: $sh-typography,
-  density: -1,
+$light: mat.define-light-theme((
+  color: (primary: mat.define-palette(mat.$teal-palette, 800), accent: mat.define-palette(mat.$teal-palette, 800), warn: mat.define-palette(mat.$red-palette, 800)),
+  typography: $typography, density: -1,
 ));
-
-// A dark theme does not inherit the light theme's palettes. Material paints the button with the
-// chosen hue and writes over it with the contrast tint of that hue — and a #1e3a5f over #192134
-// gives back a primary button that barely separates from the background. In dark the three roles
-// move to light hues with dark text, which is the same value as each one's token: 10.71, 9.29 and
-// 9.41 against the dark tint, all measured.
-$sh-primary-dark: mat.define-palette($sh-sky, 300, 200, 500);
-$sh-accent-dark: mat.define-palette($sh-green, 400, 200, 600);
-$sh-warn-dark: mat.define-palette($sh-red, 300, 200, 500);
-
-$sh-dark-theme: mat.define-dark-theme((
-  color: (primary: $sh-primary-dark, accent: $sh-accent-dark, warn: $sh-warn-dark),
-  typography: $sh-typography,
-  density: -1,
+$dark: mat.define-dark-theme((
+  color: (primary: mat.define-palette(mat.$teal-palette, 200), accent: mat.define-palette(mat.$teal-palette, 200), warn: mat.define-palette(mat.$red-palette, 200)),
 ));
-
-@include mat.all-component-themes($sh-light-theme);
-
-// Colors only in the dark theme. `all-component-themes` would re-emit identical typography and
-// density inside the selector, doubling the CSS without changing a pixel.
+@include mat.all-component-themes($light);
 :root[data-theme='dark'] {
-  @include mat.all-component-colors($sh-dark-theme);
+  @include mat.all-component-colors($dark);
 }
 
 :root {
   color-scheme: light;
-
-  // --- surfaces ----------------------------------------------------------
-  --sh-background: #f1f5f9;
+  --sh-background: #f5f6f5;
   --sh-surface: #ffffff;
-  --sh-surface-sunken: #f8fafc;
-  --sh-surface-hover: rgba(15, 23, 42, 0.04);
-  --sh-surface-selected: rgba(30, 58, 95, 0.08);
-
-  // --- strokes -----------------------------------------------------------
-  // Two borders because the standard asks different things of each: a divider is
-  // decoration and may be light, while the border that delimits a field identifies the
-  // control and needs 3:1. Measured: 1.3:1 and 3.68:1 over white.
-  --sh-border: #e2e8f0;
-  --sh-border-strong: #75879c;
-
-  // --- text --------------------------------------------------------------
-  --sh-text: #0f172a;
-  --sh-text-muted: #475569;
-  --sh-text-subtle: #64748b;
+  --sh-surface-sunken: #f2f4f3;
+  --sh-surface-hover: #edf2f0;
+  --sh-surface-selected: #e4efeb;
+  --sh-border: #dde2df;
+  --sh-border-strong: #7c8782;
+  --sh-text: #202824;
+  --sh-text-muted: #535f59;
+  --sh-text-subtle: #626f68;
   --sh-text-inverse: #ffffff;
-
-  // --- brand -------------------------------------------------------------
-  --sh-primary: #1e3a5f;
-  --sh-primary-hover: #182f4d;
-  --sh-primary-soft: rgba(30, 58, 95, 0.09);
+  --sh-primary: #00695c;
+  --sh-primary-hover: #004d40;
+  --sh-primary-soft: #e4efeb;
   --sh-on-primary: #ffffff;
-
-  // The light green (#059669) only fills: with white text it gives 3.77:1 and fails 4.5.
-  // Wherever there is text on top, the dark token is the mandatory one.
-  --sh-accent: #047857;
-  --sh-accent-fill: #059669;
-  --sh-accent-soft: rgba(5, 150, 105, 0.1);
+  --sh-accent: #00695c;
+  --sh-accent-fill: #008577;
+  --sh-accent-soft: #e4efeb;
   --sh-on-accent: #ffffff;
-
-  // --- severity ----------------------------------------------------------
-  --sh-critical: #9f1239;
-  --sh-high: #b91c1c;
-  --sh-medium: #a16207;
-  --sh-low: #15803d;
-
-  --sh-critical-soft: rgba(159, 18, 57, 0.1);
-  --sh-high-soft: rgba(185, 28, 28, 0.1);
-  --sh-medium-soft: rgba(161, 98, 7, 0.12);
-  --sh-low-soft: rgba(21, 128, 61, 0.1);
-
-  // --- status ------------------------------------------------------------
-  --sh-open: #b91c1c;
-  --sh-in-progress: #a16207;
-  --sh-resolved: #15803d;
-  --sh-accepted-risk: #475569;
-
-  --sh-danger: #b91c1c;
-  --sh-danger-soft: rgba(185, 28, 28, 0.1);
-  --sh-warning-soft: rgba(161, 98, 7, 0.12);
-  --sh-success-soft: rgba(21, 128, 61, 0.1);
-
-  // --- focus -------------------------------------------------------------
-  --sh-focus: #1e3a5f;
-  --sh-focus-halo: rgba(30, 58, 95, 0.25);
-
-  // --- spacing (dense scale, for a panel) --------------------------------
+  --sh-critical: #991b40;
+  --sh-high: #b42318;
+  --sh-medium: #8a5800;
+  --sh-low: #22704a;
+  --sh-critical-soft: #fbeaf0;
+  --sh-high-soft: #fcece9;
+  --sh-medium-soft: #fff3da;
+  --sh-low-soft: #eaf4ed;
+  --sh-open: #b42318;
+  --sh-in-progress: #8a5800;
+  --sh-resolved: #22704a;
+  --sh-accepted-risk: #535f59;
+  --sh-danger: #b42318;
+  --sh-danger-soft: #fcece9;
+  --sh-warning-soft: #fff3da;
+  --sh-success-soft: #eaf4ed;
+  --sh-focus: #00695c;
+  --sh-focus-halo: #00695c33;
   --sh-space-1: 4px;
   --sh-space-2: 8px;
   --sh-space-3: 12px;
@@ -236,172 +68,101 @@ $sh-dark-theme: mat.define-dark-theme((
   --sh-space-5: 24px;
   --sh-space-6: 32px;
   --sh-space-7: 48px;
-
-  // --- shape -------------------------------------------------------------
-  --sh-radius-sm: 6px;
-  --sh-radius-md: 10px;
-  --sh-radius-lg: 16px;
-  --sh-radius-pill: 999px;
-
-  // --- elevation ---------------------------------------------------------
-  // Two layers per shadow: a short line that draws the edge and a diffuse one that gives the
-  // distance. A single wide shadow blurs the edge, and that is what makes a card look dirty.
-  --sh-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.05);
-  --sh-shadow-md: 0 2px 4px rgba(15, 23, 42, 0.06), 0 6px 16px rgba(15, 23, 42, 0.08);
-  --sh-shadow-lg: 0 4px 8px rgba(15, 23, 42, 0.07), 0 16px 32px rgba(15, 23, 42, 0.1);
-
-  // --- motion ------------------------------------------------------------
-  --sh-ease: cubic-bezier(0.2, 0, 0.2, 1);
+  --sh-radius-sm: 4px;
+  --sh-radius-md: 6px;
+  --sh-radius-lg: 8px;
+  --sh-radius-pill: 4px;
+  --sh-shadow-sm: none;
+  --sh-shadow-md: 0 4px 16px #17231c0d;
+  --sh-shadow-lg: 0 12px 40px #17231c26;
+  --sh-ease: cubic-bezier(.2, 0, .2, 1);
   --sh-dur-fast: 120ms;
-  --sh-dur: 200ms;
-  --sh-dur-slow: 280ms;
-
-  // --- typography --------------------------------------------------------
-  --sh-font: #{$sh-font-family};
-  --sh-text-xs: 0.75rem;
-  --sh-text-sm: 0.8125rem;
-  --sh-text-md: 0.875rem;
+  --sh-dur: 180ms;
+  --sh-dur-slow: 240ms;
+  --sh-font: #{$font};
+  --sh-text-xs: .75rem;
+  --sh-text-sm: .8125rem;
+  --sh-text-md: .875rem;
   --sh-text-base: 1rem;
   --sh-text-lg: 1.125rem;
   --sh-text-xl: 1.375rem;
-  --sh-text-2xl: 1.75rem;
+  --sh-text-2xl: 1.875rem;
+  --sh-nav: #19231f;
+  --sh-nav-text: #d2ddd7;
+  --sh-nav-muted: #9bacA2;
+  --sh-nav-active: #2b3f35;
 }
-
-// Dark is not light with the colors inverted. Surfaces climb in luminance as they come closer
-// to the viewer, the text is never pure white (which vibrates over a dark background) and every
-// severity tone lightens, because the light theme's deep tones vanish against #192134. Every
-// pair below was measured at 4.5:1 or more.
 :root[data-theme='dark'] {
   color-scheme: dark;
-
-  --sh-background: #0f172a;
-  --sh-surface: #192134;
-  --sh-surface-sunken: #131b2b;
-  --sh-surface-hover: rgba(248, 250, 252, 0.06);
-  --sh-surface-selected: rgba(125, 211, 252, 0.14);
-
-  --sh-border: rgba(248, 250, 252, 0.1);
-  --sh-border-strong: #64748b;
-
-  --sh-text: #f8fafc;
-  --sh-text-muted: #94a3b8;
-  --sh-text-subtle: #7d8da3;
-  --sh-text-inverse: #0f172a;
-
-  // Vault blue is the identity in light and disappears in dark: #1e3a5f over #192134 gives
-  // 1.2:1. The brand migrates to the light tone of the same family, which is how it stays
-  // recognizable without ceasing to be legible.
-  --sh-primary: #7dd3fc;
-  --sh-primary-hover: #a5e0fd;
-  --sh-primary-soft: rgba(125, 211, 252, 0.16);
-  --sh-on-primary: #0f172a;
-
-  --sh-accent: #34d399;
-  --sh-accent-fill: #34d399;
-  --sh-accent-soft: rgba(52, 211, 153, 0.16);
-  --sh-on-accent: #0f172a;
-
-  --sh-critical: #fda4af;
-  --sh-high: #fca5a5;
-  --sh-medium: #fcd34d;
-  --sh-low: #6ee7b7;
-
-  --sh-critical-soft: rgba(253, 164, 175, 0.16);
-  --sh-high-soft: rgba(252, 165, 165, 0.16);
-  --sh-medium-soft: rgba(252, 211, 77, 0.16);
-  --sh-low-soft: rgba(110, 231, 183, 0.16);
-
-  --sh-open: #fca5a5;
-  --sh-in-progress: #fcd34d;
-  --sh-resolved: #6ee7b7;
-  --sh-accepted-risk: #cbd5e1;
-
-  --sh-danger: #fca5a5;
-  --sh-danger-soft: rgba(252, 165, 165, 0.16);
-  --sh-warning-soft: rgba(252, 211, 77, 0.16);
-  --sh-success-soft: rgba(110, 231, 183, 0.16);
-
-  --sh-focus: #7dd3fc;
-  --sh-focus-halo: rgba(125, 211, 252, 0.3);
-
-  --sh-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --sh-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.4), 0 6px 16px rgba(0, 0, 0, 0.36);
-  --sh-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.44), 0 16px 32px rgba(0, 0, 0, 0.4);
+  --sh-background: #151b18;
+  --sh-surface: #1c2420;
+  --sh-surface-sunken: #19201c;
+  --sh-surface-hover: #27332c;
+  --sh-surface-selected: #2b3f35;
+  --sh-border: #354139;
+  --sh-border-strong: #75877c;
+  --sh-text: #edf2ee;
+  --sh-text-muted: #b0bfb5;
+  --sh-text-subtle: #9badA1;
+  --sh-text-inverse: #151b18;
+  --sh-primary: #80cbc4;
+  --sh-primary-hover: #b2dfdb;
+  --sh-primary-soft: #253e36;
+  --sh-on-primary: #10231d;
+  --sh-accent: #80cbc4;
+  --sh-accent-fill: #80cbc4;
+  --sh-accent-soft: #253e36;
+  --sh-on-accent: #10231d;
+  --sh-critical: #ffa8bf;
+  --sh-high: #ffb4a6;
+  --sh-medium: #edcc88;
+  --sh-low: #99d5ad;
+  --sh-critical-soft: #40232d;
+  --sh-high-soft: #402924;
+  --sh-medium-soft: #393322;
+  --sh-low-soft: #233c2d;
+  --sh-open: #ffb4a6;
+  --sh-in-progress: #edcc88;
+  --sh-resolved: #99d5ad;
+  --sh-accepted-risk: #b0bfb5;
+  --sh-danger: #ffb4a6;
+  --sh-danger-soft: #402924;
+  --sh-warning-soft: #393322;
+  --sh-success-soft: #233c2d;
+  --sh-focus: #80cbc4;
+  --sh-focus-halo: #80cbc433;
+  --sh-shadow-md: 0 4px 16px #00000026;
+  --sh-shadow-lg: 0 12px 40px #00000040;
 }
-
-html,
-body {
+* {
+  box-sizing: border-box;
+}
+html, body {
   height: 100%;
   margin: 0;
   background: var(--sh-background);
   color: var(--sh-text);
   font-family: var(--sh-font);
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
-
-* {
-  box-sizing: border-box;
-}
-
-// Switching themes repaints the whole tree. Without this transition the change is a white
-// blowout; with it, the surfaces cross over. Color only: animating layout here would cost dear.
-body,
-.sh-card,
-.sh-panel,
-.mat-mdc-card,
-.mat-toolbar {
-  transition: background-color var(--sh-dur) var(--sh-ease),
-    border-color var(--sh-dur) var(--sh-ease), color var(--sh-dur) var(--sh-ease);
-}
-
-// Whoever asked for less motion gets less motion — on the theme switch included.
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-h1,
-h2,
-h3,
-h4 {
+h1, h2, h3, h4 {
   color: var(--sh-text);
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  letter-spacing: -.025em;
 }
-
 a {
   color: var(--sh-primary);
+  text-underline-offset: 3px;
 }
-
-/* Keyboard focus must stay visible everywhere, including inside Material overlays. */
-//
-// No `border-radius` here: declaring the radius in this rule would change the shape of the
-// element itself as it takes focus — a pill button would turn nearly rectangular the instant the
-// keyboard reached it. The outline already follows on its own the radius of what it surrounds.
+button, a, input, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
 :focus-visible {
   outline: 3px solid var(--sh-focus);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
-
-// Hides it from the eye and keeps it for the screen reader.
-//
-// `table-layout: fixed` is no detail: a `<table>` treats `width` as a minimum and widens until
-// the content fits. The equivalent tables of the dashboard charts reached 570px hidden this way,
-// and pushed the horizontal scroll of the content area — invisible and still shifting the screen
-// all the same. Swapping the `display` would solve the width and destroy the table semantics for
-// whoever depends on them, which is exactly the reason it exists.
-//
-// `clip-path` goes along with `clip`, which is deprecated but is still what an old browser
-// understands.
 .sh-visually-hidden {
   position: absolute;
   width: 1px;
@@ -415,197 +176,226 @@ a {
   border: 0;
   table-layout: fixed;
 }
-
-// The `nowrap` from the classic recipe serves running text; in a table it pins every cell to the
-// width of its content and stops the table from shrinking, even with `table-layout: fixed`.
-// Measured on the charts' equivalent tables: 628px with the nowrap, 121px without, and the
-// horizontal scroll of the content area goes away with it. The ten cells stay in the same place,
-// which is what matters for whoever reads by audio.
 table.sh-visually-hidden {
   white-space: normal;
 }
-
 .sh-skip-link {
   position: absolute;
   left: -9999px;
-  top: 0;
+  top: 8px;
   z-index: 1000;
-  padding: var(--sh-space-3) var(--sh-space-4);
+  padding: 12px 16px;
   background: var(--sh-primary);
   color: var(--sh-on-primary);
-  border-radius: var(--sh-radius-sm);
-  text-decoration: none;
-  font-weight: 600;
-
-  &:focus {
-    left: var(--sh-space-2);
-    top: var(--sh-space-2);
-  }
 }
-
+.sh-skip-link:focus {
+  left: 8px;
+}
 .sh-page {
-  padding: var(--sh-space-5);
-  max-width: 1440px;
+  padding: 36px clamp(20px, 3vw, 48px) 48px;
+  max-width: 1600px;
   margin: 0 auto;
+  min-width: 0;
 }
-
+.sh-page--narrow {
+  max-width: 960px;
+}
 .sh-page__header {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sh-space-4);
+  gap: 16px;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--sh-space-5);
-
-  h1 {
-    margin: 0;
-    font-size: var(--sh-text-2xl);
-    line-height: 1.2;
-    letter-spacing: -0.02em;
-  }
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--sh-border);
 }
-
-// Support line for the header: it tells how many items the screen is showing, or explains the
-// slice applied. Without it the number on a filtered listing means nothing.
+.sh-page__header > div {
+  min-width: 0;
+}
+.sh-page__header h1 {
+  margin: 0;
+  font-size: var(--sh-text-2xl);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -.035em;
+  overflow-wrap: anywhere;
+}
 .sh-page__subtitle {
-  margin: var(--sh-space-1) 0 0;
+  margin: 8px 0 0;
   color: var(--sh-text-muted);
   font-size: var(--sh-text-md);
 }
-
+.sh-eyebrow {
+  margin: 0 0 10px;
+  font-size: .6875rem;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--sh-text-muted);
+}
 .sh-card {
   background: var(--sh-surface);
   border: 1px solid var(--sh-border);
   border-radius: var(--sh-radius-md);
-  padding: var(--sh-space-5);
-  box-shadow: var(--sh-shadow-sm);
+  padding: 24px;
+  box-shadow: none;
 }
-
 .sh-toolbar-spacer {
   flex: 1 1 auto;
 }
-
 .sh-state {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--sh-space-3);
-  padding: var(--sh-space-7) var(--sh-space-4);
+  gap: 12px;
+  padding: 48px 16px;
   text-align: center;
   color: var(--sh-text-muted);
 }
-
 .sh-table-wrapper {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
   border-radius: var(--sh-radius-md);
   border: 1px solid var(--sh-border);
   background: var(--sh-surface);
+  overscroll-behavior-x: contain;
 }
-
 table.sh-table {
   width: 100%;
-
-  // Header in small uppercase: in a dense table it has to separate from the body without
-  // gaining visual weight, and shrinking the size works better than thickening it.
-  th.mat-mdc-header-cell {
-    font-size: var(--sh-text-xs);
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--sh-text-muted);
-    background: var(--sh-surface-sunken);
-    white-space: nowrap;
-  }
-
-  td.mat-mdc-cell {
-    font-size: var(--sh-text-md);
-    color: var(--sh-text);
-  }
-
-  tr.mat-mdc-row {
-    transition: background-color var(--sh-dur-fast) var(--sh-ease);
-
-    &:hover {
-      background: var(--sh-surface-hover);
-    }
-  }
+  border-collapse: collapse;
+  background: var(--sh-surface);
 }
-
+table.sh-table th.mat-mdc-header-cell {
+  font-size: .75rem;
+  font-weight: 500;
+  letter-spacing: .015em;
+  color: var(--sh-text-muted);
+  background: var(--sh-surface-sunken);
+  white-space: nowrap;
+  border-bottom-color: var(--sh-border);
+}
+table.sh-table td.mat-mdc-cell {
+  font-size: .875rem;
+  color: var(--sh-text);
+  border-bottom-color: var(--sh-border);
+  padding-block: 12px;
+}
+table.sh-table tr.mat-mdc-row {
+  transition: background-color var(--sh-dur-fast);
+}
+table.sh-table tr.mat-mdc-row:hover {
+  background: var(--sh-surface-hover);
+}
 .sh-form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--sh-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 16px 24px;
 }
-
-.sh-form-actions {
-  display: flex;
-  gap: var(--sh-space-3);
-  justify-content: flex-end;
-  margin-top: var(--sh-space-5);
-}
-
 .sh-filters {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--sh-space-3);
-  align-items: start;
-  margin-bottom: var(--sh-space-4);
-  padding: var(--sh-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 12px 16px;
+  padding: 20px;
+  margin-bottom: 20px;
   background: var(--sh-surface);
   border: 1px solid var(--sh-border);
   border-radius: var(--sh-radius-md);
 }
-
-// Badge shared by severity, status and format. Color plus icon, never color on its own: about
-// 8% of men cannot tell red from green, and severity is exactly the information that must not
-// depend on that.
-//
-// The fill is opaque on purpose, and not the matching `--sh-*-soft`. Translucent fill stacks
-// with whatever is behind it: over the row highlighted by the cursor, the "medium text on medium
-// background" pair dropped from 4.20 to 3.90 — it already failed at rest and got worse on hover.
-// With an opaque surface the worst pair in the set measures 4.71 in any state. The outline in
-// `currentColor` gives back the color the background stopped providing.
 .sh-badge {
   display: inline-flex;
   align-items: center;
-  gap: var(--sh-space-1);
-  padding: 2px var(--sh-space-2);
-  border-radius: var(--sh-radius-pill);
-  font-size: var(--sh-text-xs);
-  font-weight: 700;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: .75rem;
+  font-weight: 500;
   line-height: 1.5;
   white-space: nowrap;
   background: var(--sh-surface-sunken);
-  border: 1px solid currentColor;
-
-  .mat-icon {
-    font-size: 14px;
-    width: 14px;
-    height: 14px;
-    line-height: 14px;
-  }
+  border: 1px solid var(--sh-border);
 }
-
-.sh-page--narrow {
-  max-width: 880px;
+.sh-badge .mat-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  line-height: 14px;
 }
-
-@media (max-width: 599px) {
-  .sh-page {
-    padding: var(--sh-space-4);
-  }
-
-  .sh-page__header h1 {
-    font-size: var(--sh-text-xl);
-  }
+.mat-mdc-form-field {
+  min-width: 0;
 }
-
+.mat-mdc-outlined-button, .mat-mdc-raised-button, .mat-mdc-unelevated-button, .mat-mdc-button {
+  min-height: 44px;
+  border-radius: 4px !important;
+  letter-spacing: 0;
+}
+.mat-mdc-raised-button:not(:disabled) {
+  box-shadow: none !important;
+}
+.mat-mdc-paginator {
+  color: var(--sh-text-muted);
+  background: var(--sh-surface);
+}
+.mat-mdc-menu-panel, .mat-mdc-dialog-container {
+  --mdc-dialog-container-color: var(--sh-surface);
+  --mat-menu-container-color: var(--sh-surface);
+}
 .mat-mdc-snack-bar-container.sh-snack-error {
   --mdc-snackbar-container-color: #86102f;
-  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mdc-snackbar-supporting-text-color: #fff;
 }
-
 .mat-mdc-snack-bar-container.sh-snack-success {
   --mdc-snackbar-container-color: #024f36;
-  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mdc-snackbar-supporting-text-color: #fff;
+}
+@media (max-width: 599px) {
+  .sh-page {
+    padding: 24px 16px 32px;
+  }
+  .sh-page__header {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    align-items: flex-start;
+  }
+  .sh-page__header h1 {
+    font-size: 1.625rem;
+  }
+  .sh-card {
+    padding: 16px;
+  }
+  .sh-filters {
+    padding: 16px;
+    grid-template-columns: 1fr;
+  }
+  .mat-mdc-paginator-container {
+    justify-content: center !important;
+    gap: 8px;
+    padding-block: 8px !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.sh-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--sh-border);
+}
+.sh-form-actions button .mdc-button__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }

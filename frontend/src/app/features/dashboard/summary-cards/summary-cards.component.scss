@@ -1,0 +1,100 @@
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0;
+  margin-bottom: var(--sh-space-5);
+  border: 1px solid var(--sh-border);
+  border-radius: var(--sh-radius-md);
+  overflow: hidden;
+  background: var(--sh-surface);
+}
+@media (min-width: 1400px) {
+  .dashboard-cards {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+.dashboard-card {
+  --card-ink: var(--sh-text-muted);
+
+  position: relative;
+  gap: 10px;
+  height: 100%;
+  padding: 20px 16px;
+  border: 0;
+  border-right: 1px solid var(--sh-border);
+  border-radius: 0;
+  background: var(--sh-surface);
+  color: var(--sh-text);
+  text-decoration: none;
+  overflow: hidden;
+
+  &:hover {
+    background: var(--sh-surface-hover);
+  }
+  &:focus-visible {
+    border-radius: var(--sh-radius-md);
+  }
+}
+
+.dashboard-card--critical {
+  --card-ink: var(--sh-critical);
+}
+
+.dashboard-card--high {
+  --card-ink: var(--sh-high);
+}
+
+.dashboard-card--positive {
+  --card-ink: var(--sh-resolved);
+}
+.dashboard-card--quiet {
+  --card-ink: var(--sh-text-muted);
+}
+
+.dashboard-card__head {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  min-height: 34px;
+  gap: var(--sh-space-2);
+}
+.dashboard-card__icon {
+  flex: 0 0 auto;
+  color: var(--card-ink);
+}
+.dashboard-card__value {
+  margin-top: var(--sh-space-1);
+  font-size: 2.5rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.dashboard-card--critical .dashboard-card__value,
+.dashboard-card--high .dashboard-card__value {
+  color: var(--card-ink);
+}
+
+.dashboard-card__label {
+  font-size: .8125rem;
+}
+.dashboard-card__hint {
+  font-size: .75rem;
+}
+
+
+@media (max-width: 599px) {
+  .dashboard-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dashboard-cards li {
+    border-bottom: 1px solid var(--sh-border);
+  }
+  .dashboard-cards li:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+.dashboard-cards li:last-child .dashboard-card {
+  border-right: 0;
+}

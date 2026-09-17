@@ -27,6 +27,7 @@
           [ngClass]="cardClasses(card)"
           [routerLink]="card.routerLink"
           [queryParams]="card.queryParams"
+          [matTooltip]="card.linkHint ?? ''"
           [attr.data-testid]="'summary-card-' + card.key"
         >
           <span class="dashboard-card__head">
@@ -38,7 +39,8 @@
 
           <span class="dashboard-card__hint">{{ card.hint }}</span>
           <span class="dashboard-card__hint" *ngIf="card.linkHint">
-            {{ card.linkHint }}
+            <span aria-hidden="true">Ver abertas →</span>
+            <span class="sh-visually-hidden">{{ card.linkHint }}</span>
           </span>
         </a>
       </li>
