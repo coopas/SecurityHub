@@ -1,0 +1,266 @@
+/* Folha única da funcionalidade, como nas demais telas: cada componente a declara em
+   styleUrls e o Angular a isola por componente. */
+
+:host {
+  display: block;
+}
+
+.dashboard-subtitle {
+  margin: 4px 0 0;
+  max-width: 80ch;
+  color: var(--sh-text-muted);
+}
+
+.dashboard-sections {
+  display: grid;
+  gap: 24px;
+}
+
+/* auto-fit + minmax é o que faz os dois gráficos caírem um sob o outro no tablet;
+   min-width: 0 impede que o canvas force a coluna a crescer além da tela. */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+
+  > * {
+    min-width: 0;
+  }
+}
+
+.dashboard-note {
+  margin: 0 0 16px;
+  color: var(--sh-text-muted);
+  max-width: 80ch;
+}
+
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin: 0 0 24px;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  height: 100%;
+  padding: 16px;
+  border: 1px solid var(--sh-border);
+  border-radius: 8px;
+  background: var(--sh-surface);
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    border-color: var(--sh-text-muted);
+  }
+}
+
+.dashboard-card__icon {
+  color: var(--sh-text-muted);
+}
+
+.dashboard-card__value {
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.dashboard-card__label {
+  font-weight: 500;
+}
+
+.dashboard-card__hint {
+  color: var(--sh-text-muted);
+  font-size: 0.78rem;
+}
+
+.dashboard-panel {
+  height: 100%;
+}
+
+.dashboard-panel__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.dashboard-panel__title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.dashboard-panel__subtitle {
+  margin: 0;
+  color: var(--sh-text-muted);
+  font-size: 0.85rem;
+}
+
+.dashboard-panel__totals {
+  margin: 0 0 8px;
+  color: var(--sh-text-muted);
+  font-size: 0.85rem;
+}
+
+.dashboard-panel__action {
+  font-weight: 500;
+}
+
+/* Altura fixa no contêiner + maintainAspectRatio: false no Chart.js: sem isso o canvas
+   cresce a cada redesenho e transborda a coluna. */
+.dashboard-chart {
+  position: relative;
+  width: 100%;
+  height: 260px;
+}
+
+.dashboard-chart--wide {
+  height: 300px;
+}
+
+.dashboard-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.dashboard-legend__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+}
+
+.dashboard-legend__value {
+  font-weight: 600;
+}
+
+.dashboard-table {
+  th,
+  td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--sh-border);
+  }
+
+  thead th {
+    color: var(--sh-text-muted);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  tbody th {
+    font-weight: 500;
+  }
+}
+
+.dashboard-table__link {
+  color: inherit;
+  font-weight: 500;
+}
+
+.dashboard-recent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-recent__item {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--sh-border);
+
+  &:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+}
+
+.dashboard-recent__title {
+  color: inherit;
+  font-weight: 500;
+}
+
+.dashboard-recent__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 6px 0 0;
+}
+
+/* Ícone + texto em cada marcador: severidade, status e atraso nunca dependem só da cor. */
+.dashboard-recent__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.dashboard-recent__tag--overdue {
+  color: var(--sh-high);
+}
+
+.dashboard-recent__context {
+  margin: 4px 0 0;
+  color: var(--sh-text-muted);
+  font-size: 0.8rem;
+}
+
+.dashboard-severity--low {
+  color: var(--sh-low);
+}
+
+.dashboard-severity--medium {
+  color: var(--sh-medium);
+}
+
+.dashboard-severity--high {
+  color: var(--sh-high);
+}
+
+.dashboard-severity--critical {
+  color: var(--sh-critical);
+}
+
+.dashboard-status--open {
+  color: var(--sh-open);
+}
+
+.dashboard-status--in-progress {
+  color: var(--sh-in-progress);
+}
+
+.dashboard-status--resolved {
+  color: var(--sh-resolved);
+}
+
+.dashboard-status--accepted-risk {
+  color: var(--sh-accepted-risk);
+}

@@ -1,0 +1,24 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>Dashboard</h1>
+      <p class="dashboard-subtitle">
+        Situação das vulnerabilidades da sua empresa: números do momento, distribuição por
+        severidade e por status, tendência diária e os últimos achados registrados.
+      </p>
+    </div>
+  </header>
+
+  <div class="dashboard-sections">
+    <app-summary-cards></app-summary-cards>
+
+    <div class="dashboard-grid">
+      <app-distribution-chart kind="severity"></app-distribution-chart>
+      <app-distribution-chart kind="status"></app-distribution-chart>
+    </div>
+
+    <app-trend-chart></app-trend-chart>
+
+    <app-recent-vulnerabilities></app-recent-vulnerabilities>
+  </div>
+</section>

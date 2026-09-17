@@ -1,0 +1,57 @@
+<section class="sh-card dashboard-panel" aria-labelledby="dashboard-recent-title">
+  <div class="dashboard-panel__header">
+    <h2 class="dashboard-panel__title" id="dashboard-recent-title">Itens recentes</h2>
+    <a
+      class="dashboard-panel__action"
+      routerLink="/vulnerabilities"
+      [queryParams]="{ sort: 'createdAt,desc' }"
+    >
+      Ver todas
+    </a>
+  </div>
+
+  <app-state-message
+    *ngIf="state"
+    [state]="state"
+    [message]="state === 'empty' ? 'Nenhuma vulnerabilidade cadastrada ainda.' : undefined"
+    [showRetry]="true"
+    (retry)="load()"
+    data-testid="recent-state"
+  ></app-state-message>
+
+  <ul class="dashboard-recent" *ngIf="!state" data-testid="recent-list">
+    <li
+      class="dashboard-recent__item"
+      *ngFor="let vulnerability of vulnerabilities; trackBy: trackById"
+    >
+      <a class="dashboard-recent__title" [routerLink]="['/vulnerabilities', vulnerability.id]">
+        {{ vulnerability.title }}
+      </a>
+
+      <p class="dashboard-recent__meta">
+        <span class="dashboard-recent__tag" [ngClass]="severityClass(vulnerability.severity)">
+          <mat-icon aria-hidden="true">{{ severityIcon(vulnerability.severity) }}</mat-icon>
+          <span>{{ severityLabel(vulnerability.severity) }}</span>
+        </span>
+
+        <span class="dashboard-recent__tag" [ngClass]="statusClass(vulnerability.status)">
+          <mat-icon aria-hidden="true">{{ statusIcon(vulnerability.status) }}</mat-icon>
+          <span>{{ statusLabel(vulnerability.status) }}</span>
+        </span>
+
+        <span
+          class="dashboard-recent__tag dashboard-recent__tag--overdue"
+          *ngIf="vulnerability.overdue"
+        >
+          <mat-icon aria-hidden="true">schedule</mat-icon>
+          <span>Atrasada</span>
+        </span>
+      </p>
+
+      <p class="dashboard-recent__context">
+        {{ vulnerability.assetName }} · {{ vulnerability.projectName }} ·
+        {{ vulnerability.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+      </p>
+    </li>
+  </ul>
+</section>

@@ -1,0 +1,76 @@
+<section aria-labelledby="dashboard-summary-title">
+  <h2 class="sh-visually-hidden" id="dashboard-summary-title">Resumo da empresa</h2>
+
+  <app-state-message
+    *ngIf="state"
+    [state]="state"
+    [showRetry]="true"
+    (retry)="load()"
+    data-testid="summary-state"
+  ></app-state-message>
+
+  <ng-container *ngIf="!state">
+    <p class="dashboard-note" *ngIf="isEmptyCompany" data-testid="summary-empty-note">
+      Sua empresa ainda não tem projetos, ativos nem vulnerabilidades. Os números abaixo
+      permanecem em zero até o primeiro cadastro.
+    </p>
+
+    <ul class="dashboard-cards" data-testid="summary-cards">
+      <li *ngFor="let card of cards; trackBy: trackByKey">
+        <a
+          class="dashboard-card"
+          [routerLink]="card.routerLink"
+          [queryParams]="card.queryParams"
+          [attr.data-testid]="'summary-card-' + card.key"
+        >
+          <mat-icon class="dashboard-card__icon" aria-hidden="true">{{ card.icon }}</mat-icon>
+          <span class="dashboard-card__value">{{ card.value }}</span>
+          <span class="dashboard-card__label">{{ card.label }}</span>
+          <span class="dashboard-card__hint">{{ card.hint }}</span>
+          <span class="dashboard-card__hint" *ngIf="card.linkHint">{{ card.linkHint }}</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="sh-card dashboard-panel">
+      <h3 class="dashboard-panel__title" id="dashboard-top-projects">Projetos com mais achados</h3>
+
+      <p class="dashboard-note" *ngIf="topProjects.length === 0" data-testid="top-projects-empty">
+        Nenhum projeto tem vulnerabilidades registradas até agora.
+      </p>
+
+      <div class="sh-table-wrapper" *ngIf="topProjects.length > 0">
+        <table class="sh-table dashboard-table" data-testid="top-projects-table">
+          <caption class="sh-visually-hidden">
+            Até dez projetos, do maior para o menor número de vulnerabilidades, com o total,
+            as em aberto e as atrasadas de cada um.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Projeto</th>
+              <th scope="col">Total</th>
+              <th scope="col">Em aberto</th>
+              <th scope="col">Atrasadas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let project of topProjects; trackBy: trackByProjectId">
+              <th scope="row">
+                <a
+                  class="dashboard-table__link"
+                  routerLink="/vulnerabilities"
+                  [queryParams]="{ projectId: project.projectId }"
+                >
+                  {{ project.projectName }}
+                </a>
+              </th>
+              <td>{{ project.total }}</td>
+              <td>{{ project.open }}</td>
+              <td>{{ project.overdue }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </ng-container>
+</section>

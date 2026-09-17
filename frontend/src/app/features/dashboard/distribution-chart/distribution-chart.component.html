@@ -1,0 +1,70 @@
+<section class="sh-card dashboard-panel" [attr.aria-labelledby]="'dashboard-distribution-' + kind">
+  <h2 class="dashboard-panel__title" [id]="'dashboard-distribution-' + kind">{{ title }}</h2>
+
+  <app-state-message
+    *ngIf="state"
+    [state]="state"
+    [message]="state === 'empty' ? emptyMessage : undefined"
+    [showRetry]="true"
+    (retry)="load()"
+    [attr.data-testid]="'distribution-state-' + kind"
+  ></app-state-message>
+
+  <ng-container *ngIf="!state">
+    <!--
+      O canvas é uma imagem para leitores de tela: um rótulo curto identifica o gráfico e a
+      tabela logo abaixo, visualmente oculta, carrega os mesmos números que as barras.
+    -->
+    <div class="dashboard-chart">
+      <canvas
+        baseChart
+        role="img"
+        type="bar"
+        [data]="chartData"
+        [options]="chartOptions"
+        [attr.aria-label]="chartLabel"
+        [attr.data-testid]="'distribution-canvas-' + kind"
+      ></canvas>
+    </div>
+
+    <table class="sh-visually-hidden" [attr.data-testid]="'distribution-table-' + kind">
+      <caption>
+        {{ title }}, com a quantidade e o percentual de cada categoria.
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">{{ axisTitle }}</th>
+          <th scope="col">Quantidade</th>
+          <th scope="col">Percentual</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let category of categories">
+          <th scope="row">{{ category.label }}</th>
+          <td>{{ category.count }}</td>
+          <td>{{ category.percent }}%</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th scope="row">Total</th>
+          <td>{{ total }}</td>
+          <td>100%</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!--
+      Legenda em HTML, e não a do Chart.js: fica fora do canvas, acompanha o zoom do
+      navegador e nomeia cada cor em texto. `aria-hidden` porque a tabela acima já diz o
+      mesmo a quem usa leitor de tela.
+    -->
+    <ul class="dashboard-legend" aria-hidden="true">
+      <li class="dashboard-legend__item" *ngFor="let category of categories">
+        <span class="dashboard-legend__swatch" [style.background-color]="category.color"></span>
+        <span class="dashboard-legend__label">{{ category.label }}</span>
+        <span class="dashboard-legend__value">{{ category.count }}</span>
+      </li>
+    </ul>
+  </ng-container>
+</section>

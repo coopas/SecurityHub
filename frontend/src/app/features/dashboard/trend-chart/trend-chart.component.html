@@ -1,0 +1,77 @@
+<section class="sh-card dashboard-panel" aria-labelledby="dashboard-trend-title">
+  <div class="dashboard-panel__header">
+    <div>
+      <h2 class="dashboard-panel__title" id="dashboard-trend-title">Aberturas e resoluções por dia</h2>
+      <p class="dashboard-panel__subtitle" *ngIf="periodLabel" data-testid="trend-period">
+        {{ periodLabel }}
+      </p>
+    </div>
+
+    <mat-button-toggle-group
+      name="trend-days"
+      aria-label="Janela da tendência em dias"
+      [value]="selectedDays"
+      (change)="onDaysChange($event.value)"
+      data-testid="trend-days"
+    >
+      <mat-button-toggle *ngFor="let days of daysOptions" [value]="days">
+        {{ days }} dias
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  <app-state-message
+    *ngIf="state"
+    [state]="state"
+    [message]="state === 'empty' ? emptyMessage : undefined"
+    [showRetry]="true"
+    (retry)="load()"
+    data-testid="trend-state"
+  ></app-state-message>
+
+  <ng-container *ngIf="!state">
+    <p class="dashboard-panel__totals" data-testid="trend-totals">
+      {{ totalOpened }} abertas e {{ totalResolved }} resolvidas no período.
+    </p>
+
+    <div class="dashboard-chart dashboard-chart--wide">
+      <canvas
+        baseChart
+        role="img"
+        type="line"
+        [data]="chartData"
+        [options]="chartOptions"
+        [attr.aria-label]="chartLabel"
+        data-testid="trend-canvas"
+      ></canvas>
+    </div>
+
+    <!-- Mesmos números da linha, em texto, para quem não enxerga o canvas. -->
+    <table class="sh-visually-hidden" data-testid="trend-table">
+      <caption>
+        Vulnerabilidades abertas e resolvidas por dia, do mais antigo para o mais recente.
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Dia</th>
+          <th scope="col">Abertas</th>
+          <th scope="col">Resolvidas</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of rows; trackBy: trackByDate">
+          <th scope="row">{{ row.label }}</th>
+          <td>{{ row.opened }}</td>
+          <td>{{ row.resolved }}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <th scope="row">Total do período</th>
+          <td>{{ totalOpened }}</td>
+          <td>{{ totalResolved }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </ng-container>
+</section>
