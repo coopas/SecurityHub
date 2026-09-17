@@ -35,6 +35,19 @@
     },
     {
       "files": [
+        "cypress/**/*.ts",
+        "cypress.config.ts"
+      ],
+      "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended"
+      ],
+      "rules": {
+        "@typescript-eslint/no-namespace": "off"
+      }
+    },
+    {
+      "files": [
         "*.html"
       ],
       "extends": [

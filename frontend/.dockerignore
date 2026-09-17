@@ -5,3 +5,4 @@ coverage/
 reports/
 cypress/videos/
 cypress/screenshots/
+cypress/downloads/

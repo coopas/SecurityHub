@@ -1,0 +1,22 @@
+{
+  // Estende o tsconfig da raiz, e não o `tsconfig.spec.json`: `strict`, `noImplicitReturns` e
+  // o resto do rigor que vale para `src/` vale igualmente aqui — um teste frouxo é um teste
+  // que passa por acidente.
+  //
+  // O que muda é só `types`. O `tsconfig.spec.json` declara `types: ["jasmine"]`, e os globais
+  // de Mocha/Chai que o Cypress traz colidem com os de Jasmine (`expect`, `it.only`,
+  // `beforeEach`) — duas declarações incompatíveis do mesmo nome. A separação não exige tocar
+  // em `tsconfig.app.json` nem em `tsconfig.spec.json`: os dois já têm escopo `src/`, então
+  // este diretório de primeiro nível é invisível para ambos. O que faltava era apenas excluir
+  // `cypress/` do tsconfig da raiz, que não tem `include` e portanto pega tudo.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["cypress", "node"],
+    "outDir": "../dist/out-tsc/cypress",
+    "sourceMap": false
+  },
+  // O `exclude` do tsconfig da raiz lista `cypress`, e é herdado: sem zerá-lo aqui este
+  // projeto excluiria os próprios arquivos.
+  "exclude": [],
+  "include": ["**/*.ts"]
+}
