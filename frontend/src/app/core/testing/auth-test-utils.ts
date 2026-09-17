@@ -6,6 +6,15 @@ export function makeJwt(expiresInSeconds: number): string {
   return `header.${btoa(JSON.stringify(payload))}.signature`;
 }
 
+/**
+ * O refresh token é opaco para o frontend: nada o decodifica, então uma string qualquer
+ * basta. O sufixo torna as asserções legíveis quando um teste compara antes e depois de
+ * uma renovação.
+ */
+export function makeRefreshToken(suffix = '1'): string {
+  return `refresh-token-${suffix}`;
+}
+
 export function makeUser(role: Role = 'ADMIN'): User {
   return {
     id: 1,
@@ -20,9 +29,14 @@ export function makeUser(role: Role = 'ADMIN'): User {
   };
 }
 
-export function makeAuthResponse(role: Role = 'ADMIN', expiresInSeconds = 3600): AuthResponse {
+export function makeAuthResponse(
+  role: Role = 'ADMIN',
+  expiresInSeconds = 3600,
+  refreshToken = makeRefreshToken(),
+): AuthResponse {
   return {
     accessToken: makeJwt(expiresInSeconds),
+    refreshToken,
     tokenType: 'Bearer',
     expiresIn: expiresInSeconds,
     user: makeUser(role),
