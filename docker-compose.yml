@@ -43,24 +43,25 @@ services:
       MAIL_PORT: 1025
       SECURITYHUB_MAIL_FROM: ${SECURITYHUB_MAIL_FROM:-nao-responda@securityhub.local}
       SECURITYHUB_APP_BASE_URL: ${SECURITYHUB_APP_BASE_URL:-http://localhost:8081}
-      # Senha das contas criadas pelo seed do perfil `demo`. Credencial pública da
-      # demonstração local, e não um segredo: o tenant `demo` vive apenas no banco que este
-      # compose acabou de subir na máquina de quem clonou o repositório. Sobrescreva em
-      # qualquer implantação exposta, ou desligue o seed com SPRING_PROFILES_ACTIVE=prod.
+      # Password of the accounts created by the `demo` profile seed. A public credential of the
+      # local demonstration, not a secret: the `demo` tenant lives only in the database this
+      # compose has just brought up on the machine of whoever cloned the repository. Override it
+      # in any exposed deployment, or turn the seed off with SPRING_PROFILES_ACTIVE=prod.
       SECURITYHUB_DEMO_PASSWORD: ${SECURITYHUB_DEMO_PASSWORD:-Demo@SecurityHub2026}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
-      # Porta de gestão (actuator). O bind em 127.0.0.1 não é cosmético. O contexto filho da
-      # porta de gestão herda a cadeia de segurança da aplicação, então /actuator aqui exige um
-      # token — mas o de qualquer usuário de qualquer papel, inclusive VIEWER, porque a regra
-      # é o mesmo `anyRequest().authenticated()` da API. Publicar esta porta em 0.0.0.0
-      # devolveria o vazamento que a mudança fechou, bastando uma conta comum para lê-lo.
+      # Management (actuator) port. Binding it to 127.0.0.1 is not cosmetic. The management
+      # port's child context inherits the application's security chain, so /actuator here does
+      # require a token — but the token of any user of any role, VIEWER included, because the
+      # rule is the same `anyRequest().authenticated()` as the API's. Publishing this port on
+      # 0.0.0.0 would hand back the leak that change closed, with an ordinary account enough
+      # to read it.
       - "127.0.0.1:${MANAGEMENT_PORT:-9090}:9090"
     volumes:
       - attachments-data:/var/securityhub/uploads
-      # Volume próprio, e não uma pasta dentro do de anexos: o relatório de uma
-      # importação descartada é lixo, enquanto o anexo que alguém prendeu a um achado
-      # é evidência. Retenções diferentes não dividem o mesmo volume.
+      # Its own volume, and not a folder inside the attachments one: the report of a discarded
+      # import is garbage, while an attachment somebody pinned to a finding is evidence.
+      # Different retentions do not share a volume.
       - scan-data:/var/securityhub/uploads-scan
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/actuator/health/readiness"]
@@ -88,9 +89,9 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # Caixa de entrada local para os links de recuperação de senha e convite: SMTP em 1025,
-  # interface web em 8025. Sem healthcheck e sem depends_on de propósito — a imagem não tem
-  # shell para um healthcheck e o backend tolera SMTP indisponível (ver docs/adr/0007).
+  # Local inbox for the password recovery and invitation links: SMTP on 1025, web interface on
+  # 8025. No healthcheck and no depends_on on purpose — the image has no shell for a healthcheck
+  # and the backend tolerates an unavailable SMTP (see docs/adr/0007).
   mailhog:
     image: mailhog/mailhog:v1.0.1
     container_name: securityhub-mailhog

@@ -23,8 +23,8 @@ yarn-error.log*
 .nx/
 
 # Cypress
-# Barra inicial para casar em qualquer profundidade: `cypress/videos/` contém uma barra no
-# meio, então o Git ancora o padrão na raiz e ele nunca casaria com frontend/cypress/.
+# Leading glob so it matches at any depth: `cypress/videos/` contains a mid-path slash, so Git
+# anchors the pattern at the root and it would never match frontend/cypress/.
 **/cypress/videos/
 **/cypress/screenshots/
 **/cypress/downloads/

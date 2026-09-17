@@ -9,10 +9,10 @@ COPY src ./src
 RUN mvn -B -q clean package -DskipTests
 
 FROM eclipse-temurin:11-jre-alpine
-# Os dois diretórios de upload precisam existir na imagem, ainda que vazios. O Compose monta
-# um volume nomeado em cada um, e um volume montado sobre um caminho que não existe na imagem
-# é criado pelo Docker como root — a aplicação roda como `securityhub` e o primeiro upload
-# morreria com AccessDenied. Criá-los aqui faz o volume herdar o dono certo.
+# Both upload directories have to exist in the image, even empty. Compose mounts a named
+# volume on each, and a volume mounted over a path that does not exist in the image is created
+# by Docker as root — the application runs as `securityhub`, and the first upload would die
+# with AccessDenied. Creating them here is what makes the volume inherit the right owner.
 RUN apk add --no-cache wget \
  && addgroup -S securityhub \
  && adduser -S -G securityhub securityhub \

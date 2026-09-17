@@ -53,10 +53,10 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      # O setup-node guarda ~/.npm, mas o postinstall do puppeteer baixa ~500 MB de
-      # binários do Chrome para ~/.cache/puppeteer, que fica de fora. Sem este cache o
-      # download se repete a cada execução e um estol dele trava o `npm ci`.
-      - name: Cache Chrome do puppeteer
+      # setup-node keeps ~/.npm, but puppeteer's postinstall downloads ~500 MB of
+      # Chrome binaries into ~/.cache/puppeteer, which is left out of it. Without this cache the
+      # download repeats on every run, and a stall in it hangs `npm ci`.
+      - name: Cache puppeteer's Chrome
         uses: actions/cache@v4
         with:
           path: ~/.cache/puppeteer
@@ -101,10 +101,10 @@ jobs:
       - name: Smoke test
         run: ./scripts/smoke-test.sh
 
-      # A suíte Cypress entra aqui, entre o smoke test e o descarte: a pilha já está de pé com
-      # o seed do perfil `demo`, e os passos de dump e teardown abaixo continuam cobrindo
-      # também as falhas dela. Rodar contra o compose — e não contra `ng serve` — é o que faz
-      # o teste exercitar o bundle de produção atrás do nginx real.
+      # The Cypress suite goes here, between the smoke test and the teardown: the stack is
+      # already up with the `demo` profile seed, and the dump and teardown steps below cover
+      # its failures too. Running against compose — and not against `ng serve` — is what makes
+      # the test exercise the production bundle behind the real nginx.
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -112,7 +112,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      # O binário do Cypress fica fora de node_modules e não é coberto pelo cache do npm.
+      # The Cypress binary lives outside node_modules and is not covered by the npm cache.
       - name: Cache the Cypress binary
         uses: actions/cache@v4
         with:
@@ -127,7 +127,7 @@ jobs:
         working-directory: frontend
         env:
           CYPRESS_BASE_URL: http://localhost:8081
-          # A mesma senha que o .env.example copiado no início do job entrega ao seed.
+          # The same password the .env.example copied at the start of the job hands the seed.
           CYPRESS_DEMO_PASSWORD: Demo@SecurityHub2026
         run: npm run e2e:ci
 
@@ -163,18 +163,18 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      # Relatório completo das dependências que chegam ao navegador. Informativo: os achados
-      # remanescentes são do próprio Angular, não têm vetor alcançável nesta aplicação e
-      # estão analisados em docs/security-dependencies.md.
+      # Full report of the dependencies that reach the browser. Informational: the remaining
+      # findings are Angular's own, have no reachable vector in this application, and are
+      # analysed in docs/security-dependencies.md.
       - name: npm audit report (production dependencies)
         working-directory: frontend
         run: npm audit --omit=dev || true
 
-      # O portão real. Antes ele falhava em `high` com continue-on-error, o que deixava o job
-      # permanentemente vermelho por achados conhecidos e aceitos — um alarme que ninguém mais
-      # lê. O nível reflete a política do projeto: nenhuma vulnerabilidade
-      # crítica em dependência de produção. Assim o job passa hoje e quebra de verdade quando
-      # uma nova crítica aparecer.
+      # The real gate. It used to fail at `high` with continue-on-error, which left the job
+      # permanently red over known and accepted findings — an alarm nobody reads any more. The
+      # level reflects the project's policy: no critical vulnerability in a production
+      # dependency. This way the job passes today and genuinely breaks when a new critical one
+      # shows up.
       - name: Fail on critical advisories
         working-directory: frontend
         run: npm audit --omit=dev --audit-level=critical
