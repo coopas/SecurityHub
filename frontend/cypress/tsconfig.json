@@ -1,22 +1,22 @@
 {
-  // Estende o tsconfig da raiz, e não o `tsconfig.spec.json`: `strict`, `noImplicitReturns` e
-  // o resto do rigor que vale para `src/` vale igualmente aqui — um teste frouxo é um teste
-  // que passa por acidente.
+  // Extends the root tsconfig, and not `tsconfig.spec.json`: `strict`, `noImplicitReturns` and
+  // the rest of the strictness that applies to `src/` applies just as much here — a lax test is
+  // a test that passes by accident.
   //
-  // O que muda é só `types`. O `tsconfig.spec.json` declara `types: ["jasmine"]`, e os globais
-  // de Mocha/Chai que o Cypress traz colidem com os de Jasmine (`expect`, `it.only`,
-  // `beforeEach`) — duas declarações incompatíveis do mesmo nome. A separação não exige tocar
-  // em `tsconfig.app.json` nem em `tsconfig.spec.json`: os dois já têm escopo `src/`, então
-  // este diretório de primeiro nível é invisível para ambos. O que faltava era apenas excluir
-  // `cypress/` do tsconfig da raiz, que não tem `include` e portanto pega tudo.
+  // The only thing that changes is `types`. `tsconfig.spec.json` declares `types: ["jasmine"]`,
+  // and the Mocha/Chai globals that Cypress brings collide with Jasmine's (`expect`, `it.only`,
+  // `beforeEach`) — two incompatible declarations of the same name. The separation does not
+  // require touching `tsconfig.app.json` or `tsconfig.spec.json`: both are already scoped to
+  // `src/`, so this top-level directory is invisible to both. All that was missing was excluding
+  // `cypress/` from the root tsconfig, which has no `include` and therefore picks up everything.
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "types": ["cypress", "node"],
     "outDir": "../dist/out-tsc/cypress",
     "sourceMap": false
   },
-  // O `exclude` do tsconfig da raiz lista `cypress`, e é herdado: sem zerá-lo aqui este
-  // projeto excluiria os próprios arquivos.
+  // The root tsconfig's `exclude` lists `cypress`, and it is inherited: without zeroing it out
+  // here this project would exclude its own files.
   "exclude": [],
   "include": ["**/*.ts"]
 }

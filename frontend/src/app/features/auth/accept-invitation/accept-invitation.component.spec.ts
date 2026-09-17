@@ -143,7 +143,7 @@ describe('AcceptInvitationComponent', () => {
     });
     request.flush(response);
 
-    // O aceite já devolve o par de tokens: não há por que passar pelo login.
+    // Accepting already returns the token pair: there is no reason to go through login.
     expect(localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)).toBe(response.accessToken);
     expect(localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)).toBe(response.refreshToken);
     expect(localStorage.getItem(CURRENT_USER_STORAGE_KEY)).not.toBeNull();

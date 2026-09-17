@@ -1,20 +1,20 @@
 import { Severity, VulnerabilityStatus } from '../../vulnerabilities/models/vulnerability.model';
 
-/** Uma linha de `summary.topProjects`: no máximo dez, já ordenadas pelo backend. */
+/** One row of `summary.topProjects`: at most ten, already sorted by the backend. */
 export interface ProjectSummary {
   projectId: number;
   projectName: string;
   total: number;
-  /** Aberta + Em andamento dentro do projeto. */
+  /** Open + In progress within the project. */
   open: number;
   overdue: number;
 }
 
 /**
- * `GET /api/v1/dashboard/summary`. `openVulnerabilities` não é a contagem do status
- * `OPEN`: é o balde "ainda acionável", `OPEN + IN_PROGRESS`, como documentado no
- * `DashboardSummaryResponse`. Os cards repetem essa distinção em texto para que o número
- * não seja lido como o filtro de status da listagem.
+ * `GET /api/v1/dashboard/summary`. `openVulnerabilities` is not the count of the `OPEN`
+ * status: it is the "still actionable" bucket, `OPEN + IN_PROGRESS`, as documented on
+ * `DashboardSummaryResponse`. The cards repeat that distinction in text so the number is
+ * not read as the list's status filter.
  */
 export interface DashboardSummary {
   totalVulnerabilities: number;
@@ -27,30 +27,30 @@ export interface DashboardSummary {
   topProjects: ProjectSummary[];
 }
 
-/** Item de `GET /dashboard/severity-distribution`: array puro, sempre com as 4 severidades. */
+/** Item of `GET /dashboard/severity-distribution`: plain array, always with the 4 severities. */
 export interface SeverityDistributionEntry {
   severity: Severity;
   count: number;
 }
 
-/** Item de `GET /dashboard/status-distribution`: array puro, sempre com os 4 status. */
+/** Item of `GET /dashboard/status-distribution`: plain array, always with the 4 statuses. */
 export interface StatusDistributionEntry {
   status: VulnerabilityStatus;
   count: number;
 }
 
-/** Um dia da série, em UTC. Dias sem movimento vêm com zeros. */
+/** One day of the series, in UTC. Days with no movement come back with zeros. */
 export interface TrendPoint {
-  /** `yyyy-MM-dd`; o backend serializa `LocalDate` como texto ISO. */
+  /** `yyyy-MM-dd`; the backend serializes `LocalDate` as ISO text. */
   date: string;
   opened: number;
   resolved: number;
 }
 
 /**
- * `GET /dashboard/trend?days=30`. `days`, `from` e `to` ecoam a janela que o servidor
- * realmente usou — o pedido é limitado silenciosamente a [1, 90] —, então a tela sempre
- * rotula o gráfico com o que veio na resposta, nunca com o que foi pedido.
+ * `GET /dashboard/trend?days=30`. `days`, `from` and `to` echo the window the server actually
+ * used — the request is silently clamped to [1, 90] — so the screen always labels the chart
+ * with what came back in the response, never with what was asked for.
  */
 export interface Trend {
   days: number;
@@ -61,11 +61,11 @@ export interface Trend {
 
 export const DEFAULT_TREND_DAYS = 30;
 
-/** Opções do seletor de janela; todas dentro do intervalo aceito pelo backend. */
+/** Options of the window selector; all of them inside the range the backend accepts. */
 export const TREND_DAYS_OPTIONS: readonly number[] = [7, 30, 90];
 
-/** Quantidade de itens do painel "Itens recentes". */
+/** Number of items in the "Itens recentes" panel. */
 export const RECENT_VULNERABILITIES_SIZE = 5;
 
-/** Ordenação do painel de itens recentes; `createdAt` é ordenável no backend. */
+/** Sort order of the recent items panel; `createdAt` is sortable on the backend. */
 export const RECENT_VULNERABILITIES_SORT = 'createdAt,desc';

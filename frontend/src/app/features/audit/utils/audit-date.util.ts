@@ -1,9 +1,9 @@
-/** `yyyy-MM-dd`: forma civil da data, que é o que viaja na URL e o que o usuário escolhe. */
+/** `yyyy-MM-dd`: civil date form, which is what travels in the URL and what the user picks. */
 const CIVIL_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 /**
- * Converte a data escolhida no calendário para `yyyy-MM-dd` **no fuso do usuário**.
- * `toISOString()` não serve aqui: às 21h de Brasília ele já devolveria o dia seguinte.
+ * Converts the date picked in the calendar to `yyyy-MM-dd` **in the user's time zone**.
+ * `toISOString()` is no good here: at 21h in Brasília it would already return the next day.
  */
 export function toCivilDate(date: Date): string {
   const month = `${date.getMonth() + 1}`.padStart(2, '0');
@@ -12,9 +12,9 @@ export function toCivilDate(date: Date): string {
 }
 
 /**
- * `Date` local à meia-noite, para alimentar o `mat-datepicker`. Devolve `null` para
- * qualquer coisa que não seja um dia que exista: `2026-02-31` casa com a expressão mas
- * o `Date` o normalizaria para março, e a ida e volta é o que denuncia isso.
+ * Local `Date` at midnight, to feed the `mat-datepicker`. Returns `null` for anything
+ * that is not a day that exists: `2026-02-31` matches the expression but `Date` would
+ * normalize it to March, and the round trip is what gives that away.
  */
 export function toLocalDate(civilDate: string | null | undefined): Date | null {
   const match = CIVIL_DATE.exec((civilDate ?? '').trim());
@@ -29,15 +29,15 @@ export function toLocalDate(civilDate: string | null | undefined): Date | null {
   return date;
 }
 
-/** Devolve a data civil válida ou `null`; usado para filtrar o que chega pela URL. */
+/** Returns the valid civil date or `null`; used to filter what arrives through the URL. */
 export function parseCivilDate(raw: string | null | undefined): string | null {
   const date = toLocalDate(raw);
   return date ? toCivilDate(date) : null;
 }
 
 /**
- * Início do dia civil, como instante ISO — o formato que `AuditController` aceita
- * (`@DateTimeFormat(ISO.DATE_TIME)` sobre um `Instant`).
+ * Start of the civil day, as an ISO instant — the format `AuditController` accepts
+ * (`@DateTimeFormat(ISO.DATE_TIME)` over an `Instant`).
  */
 export function startOfDayInstant(civilDate: string): string | null {
   const date = toLocalDate(civilDate);
@@ -45,9 +45,9 @@ export function startOfDayInstant(civilDate: string): string | null {
 }
 
 /**
- * Fim do dia civil, como instante ISO. `AuditSpecifications` usa `lessThanOrEqualTo`
- * em `createdAt`, então mandar a meia-noite do próprio dia devolveria uma página vazia
- * para o último dia escolhido: quem filtra "até 17/09/2026" espera ver o dia 17 inteiro.
+ * End of the civil day, as an ISO instant. `AuditSpecifications` uses `lessThanOrEqualTo`
+ * on `createdAt`, so sending midnight of the day itself would return an empty page for
+ * the last chosen day: whoever filters "até 17/09/2026" expects to see the whole 17th.
  */
 export function endOfDayInstant(civilDate: string): string | null {
   const date = toLocalDate(civilDate);

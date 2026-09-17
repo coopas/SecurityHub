@@ -2,9 +2,9 @@
 
 @include mat.core();
 
-// Paletas próprias em vez das prontas do Material: a identidade é azul-cofre com verde
-// seguro, e nenhuma paleta embutida chega perto. Os tons de contraste de cada faixa foram
-// medidos, não escolhidos no olho — ver o bloco de tokens abaixo.
+// Custom palettes instead of Material's ready-made ones: the identity is vault blue with a
+// safe green, and no built-in palette comes close. The contrast tints of every band were
+// measured, not picked by eye — see the token block below.
 $sh-blue: (
   50: #eef2f7,
   100: #d3dde9,
@@ -47,9 +47,9 @@ $sh-green: (
     200: #013a27,
     300: #013a27,
     400: #013a27,
-    // 500 (#059669) não alcança 4.5:1 com nenhuma das duas tintas: 3.77 com branco, 3.41
-    // com escuro. Fica declarado por completude da rampa e nunca é escolhido como matiz de
-    // um tema — é o mesmo motivo de `--sh-accent-fill` existir separado de `--sh-accent`.
+    // 500 (#059669) does not reach 4.5:1 with either tint: 3.77 with white, 3.41 with dark.
+    // It stays declared for the sake of a complete ramp and is never picked as a theme's hue
+    // — it is the same reason `--sh-accent-fill` exists separately from `--sh-accent`.
     500: #ffffff,
     600: #ffffff,
     700: #ffffff,
@@ -74,8 +74,8 @@ $sh-red: (
     100: #6b0c25,
     200: #6b0c25,
     300: #6b0c25,
-    // 400 (#d95d63) também fica entre as duas tintas (3.69 / 3.34) e, como o verde 500,
-    // não é escolhido por tema nenhum.
+    // 400 (#d95d63) also lands between the two tints (3.69 / 3.34) and, like green 500, is
+    // not picked by any theme.
     400: #ffffff,
     500: #ffffff,
     600: #ffffff,
@@ -85,10 +85,10 @@ $sh-red: (
   ),
 );
 
-// O azul-cofre é a marca no claro e some no escuro: #1e3a5f sobre #192134 dá 1.2:1. O tema
-// escuro precisa da mesma identidade em uma faixa que se sustente sobre fundo fundo, e é o
-// que esta rampa dá — o matiz 300 é exatamente o `--sh-primary` do escuro, para que botão do
-// Material e token contem a mesma história em vez de dois azuis parecidos.
+// Vault blue is the brand in light and vanishes in dark: #1e3a5f over #192134 gives 1.2:1. The
+// dark theme needs that same identity in a band that holds up over a dark background, and that
+// is what this ramp gives — hue 300 is exactly the dark `--sh-primary`, so that the Material
+// button and the token tell the same story instead of two lookalike blues.
 $sh-sky: (
   50: #f0f9ff,
   100: #e0f2fe,
@@ -107,8 +107,8 @@ $sh-sky: (
     300: #0f172a,
     400: #0f172a,
     500: #0f172a,
-    // 600 (#0284c7) não fecha 4.5:1 com nenhuma tinta (4.10 / 4.36). Declarado para a rampa
-    // ficar completa, nunca escolhido como matiz.
+    // 600 (#0284c7) does not close 4.5:1 with either tint (4.10 / 4.36). Declared so the ramp
+    // stays complete, never picked as a hue.
     600: #ffffff,
     700: #ffffff,
     800: #ffffff,
@@ -120,9 +120,9 @@ $sh-primary: mat.define-palette($sh-blue, 700, 400, 900);
 $sh-accent: mat.define-palette($sh-green, 600, 400, 800);
 $sh-warn: mat.define-palette($sh-red, 600, 400, 800);
 
-// A família vem do Google Fonts, como o Roboto já vinha. A pilha de reserva é o que mantém
-// o painel legível numa rede fechada: ali a fonte externa simplesmente não chega, e sem
-// reserva declarada o navegador cairia num serifado qualquer.
+// The family comes from Google Fonts, just as Roboto already did. The fallback stack is what
+// keeps the panel readable on a closed network: there the external font simply never arrives,
+// and with no fallback declared the browser would drop to some serif or other.
 $sh-font-family: 'Plus Jakarta Sans', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
 $sh-typography: mat.define-typography-config(
@@ -143,11 +143,11 @@ $sh-light-theme: mat.define-light-theme((
   density: -1,
 ));
 
-// Um tema escuro não herda as paletas do claro. O Material pinta o botão com o matiz
-// escolhido e escreve por cima com a tinta de contraste daquele matiz — e um #1e3a5f sobre
-// #192134 devolve um botão primário que quase não se separa do fundo. No escuro os três
-// papéis passam a matizes claros com texto escuro, que é o mesmo valor dos tokens de cada
-// um: 10.71, 9.29 e 9.41 contra a tinta escura, todos medidos.
+// A dark theme does not inherit the light theme's palettes. Material paints the button with the
+// chosen hue and writes over it with the contrast tint of that hue — and a #1e3a5f over #192134
+// gives back a primary button that barely separates from the background. In dark the three roles
+// move to light hues with dark text, which is the same value as each one's token: 10.71, 9.29 and
+// 9.41 against the dark tint, all measured.
 $sh-primary-dark: mat.define-palette($sh-sky, 300, 200, 500);
 $sh-accent-dark: mat.define-palette($sh-green, 400, 200, 600);
 $sh-warn-dark: mat.define-palette($sh-red, 300, 200, 500);
@@ -160,8 +160,8 @@ $sh-dark-theme: mat.define-dark-theme((
 
 @include mat.all-component-themes($sh-light-theme);
 
-// Só as cores no tema escuro. `all-component-themes` reemitiria tipografia e densidade
-// idênticas dentro do seletor, dobrando o CSS sem mudar um pixel.
+// Colors only in the dark theme. `all-component-themes` would re-emit identical typography and
+// density inside the selector, doubling the CSS without changing a pixel.
 :root[data-theme='dark'] {
   @include mat.all-component-colors($sh-dark-theme);
 }
@@ -169,40 +169,40 @@ $sh-dark-theme: mat.define-dark-theme((
 :root {
   color-scheme: light;
 
-  // --- superfícies -------------------------------------------------------
+  // --- surfaces ----------------------------------------------------------
   --sh-background: #f1f5f9;
   --sh-surface: #ffffff;
   --sh-surface-sunken: #f8fafc;
   --sh-surface-hover: rgba(15, 23, 42, 0.04);
   --sh-surface-selected: rgba(30, 58, 95, 0.08);
 
-  // --- traços ------------------------------------------------------------
-  // Duas bordas porque a norma pede coisas diferentes de cada uma: uma divisória é
-  // decoração e pode ser leve, enquanto a borda que delimita um campo identifica o
-  // controle e precisa de 3:1. Medidas: 1.3:1 e 3.68:1 sobre branco.
+  // --- strokes -----------------------------------------------------------
+  // Two borders because the standard asks different things of each: a divider is
+  // decoration and may be light, while the border that delimits a field identifies the
+  // control and needs 3:1. Measured: 1.3:1 and 3.68:1 over white.
   --sh-border: #e2e8f0;
   --sh-border-strong: #75879c;
 
-  // --- texto -------------------------------------------------------------
+  // --- text --------------------------------------------------------------
   --sh-text: #0f172a;
   --sh-text-muted: #475569;
   --sh-text-subtle: #64748b;
   --sh-text-inverse: #ffffff;
 
-  // --- marca -------------------------------------------------------------
+  // --- brand -------------------------------------------------------------
   --sh-primary: #1e3a5f;
   --sh-primary-hover: #182f4d;
   --sh-primary-soft: rgba(30, 58, 95, 0.09);
   --sh-on-primary: #ffffff;
 
-  // O verde claro (#059669) só preenche: com texto branco dá 3.77:1 e reprova em 4.5.
-  // Onde houver texto por cima, o token escuro é o obrigatório.
+  // The light green (#059669) only fills: with white text it gives 3.77:1 and fails 4.5.
+  // Wherever there is text on top, the dark token is the mandatory one.
   --sh-accent: #047857;
   --sh-accent-fill: #059669;
   --sh-accent-soft: rgba(5, 150, 105, 0.1);
   --sh-on-accent: #ffffff;
 
-  // --- severidade --------------------------------------------------------
+  // --- severity ----------------------------------------------------------
   --sh-critical: #9f1239;
   --sh-high: #b91c1c;
   --sh-medium: #a16207;
@@ -213,7 +213,7 @@ $sh-dark-theme: mat.define-dark-theme((
   --sh-medium-soft: rgba(161, 98, 7, 0.12);
   --sh-low-soft: rgba(21, 128, 61, 0.1);
 
-  // --- situação ----------------------------------------------------------
+  // --- status ------------------------------------------------------------
   --sh-open: #b91c1c;
   --sh-in-progress: #a16207;
   --sh-resolved: #15803d;
@@ -224,11 +224,11 @@ $sh-dark-theme: mat.define-dark-theme((
   --sh-warning-soft: rgba(161, 98, 7, 0.12);
   --sh-success-soft: rgba(21, 128, 61, 0.1);
 
-  // --- foco --------------------------------------------------------------
+  // --- focus -------------------------------------------------------------
   --sh-focus: #1e3a5f;
   --sh-focus-halo: rgba(30, 58, 95, 0.25);
 
-  // --- espaçamento (escala densa, para painel) ---------------------------
+  // --- spacing (dense scale, for a panel) --------------------------------
   --sh-space-1: 4px;
   --sh-space-2: 8px;
   --sh-space-3: 12px;
@@ -237,26 +237,26 @@ $sh-dark-theme: mat.define-dark-theme((
   --sh-space-6: 32px;
   --sh-space-7: 48px;
 
-  // --- forma -------------------------------------------------------------
+  // --- shape -------------------------------------------------------------
   --sh-radius-sm: 6px;
   --sh-radius-md: 10px;
   --sh-radius-lg: 16px;
   --sh-radius-pill: 999px;
 
-  // --- elevação ----------------------------------------------------------
-  // Duas camadas por sombra: uma linha curta que desenha a aresta e uma difusa que dá a
-  // distância. Uma sombra só, larga, borra a aresta e é o que faz um card parecer sujo.
+  // --- elevation ---------------------------------------------------------
+  // Two layers per shadow: a short line that draws the edge and a diffuse one that gives the
+  // distance. A single wide shadow blurs the edge, and that is what makes a card look dirty.
   --sh-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.05);
   --sh-shadow-md: 0 2px 4px rgba(15, 23, 42, 0.06), 0 6px 16px rgba(15, 23, 42, 0.08);
   --sh-shadow-lg: 0 4px 8px rgba(15, 23, 42, 0.07), 0 16px 32px rgba(15, 23, 42, 0.1);
 
-  // --- movimento ---------------------------------------------------------
+  // --- motion ------------------------------------------------------------
   --sh-ease: cubic-bezier(0.2, 0, 0.2, 1);
   --sh-dur-fast: 120ms;
   --sh-dur: 200ms;
   --sh-dur-slow: 280ms;
 
-  // --- tipografia --------------------------------------------------------
+  // --- typography --------------------------------------------------------
   --sh-font: #{$sh-font-family};
   --sh-text-xs: 0.75rem;
   --sh-text-sm: 0.8125rem;
@@ -267,10 +267,10 @@ $sh-dark-theme: mat.define-dark-theme((
   --sh-text-2xl: 1.75rem;
 }
 
-// O escuro não é o claro com as cores invertidas. As superfícies sobem de luminosidade
-// conforme se aproximam de quem olha, o texto nunca é branco puro (que vibra sobre fundo
-// escuro) e todo tom de severidade clareia, porque os tons fechados do tema claro somem
-// contra #192134. Cada par abaixo foi medido em 4.5:1 ou mais.
+// Dark is not light with the colors inverted. Surfaces climb in luminance as they come closer
+// to the viewer, the text is never pure white (which vibrates over a dark background) and every
+// severity tone lightens, because the light theme's deep tones vanish against #192134. Every
+// pair below was measured at 4.5:1 or more.
 :root[data-theme='dark'] {
   color-scheme: dark;
 
@@ -288,9 +288,9 @@ $sh-dark-theme: mat.define-dark-theme((
   --sh-text-subtle: #7d8da3;
   --sh-text-inverse: #0f172a;
 
-  // O azul-cofre é a identidade no claro e desaparece no escuro: #1e3a5f sobre #192134 dá
-  // 1.2:1. A marca migra para o tom claro da mesma família, que é como ela continua sendo
-  // reconhecível sem deixar de ser legível.
+  // Vault blue is the identity in light and disappears in dark: #1e3a5f over #192134 gives
+  // 1.2:1. The brand migrates to the light tone of the same family, which is how it stays
+  // recognizable without ceasing to be legible.
   --sh-primary: #7dd3fc;
   --sh-primary-hover: #a5e0fd;
   --sh-primary-soft: rgba(125, 211, 252, 0.16);
@@ -346,8 +346,8 @@ body {
   box-sizing: border-box;
 }
 
-// A troca de tema repinta a árvore inteira. Sem esta transição a mudança é um estouro
-// branco; com ela, as superfícies atravessam. Só cor: animar layout aqui custaria caro.
+// Switching themes repaints the whole tree. Without this transition the change is a white
+// blowout; with it, the surfaces cross over. Color only: animating layout here would cost dear.
 body,
 .sh-card,
 .sh-panel,
@@ -357,7 +357,7 @@ body,
     border-color var(--sh-dur) var(--sh-ease), color var(--sh-dur) var(--sh-ease);
 }
 
-// Quem pediu menos movimento recebe menos movimento — inclusive na troca de tema.
+// Whoever asked for less motion gets less motion — on the theme switch included.
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -384,24 +384,24 @@ a {
 
 /* Keyboard focus must stay visible everywhere, including inside Material overlays. */
 //
-// Sem `border-radius` aqui: declarar o raio nesta regra mudaria a forma do próprio elemento
-// ao receber foco — um botão pílula viraria quase retângulo no instante em que o teclado
-// chegasse nele. O contorno já acompanha sozinho o raio de quem ele circunda.
+// No `border-radius` here: declaring the radius in this rule would change the shape of the
+// element itself as it takes focus — a pill button would turn nearly rectangular the instant the
+// keyboard reached it. The outline already follows on its own the radius of what it surrounds.
 :focus-visible {
   outline: 3px solid var(--sh-focus);
   outline-offset: 2px;
 }
 
-// Esconde do olho e mantém para o leitor de tela.
+// Hides it from the eye and keeps it for the screen reader.
 //
-// `table-layout: fixed` não é detalhe: um `<table>` trata `width` como mínimo e se alarga
-// até caber o conteúdo. As tabelas equivalentes dos gráficos do dashboard chegavam a 570px
-// escondidas assim, e empurravam a rolagem horizontal da área de conteúdo — invisíveis e
-// ainda assim deslocando a tela. Trocar o `display` resolveria a largura e destruiria a
-// semântica de tabela para quem depende dela, que é justamente o motivo de ela existir.
+// `table-layout: fixed` is no detail: a `<table>` treats `width` as a minimum and widens until
+// the content fits. The equivalent tables of the dashboard charts reached 570px hidden this way,
+// and pushed the horizontal scroll of the content area — invisible and still shifting the screen
+// all the same. Swapping the `display` would solve the width and destroy the table semantics for
+// whoever depends on them, which is exactly the reason it exists.
 //
-// `clip-path` acompanha o `clip`, que está obsoleto mas segue sendo o que navegador antigo
-// entende.
+// `clip-path` goes along with `clip`, which is deprecated but is still what an old browser
+// understands.
 .sh-visually-hidden {
   position: absolute;
   width: 1px;
@@ -416,11 +416,11 @@ a {
   table-layout: fixed;
 }
 
-// O `nowrap` da receita clássica serve a texto corrido; numa tabela ele fixa cada célula na
-// largura do seu conteúdo e impede a tabela de encolher, mesmo com `table-layout: fixed`.
-// Medido nas tabelas equivalentes dos gráficos: 628px com o nowrap, 121px sem, e a rolagem
-// horizontal da área de conteúdo desaparece junto. As dez células seguem no mesmo lugar,
-// que é o que importa para quem lê por áudio.
+// The `nowrap` from the classic recipe serves running text; in a table it pins every cell to the
+// width of its content and stops the table from shrinking, even with `table-layout: fixed`.
+// Measured on the charts' equivalent tables: 628px with the nowrap, 121px without, and the
+// horizontal scroll of the content area goes away with it. The ten cells stay in the same place,
+// which is what matters for whoever reads by audio.
 table.sh-visually-hidden {
   white-space: normal;
 }
@@ -465,8 +465,8 @@ table.sh-visually-hidden {
   }
 }
 
-// Linha de apoio do cabeçalho: conta quantos itens a tela está mostrando, ou explica o
-// recorte aplicado. Sem ela o número de uma listagem filtrada não quer dizer nada.
+// Support line for the header: it tells how many items the screen is showing, or explains the
+// slice applied. Without it the number on a filtered listing means nothing.
 .sh-page__subtitle {
   margin: var(--sh-space-1) 0 0;
   color: var(--sh-text-muted);
@@ -505,8 +505,8 @@ table.sh-visually-hidden {
 table.sh-table {
   width: 100%;
 
-  // Cabeçalho em caixa alta pequena: numa tabela densa ele precisa se separar do corpo sem
-  // ganhar peso visual, e reduzir o tamanho funciona melhor do que engrossar.
+  // Header in small uppercase: in a dense table it has to separate from the body without
+  // gaining visual weight, and shrinking the size works better than thickening it.
   th.mat-mdc-header-cell {
     font-size: var(--sh-text-xs);
     font-weight: 700;
@@ -556,15 +556,15 @@ table.sh-table {
   border-radius: var(--sh-radius-md);
 }
 
-// Selo compartilhado por severidade, situação e formato. Cor mais ícone, nunca cor
-// sozinha: cerca de 8% dos homens não distinguem vermelho de verde, e severidade é
-// exatamente a informação que não pode depender disso.
+// Badge shared by severity, status and format. Color plus icon, never color on its own: about
+// 8% of men cannot tell red from green, and severity is exactly the information that must not
+// depend on that.
 //
-// O preenchimento é opaco de propósito, e não o `--sh-*-soft` correspondente. Tinta
-// translúcida empilha com o que estiver atrás: sobre a linha realçada pelo cursor, o par
-// "texto médio sobre fundo médio" caía de 4.20 para 3.90 — já reprovava parado e piorava ao
-// passar o mouse. Com uma superfície opaca o pior par do conjunto mede 4.71 em qualquer
-// estado. O contorno em `currentColor` devolve a cor que o fundo deixou de dar.
+// The fill is opaque on purpose, and not the matching `--sh-*-soft`. Translucent fill stacks
+// with whatever is behind it: over the row highlighted by the cursor, the "medium text on medium
+// background" pair dropped from 4.20 to 3.90 — it already failed at rest and got worse on hover.
+// With an opaque surface the worst pair in the set measures 4.71 in any state. The outline in
+// `currentColor` gives back the color the background stopped providing.
 .sh-badge {
   display: inline-flex;
   align-items: center;

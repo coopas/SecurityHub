@@ -15,7 +15,7 @@ import {
 } from '../models/project.model';
 import { ProjectService } from '../services/project.service';
 
-/** Criação e edição compartilham o formulário; a rota define o modo. */
+/** Creation and editing share the form; the route defines the mode. */
 @Component({
   selector: 'app-project-form',
   templateUrl: './project-form.component.html',
@@ -34,7 +34,7 @@ export class ProjectFormComponent implements OnInit {
   projectId: number | null = null;
   submitting = false;
   generalError: string | null = null;
-  /** `null` quando o formulário pode ser exibido. */
+  /** `null` when the form can be displayed. */
   loadState: ViewState | null = null;
   loadErrorMessage: string | null = null;
 
@@ -145,8 +145,8 @@ export class ProjectFormComponent implements OnInit {
   }
 
   /**
-   * `fieldErrors` viram erros inline dos controles; só sobra mensagem geral quando
-   * nenhum campo do formulário corresponde (ou quando o erro não é de validação).
+   * `fieldErrors` turn into inline errors on the controls; a general message is only left
+   * over when no field of the form matches (or when the error is not a validation one).
    */
   private handleError(error: unknown): void {
     const apiError = toApiError(error);

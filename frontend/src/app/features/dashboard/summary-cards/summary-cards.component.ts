@@ -6,19 +6,20 @@ import { DashboardSummary, ProjectSummary } from '../models/dashboard.model';
 import { DashboardService } from '../services/dashboard.service';
 
 /**
- * Tom do card, que decide o filete lateral, a cor do ícone e a do número. É reforço, nunca
- * o único sinal: o rótulo e o ícone já dizem do que o número trata.
+ * The card's shade, which decides the side hairline, the icon color and the number's. It is
+ * reinforcement, never the only signal: the label and the icon already say what the number
+ * is about.
  */
 export type SummaryCardTone = 'critical' | 'high' | 'positive' | 'neutral';
 
 /**
- * Um card. `routerLink` + `queryParams` levam à listagem já filtrada: o número é o começo
- * de uma investigação, não um enfeite.
+ * One card. `routerLink` + `queryParams` lead to the list already filtered: the number is
+ * the start of an investigation, not an ornament.
  *
- * `linkHint` só existe nos cards cujo filtro a listagem não consegue reproduzir exatamente
- * — ela filtra um status por vez, e "em aberto" no backend é `OPEN + IN_PROGRESS`. Dizer
- * isso é mais honesto do que mandar o usuário para uma lista que conta diferente do card
- * sem explicação.
+ * `linkHint` only exists on the cards whose filter the list cannot reproduce exactly — it
+ * filters one status at a time, and "em aberto" on the backend is `OPEN + IN_PROGRESS`.
+ * Saying so is more honest than sending the user to a list that counts differently from the
+ * card, with no explanation.
  */
 export interface SummaryCard {
   key: string;
@@ -32,12 +33,13 @@ export interface SummaryCard {
   linkHint?: string;
 }
 
-/** Repetido nos dois cards cujo destino é uma aproximação do número exibido. */
+/** Repeated on the two cards whose destination is an approximation of the number shown. */
 const SINGLE_STATUS_HINT = 'A listagem filtra um status por vez: o link abre as Abertas.';
 
 /**
- * Cards do resumo e os dez projetos com mais achados. Região assíncrona independente: os
- * gráficos podem falhar sem apagar estes números, e o contrário também vale.
+ * The summary cards and the ten projects with the most findings. An independent async
+ * region: the charts can fail without wiping out these numbers, and the other way around
+ * holds too.
  */
 @Component({
   selector: 'app-summary-cards',
@@ -56,8 +58,8 @@ export class SummaryCardsComponent implements OnInit {
   }
 
   /**
-   * Empresa recém-criada: os zeros são a resposta correta, não uma falha, então os cards
-   * continuam na tela e ganham uma frase que explica o que fazer em seguida.
+   * A freshly created company: the zeros are the correct answer, not a failure, so the cards
+   * stay on the screen and get a sentence explaining what to do next.
    */
   get isEmptyCompany(): boolean {
     return (
@@ -93,9 +95,9 @@ export class SummaryCardsComponent implements OnInit {
   }
 
   /**
-   * Classes do card. O tom vira ênfase visual só quando há o que olhar: um "críticas em
-   * aberto" zerado é boa notícia, e pintá-lo de vermelho ensinaria o analista a ignorar a
-   * cor justamente onde ela precisa significar alguma coisa.
+   * The card's classes. The shade becomes visual emphasis only when there is something to
+   * look at: a zeroed "críticas em aberto" is good news, and painting it red would teach the
+   * analyst to ignore the color exactly where it needs to mean something.
    */
   cardClasses(card: SummaryCard): string[] {
     const classes = [`dashboard-card--${card.tone}`];

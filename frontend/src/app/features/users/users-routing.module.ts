@@ -7,15 +7,15 @@ import { UserDetailComponent } from './user-detail/user-detail.component';
 import { UserListComponent } from './user-list/user-list.component';
 
 /**
- * Toda rota carrega o `roleGuard`, inclusive a listagem: a funcionalidade inteira é
- * administrativa. `UserService.get`, `update`, `changeRole` e `changeActive` são anotados
- * com `@PreAuthorize("hasRole('ADMIN')")`, e `GET /users` só é mais permissivo porque
- * serve ao seletor de responsável das vulnerabilidades — esta tela não é aquele seletor,
- * e abrir uma administração cujos botões só poderiam falhar não ajudaria ninguém.
+ * Every route carries the `roleGuard`, the listing included: the whole feature is
+ * administrative. `UserService.get`, `update`, `changeRole` and `changeActive` are annotated
+ * with `@PreAuthorize("hasRole('ADMIN')")`, and `GET /users` is only more permissive because
+ * it serves the vulnerability assignee selector — this screen is not that selector, and
+ * opening an administration whose buttons could only fail would help nobody.
  *
- * `convidar` precede `:id` para não ser lido como identificador.
+ * `convidar` comes before `:id` so it is not read as an identifier.
  *
- * A lista é exportada para que a restrição de papel seja verificável por teste.
+ * The list is exported so that the role restriction is verifiable by test.
  */
 export const USERS_ROUTES: Routes = [
   {

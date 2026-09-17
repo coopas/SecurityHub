@@ -64,15 +64,16 @@ describe('ImportService', () => {
     const request = httpMock.expectOne({ url: baseUrl, method: 'POST' });
     const body = request.request.body as FormData;
     expect(body instanceof FormData).toBeTrue();
-    // `append` com nome cria um File novo com o mesmo conteúdo, então a comparação é
-    // pelo que viaja: a parte se chama `file` e leva o nome e o tamanho do original.
+    // `append` with a name creates a new File with the same content, so the comparison
+    // is by what travels: the part is called `file` and carries the original's name and
+    // size.
     const part = body.get('file') as File;
     expect(part.name).toBe('varredura.xml');
     expect(part.size).toBe(file.size);
     expect(body.get('projectId')).toBe('3');
     expect(body.get('format')).toBe('NMAP_XML');
-    // Quem escreve o cabeçalho multipart é o navegador, porque só ele conhece o
-    // boundary; defini-lo aqui produziria um Content-Type sem boundary algum.
+    // The one who writes the multipart header is the browser, because only it knows the
+    // boundary; setting it here would produce a Content-Type with no boundary at all.
     expect(request.request.headers.has('Content-Type')).toBeFalse();
     expect(request.request.reportProgress).toBeTrue();
 

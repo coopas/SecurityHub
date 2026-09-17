@@ -1,17 +1,17 @@
-// Folha única das cinco telas públicas (entrar, cadastrar, esqueci, redefinir e convite).
-// As cinco compartilham a mesma casca de propósito: quem chega por um convite ou por um
-// link de redefinição precisa reconhecer na hora que está no mesmo produto em que entrou
-// ontem — telas de credencial que destoam entre si é exatamente o que um phishing imita.
+// Single stylesheet for the five public screens (login, register, forgot, reset and invite).
+// All five share the same shell on purpose: whoever arrives through an invitation or through a
+// reset link has to recognise at once that they are in the same product they logged into
+// yesterday — credential screens that clash with one another are exactly what phishing imitates.
 
-// O painel de marca é a única área grande de cor da aplicação, e é onde os dois temas
-// pedem tratamentos diferentes: no claro o azul-cofre chapado é a identidade; no escuro o
-// mesmo token vira azul-claro e meia tela dele ofuscaria. Por isso o apelido local, trocado
-// uma vez por tema, em vez de repetir a decisão em cada regra abaixo.
+// The brand panel is the only large area of color in the application, and it is where the two
+// themes ask for different treatments: in light, the flat vault blue is the identity; in dark
+// the same token turns light blue and half a screen of it would dazzle. Hence the local alias,
+// swapped once per theme, instead of repeating the decision in every rule below.
 .auth-shell {
   --auth-brand-bg: linear-gradient(155deg, var(--sh-primary), var(--sh-primary-hover));
   --auth-brand-fg: var(--sh-on-primary);
-  // Cor dos traços geométricos e do halo; a opacidade vive na camada, nunca na cor, porque
-  // um rgba() aqui congelaria um tema dentro do outro.
+  // Color of the geometric strokes and of the glow; the opacity lives on the layer, never on
+  // the color, because an rgba() here would freeze one theme inside the other.
   --auth-brand-ink: var(--sh-on-primary);
   --auth-brand-grid-opacity: 0.1;
   --auth-brand-glow-opacity: 0.16;
@@ -23,26 +23,27 @@
   color: var(--sh-text);
 }
 
-// `:host-context` e não `:root[data-theme]`: o encapsulamento emulado prefixa o atributo
-// do componente no primeiro seletor composto, e `[_ngcontent]:root` nunca casaria com o
-// <html>, que é justamente onde o tema é marcado.
+// `:host-context` and not `:root[data-theme]`: emulated encapsulation prefixes the component
+// attribute onto the first compound selector, and `[_ngcontent]:root` would never match the
+// <html>, which is precisely where the theme is marked.
 :host-context([data-theme='dark']) .auth-shell {
-  // No escuro a marca não é um bloco aceso: o painel recua para as superfícies fundas e o
-  // azul da identidade volta só nos traços e no halo, que é o que ainda o torna reconhecível.
+  // In dark the brand is not a lit block: the panel falls back to the sunken surfaces and the
+  // identity blue returns only in the strokes and the glow, which is what still makes it
+  // recognisable.
   --auth-brand-bg: linear-gradient(155deg, var(--sh-surface-sunken), var(--sh-background));
   --auth-brand-fg: var(--sh-text);
   --auth-brand-ink: var(--sh-primary);
   --auth-brand-grid-opacity: 0.16;
   --auth-brand-glow-opacity: 0.22;
 
-  // No claro a junção das duas colunas já é uma troca de azul para branco; no escuro as
-  // duas superfícies são vizinhas e a costura precisa do traço para existir.
+  // In light the junction of the two columns is already a switch from blue to white; in dark
+  // the two surfaces are neighbours and the seam needs the border in order to exist at all.
   .auth-brand {
     border-right: 1px solid var(--sh-border);
   }
 }
 
-// --- painel de marca ------------------------------------------------------
+// --- brand panel ----------------------------------------------------------
 
 .auth-brand {
   position: relative;
@@ -56,9 +57,9 @@
   color: var(--auth-brand-fg);
 }
 
-// Anéis concêntricos finos saindo do canto superior: a geometria é a de um varredura, que
-// é o que o produto faz. Fica em camada própria para que a opacidade baixe o desenho sem
-// levar junto o texto que corre por cima.
+// Thin concentric rings radiating out of the top corner: the geometry is that of a scan, which
+// is what the product does. It sits on its own layer so that the opacity can dim the drawing
+// without taking the text running over it along with it.
 .auth-brand__grid {
   position: absolute;
   inset: 0;
@@ -116,12 +117,12 @@
   max-width: 42ch;
   font-size: var(--sh-text-md);
   line-height: 1.6;
-  // Hierarquia sem uma segunda cor: sobre um fundo de marca só há um tom legível, e
-  // rebaixar a camada inteira mantém o contraste previsível nos dois temas.
+  // Hierarchy without a second color: over a brand background there is only one legible tone,
+  // and dimming the whole layer keeps the contrast predictable in both themes.
   opacity: 0.78;
 }
 
-// --- coluna do formulário -------------------------------------------------
+// --- form column ----------------------------------------------------------
 
 .auth-panel {
   display: flex;
@@ -131,15 +132,15 @@
   background: var(--sh-surface);
 }
 
-// Medida de linha curta: um formulário de credencial com campos largos demais obriga o
-// olho a voltar do fim de um campo até o começo do seguinte.
+// Short measure: a credential form with fields that are too wide forces the eye to travel
+// back from the end of one field to the start of the next.
 .auth-panel__inner {
   width: 100%;
   max-width: 400px;
 }
 
-// A marca aparece uma vez só por largura: no painel quando ele existe, aqui quando não.
-// `display: none` e não `visibility`, para que o leitor de tela também ouça uma só.
+// The mark shows up exactly once per width: in the panel when it exists, here when it does not.
+// `display: none` and not `visibility`, so that the screen reader also hears only one.
 .auth-mark {
   display: flex;
   align-items: center;
@@ -170,8 +171,8 @@
   }
 }
 
-// Dois parágrafos seguidos de apoio (o resumo do convite, por exemplo) não podem herdar a
-// margem inferior larga do primeiro: entre eles a distância é de parágrafo, não de bloco.
+// Two support paragraphs in a row (the invitation summary, for instance) must not inherit the
+// wide bottom margin of the first: between them the distance is a paragraph, not a block.
 .auth-subtitle + .auth-subtitle {
   margin-top: calc(var(--sh-space-4) * -1);
 }
@@ -188,15 +189,15 @@
   justify-content: center;
   gap: var(--sh-space-2);
   width: 100%;
-  // A densidade -1 do tema encolhe o botão abaixo do alvo mínimo de toque; aqui ele é a
-  // ação principal da tela e volta ao tamanho cheio.
+  // The theme's -1 density shrinks the button below the minimum touch target; here it is the
+  // primary action of the screen and goes back to full size.
   min-height: 48px;
   margin-top: var(--sh-space-3);
   font-size: var(--sh-text-base);
 }
 
-// Um alerta ou um estado de carregamento logo abaixo do título ocupa o lugar da linha de
-// apoio, e precisa da mesma distância que ela daria — sem isso encosta na caixa alta.
+// An alert or a loading state right below the title takes the place of the support line, and
+// needs the same distance that line would have given — without it, it butts into the uppercase.
 .auth-title + .auth-alert,
 .auth-title + app-state-message {
   display: block;
@@ -214,7 +215,7 @@
   line-height: 1.5;
 }
 
-// --- rodapé de apoio ------------------------------------------------------
+// --- support footer -------------------------------------------------------
 
 .auth-foot {
   display: flex;
@@ -234,7 +235,7 @@
   gap: var(--sh-space-1);
   margin: 0;
 
-  // O alvo de toque do link é a linha inteira, e não a altura da letra.
+  // The link's touch target is the whole line, not the height of the letter.
   a {
     display: inline-flex;
     align-items: center;

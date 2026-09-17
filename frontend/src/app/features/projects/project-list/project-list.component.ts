@@ -28,9 +28,9 @@ export const DEFAULT_SORT = 'createdAt,desc';
 export const SEARCH_DEBOUNCE_MS = 350;
 
 /**
- * Listagem de projetos. Os query params da URL são a única fonte de verdade dos
- * filtros, da paginação e da ordenação: qualquer interação navega e a navegação
- * é que dispara a busca, de modo que recarregar ou voltar restaura a mesma tela.
+ * Project listing. The URL query params are the single source of truth for the filters,
+ * the pagination and the sorting: any interaction navigates and it is the navigation
+ * that triggers the fetch, so reloading or going back restores the same screen.
  */
 @Component({
   selector: 'app-project-list',
@@ -93,10 +93,11 @@ export class ProjectListComponent implements OnInit, OnDestroy {
       .pipe(
         debounceTime(SEARCH_DEBOUNCE_MS),
         map((value) => value.trim()),
-        // Comparado com o filtro já aplicado, e não com a emissão anterior do próprio
-        // stream: a rota reescreve o controle com emitEvent: false, então um
-        // distinctUntilChanged guardaria um valor que o usuário já não vê e engoliria a
-        // reaplicação de um termo idêntico depois de limpar os filtros.
+        // Compared against the filter already applied, and not against the previous
+        // emission of the stream itself: the route rewrites the control with
+        // emitEvent: false, so a distinctUntilChanged would hold a value the user no longer
+        // sees and would swallow the re-application of an identical term after the filters
+        // were cleared.
         filter((search) => search !== (this.query.search ?? '')),
         takeUntil(this.destroy$),
       )
@@ -171,7 +172,7 @@ export class ProjectListComponent implements OnInit, OnDestroy {
       });
   }
 
-  /** A célula da tabela tem contexto `any`; o rótulo passa por aqui para manter o tipo. */
+  /** The table cell has an `any` context; the label goes through here to keep the type. */
   statusLabel(status: ProjectStatus): string {
     return this.statusLabels[status];
   }
@@ -185,7 +186,7 @@ export class ProjectListComponent implements OnInit, OnDestroy {
     this.projectService.delete(project.id).subscribe({
       next: () => {
         this.notifications.success('Projeto excluído.');
-        // Excluir o último item da página traria uma página vazia: volta uma página.
+        // Deleting the last item on the page would bring an empty page: step back one page.
         if (this.projects.length === 1 && this.query.page > 0) {
           this.patchQueryParams({ page: this.query.page - 1 || null });
           return;
@@ -199,7 +200,7 @@ export class ProjectListComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** `null` remove o parâmetro da URL; os demais são mesclados aos existentes. */
+  /** `null` removes the parameter from the URL; the others are merged into the existing ones. */
   private patchQueryParams(queryParams: Params): void {
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -224,7 +225,7 @@ export class ProjectListComponent implements OnInit, OnDestroy {
     };
   }
 
-  /** Mantém apenas `propriedade,direção` aceitos pelo backend; o resto vira o padrão. */
+  /** Keeps only a `property,direction` accepted by the backend; the rest becomes the default. */
   private parseSort(raw: string | null): string {
     const [property, direction] = (raw ?? '').split(',');
     const sortable = (PROJECT_SORTABLE_PROPERTIES as readonly string[]).includes(property);

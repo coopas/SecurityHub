@@ -139,8 +139,8 @@ describe('audit-diff.util', () => {
     it('não escapa nem interpreta marcação: o valor é devolvido como texto', () => {
       const payload = '<img src=x onerror="alert(1)">';
 
-      // Escapar aqui seria duplicar o trabalho do Angular; o que importa é que o valor
-      // nunca vira HTML — o template só o interpola.
+      // Escaping here would duplicate Angular's work; what matters is that the value
+      // never becomes HTML — the template only interpolates it.
       expect(formatValue(payload)).toBe(payload);
     });
 

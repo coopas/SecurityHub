@@ -59,7 +59,7 @@ describe('SummaryCardsComponent', () => {
   it('leva cada card à listagem filtrada correspondente', () => {
     fixture.detectChanges();
 
-    // Os mesmos parâmetros que `VulnerabilityListComponent.parseQuery` reconhece.
+    // The same params that `VulnerabilityListComponent.parseQuery` recognizes.
     expect(card('total')?.getAttribute('href')).toBe('/vulnerabilities');
     expect(card('open')?.getAttribute('href')).toBe('/vulnerabilities?status=OPEN');
     expect(card('criticalOpen')?.getAttribute('href')).toBe(
@@ -74,7 +74,7 @@ describe('SummaryCardsComponent', () => {
   it('avisa nos cards cujo destino não reproduz o número exatamente', () => {
     fixture.detectChanges();
 
-    // "Em aberto" é OPEN + IN_PROGRESS no backend e a listagem filtra um status por vez.
+    // "Em aberto" is OPEN + IN_PROGRESS on the backend and the list filters one status at a time.
     expect(card('open')?.textContent).toContain('A listagem filtra um status por vez');
     expect(card('criticalOpen')?.textContent).toContain('A listagem filtra um status por vez');
     expect(card('overdue')?.textContent).not.toContain('A listagem filtra um status por vez');
@@ -123,7 +123,7 @@ describe('SummaryCardsComponent', () => {
     dashboardService.summary.and.returnValue(of(makeEmptyDashboardSummary()));
     fixture.detectChanges();
 
-    // Zero é a resposta correta: os cards continuam na tela, com uma frase explicando.
+    // Zero is the correct answer: the cards stay on the screen, with a sentence explaining it.
     expect(component.state).toBeNull();
     expect(element().querySelectorAll('.dashboard-card').length).toBe(7);
     expect(cardValue('total')).toBe('0');

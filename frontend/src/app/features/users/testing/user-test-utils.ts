@@ -1,7 +1,7 @@
 import { Role, User } from '../../../core/models';
 import { Invitation, InvitationPreview } from '../models/invitation.model';
 
-/** Fixtures dos testes; nenhuma tela usa dados simulados. */
+/** Test fixtures; no screen uses simulated data. */
 export function makeAdminUser(overrides: Partial<User> = {}): User {
   return {
     id: 1,

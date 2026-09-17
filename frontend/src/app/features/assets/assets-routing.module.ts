@@ -7,8 +7,8 @@ import { AssetFormComponent } from './asset-form/asset-form.component';
 import { AssetListComponent } from './asset-list/asset-list.component';
 
 /**
- * `novo` precede `:id` para não ser capturado como identificador. Escrita é
- * restrita a ADMIN também no roteador; o backend valida de novo em cada chamada.
+ * `novo` comes before `:id` so it is not captured as an identifier. Writing is
+ * restricted to ADMIN in the router too; the backend validates it again on every call.
  */
 const routes: Routes = [
   { path: '', component: AssetListComponent, title: 'Ativos · SecurityHub' },

@@ -1,15 +1,15 @@
 // ==========================================================================
-// Vulnerabilidades — camada comum às três telas: avisos, selos e alvos de
-// toque. O que é de uma tela só mora na folha dela, porque esta aqui é
-// emitida três vezes, uma por componente.
+// Vulnerabilities — the layer common to all three screens: alerts, badges and
+// touch targets. What belongs to a single screen lives in that screen's own
+// stylesheet, because this one here is emitted three times, once per component.
 //
-// Nenhum valor de cor literal: o tema escuro é exatamente esta marcação com
-// outros valores nos tokens, e um `#hex` esquecido aqui só apareceria
-// quebrado do outro lado da chave.
+// No literal colour value: the dark theme is exactly this markup with other
+// values in the tokens, and a `#hex` forgotten here would only ever show up
+// broken on the other side of the switch.
 // ==========================================================================
 
-// Erro de ação não é um parágrafo vermelho: é um bloco com ícone, porque a cor
-// sozinha não chega a quem não a distingue.
+// An action error is not a red paragraph: it is a block with an icon, because
+// colour alone does not reach whoever cannot tell it apart.
 .vulnerabilities-alert {
   display: flex;
   flex-wrap: wrap;
@@ -29,10 +29,10 @@
   }
 }
 
-// O selo é o `.sh-badge` global; do `mat-chip` sobra o elemento, porque é por ele
-// que a suíte identifica o selo na listagem. Os tokens abaixo desligam a caixa do
-// MDC (altura fixa, fundo, tipografia própria) para que a geometria do selo
-// compartilhado seja a que aparece, e não duas caixas somadas.
+// The badge is the global `.sh-badge`; of `mat-chip` only the element is left, because
+// that is how the suite identifies the badge in the listing. The tokens below switch off
+// the MDC box (fixed height, background, typography of its own) so that the geometry of
+// the shared badge is the one that shows, and not two boxes added together.
 .vulnerabilities-chip.sh-badge.mat-mdc-chip {
   --mdc-chip-container-height: auto;
   --mdc-chip-container-shape-radius: var(--sh-radius-pill);
@@ -42,13 +42,13 @@
   --mdc-chip-label-text-line-height: inherit;
   --mdc-chip-with-icon-icon-color: currentColor;
 
-  // O fundo do selo é opaco de propósito: tinta translúcida empilha com a linha
-  // realçada sob o cursor e derruba o contraste do texto pequeno. O MDC pinta o
-  // fundo com precedência sobre a base do `.sh-badge` — e, no tema escuro, com
-  // precedência ainda maior —, então o token dele aponta para a mesma superfície.
-  // É também por isso que o seletor acima soma as três classes: menos que isso
-  // empata com o tema escuro do Material e o vencedor passa a ser a ordem de
-  // injeção das folhas.
+  // The badge background is opaque on purpose: a translucent fill stacks with the
+  // row highlighted under the cursor and drops the contrast of the small text. MDC
+  // paints the background with precedence over the `.sh-badge` base — and, in the
+  // dark theme, with even greater precedence —, so its token points at the same
+  // surface. It is also why the selector above adds up all three classes: any less
+  // than that ties with Material's dark theme and the winner becomes the order in
+  // which the stylesheets are injected.
   --mdc-chip-elevated-container-color: var(--sh-surface-sunken);
 
   color: var(--vulnerabilities-chip-ink, var(--sh-text-muted));
@@ -57,9 +57,9 @@
     margin-right: var(--sh-space-1);
   }
 
-  // O preenchimento e a camada de estado moram dentro do componente do Material e
-  // não há como alcançá-los de outro jeito; sem isto o selo ganha 24px de sobra
-  // horizontal e acende sob o mouse, como se fosse clicável.
+  // The padding and the state layer live inside the Material component and there is
+  // no other way to reach them; without this the badge gains 24px of horizontal
+  // slack and lights up under the mouse, as if it were clickable.
   ::ng-deep .mdc-evolution-chip__action--primary {
     padding: 0;
   }
@@ -101,18 +101,18 @@
   --vulnerabilities-chip-ink: var(--sh-accepted-risk);
 }
 
-// Atraso é marcador visível com ícone e texto, nunca apenas uma cor de fundo.
+// Overdue is a visible marker with icon and text, never just a background colour.
 .vulnerabilities-overdue {
   color: var(--sh-danger);
 }
 
-// "Sem prazo" e afins não são dados: recuam para o cinza de apoio.
+// "Sem prazo" and the like are not data: they recede to the supporting grey.
 .vulnerabilities-empty-value {
   color: var(--sh-text-subtle);
 }
 
-// Sublinhado discreto: onde uma coluna inteira é de links, tirar o sublinhado
-// deixaria o que é navegável indistinguível do que é só texto.
+// Discreet underline: where a whole column is links, dropping the underline would
+// leave what is navigable indistinguishable from what is merely text.
 .vulnerabilities-table__link {
   color: var(--sh-text);
   font-weight: 600;
@@ -126,8 +126,8 @@
   }
 }
 
-// 44px é o mínimo confortável para o dedo, e a densidade -1 do tema deixa os
-// botões abaixo disso.
+// 44px is the comfortable minimum for a finger, and the theme's density -1 leaves
+// the buttons below that.
 .mat-mdc-icon-button.mat-mdc-button-base {
   --mdc-icon-button-state-layer-size: 44px;
 }

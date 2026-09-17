@@ -22,7 +22,7 @@ import { UserDetailComponent } from './user-detail/user-detail.component';
 import { UserListComponent } from './user-list/user-list.component';
 import { USERS_ROUTES } from './users-routing.module';
 
-/** Substitui as telas vizinhas (/403 e /login) sem arrastar os módulos delas. */
+/** Replaces the neighbouring screens (/403 and /login) without dragging in their modules. */
 @Component({ selector: 'app-route-stub', template: '' })
 class RouteStubComponent {}
 

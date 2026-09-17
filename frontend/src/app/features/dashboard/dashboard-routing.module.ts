@@ -3,7 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { DashboardPageComponent } from './dashboard-page/dashboard-page.component';
 
-/** Rota única: os quatro agregados do dashboard são abertos a todos os papéis. */
+/** Single route: the dashboard's four aggregates are open to every role. */
 const routes: Routes = [{ path: '', component: DashboardPageComponent }];
 
 @NgModule({

@@ -1,6 +1,6 @@
-// `Severity`, `AssetOption` e `ProjectOption` vêm das vulnerabilidades porque é lá que
-// já moram: uma importação termina virando vulnerabilidade, e uma segunda declaração
-// dos mesmos tipos só criaria a chance de as duas divergirem.
+// `Severity`, `AssetOption` and `ProjectOption` come from vulnerabilities because that
+// is where they already live: an import ends up becoming a vulnerability, and a second
+// declaration of the same types would only create the chance of the two diverging.
 import {
   AssetOption,
   ProjectOption,
@@ -16,12 +16,13 @@ export type ScanImportStatus = 'PENDING' | 'CONFIRMED' | 'DISCARDED';
 export type ScanFindingStatus = 'MATCHED' | 'UNMATCHED' | 'DUPLICATE' | 'IMPORTED' | 'SKIPPED';
 
 /**
- * Achado bruto do relatório, já normalizado pelo backend.
+ * Raw finding from the report, already normalized by the backend.
  *
- * Os campos anuláveis abaixo são declarados `| null` porque é assim que o contrato os
- * descreve, mas **na resposta eles chegam ausentes, não nulos**: a API inteira serializa com
- * `default-property-inclusion: non_null` e apaga a chave. Quem for testar um deles precisa
- * tratar `undefined` — ver `hasCvss()` no componente de revisão, que existe por isso.
+ * The nullable fields below are declared `| null` because that is how the contract
+ * describes them, but **in the response they arrive absent, not null**: the whole API
+ * serializes with `default-property-inclusion: non_null` and drops the key. Anyone testing
+ * one of them has to handle `undefined` — see `hasCvss()` in the review component, which
+ * exists for exactly that reason.
  */
 export interface ScanFinding {
   id: number;
@@ -39,7 +40,7 @@ export interface ScanFinding {
   vulnerabilityId: number | null;
 }
 
-/** Linha do histórico: a importação sem os achados, que só o detalhe carrega. */
+/** History row: the import without the findings, which only the detail carries. */
 export interface ScanImportSummary {
   id: number;
   projectId: number;
@@ -63,7 +64,7 @@ export interface ScanImport extends ScanImportSummary {
   findings: ScanFinding[];
 }
 
-/** Paginação do histórico, espelhada nos query params da URL. */
+/** History pagination, mirrored in the URL query params. */
 export interface ScanImportQuery {
   page: number;
   size: number;
@@ -85,9 +86,9 @@ export const SCAN_FORMAT_HINTS: Readonly<Record<ScanFormat, string>> = {
 };
 
 /**
- * Alimenta o `accept` do seletor de arquivos, que é uma sugestão ao navegador e nada
- * mais: quem decide se o arquivo serve é o servidor, lendo o conteúdo. JSONL não tem
- * tipo registrado, por isso a extensão entra na lista.
+ * Feeds the `accept` of the file picker, which is a hint to the browser and nothing more:
+ * the one who decides whether the file is any good is the server, reading the content.
+ * JSONL has no registered type, which is why the extension goes in the list.
  */
 export const SCAN_FORMAT_ACCEPT: Readonly<Record<ScanFormat, string>> = {
   NMAP_XML: '.xml,text/xml,application/xml',
@@ -101,7 +102,7 @@ export const SCAN_IMPORT_STATUS_LABELS: Readonly<Record<ScanImportStatus, string
   DISCARDED: 'Descartada',
 };
 
-/** Ícone acompanha sempre o rótulo: situação nunca é comunicada só por cor (WCAG 1.4.1). */
+/** An icon always goes with the label: status is never conveyed by color alone (WCAG 1.4.1). */
 export const SCAN_IMPORT_STATUS_ICONS: Readonly<Record<ScanImportStatus, string>> = {
   PENDING: 'pending_actions',
   CONFIRMED: 'check_circle',
@@ -133,9 +134,9 @@ export const SCAN_FINDING_STATUSES: readonly ScanFindingStatus[] = [
 ];
 
 /**
- * Espelha `ScanImportService.SORTABLE_PROPERTIES` do backend; o resto é descartado lá.
- * Repetir a lista aqui evita oferecer um cabeçalho ordenável que o servidor ignoraria em
- * silêncio, deixando a seta apontando para uma ordem que nunca acontece.
+ * Mirrors the backend's `ScanImportService.SORTABLE_PROPERTIES`; the rest is discarded
+ * there. Repeating the list here avoids offering a sortable header that the server would
+ * silently ignore, leaving the arrow pointing at an order that never happens.
  */
 export const SCAN_IMPORT_SORTABLE_PROPERTIES = [
   'createdAt',
@@ -151,16 +152,17 @@ export type ScanImportSortProperty = (typeof SCAN_IMPORT_SORTABLE_PROPERTIES)[nu
 export const SCAN_IMPORT_DEFAULT_SORT = 'createdAt,desc';
 
 /**
- * `securityhub.scan.max-upload-bytes`: 10 MiB. Serve à checagem imediata antes de subir
- * o arquivo, que existe só para poupar um upload que já se sabe recusado — o limite de
- * verdade é o do servidor, que o reaplica sobre o que realmente chegou e responde
- * `PAYLOAD_TOO_LARGE`. Esta constante não protege nada, apenas economiza a espera.
+ * `securityhub.scan.max-upload-bytes`: 10 MiB. It serves the immediate check before the
+ * file goes up, which exists only to spare an upload already known to be refused — the
+ * real limit is the server's, which reapplies it over what actually arrived and answers
+ * `PAYLOAD_TOO_LARGE`. This constant protects nothing, it only saves the wait.
  */
 export const MAX_SCAN_FILE_BYTES = 10 * 1024 * 1024;
 
 /**
- * O backend limita `size` a 100 nas listagens. Uma página basta para os dois seletores
- * desta funcionalidade: o de projetos, no envio, e o de ativos de um projeto só, na
- * prévia — e o segundo escolhe entre os ativos de um projeto, não de toda a empresa.
+ * The backend caps `size` at 100 on listings. One page is enough for the two pickers of
+ * this feature: the project one, on upload, and the one for the assets of a single
+ * project, on the preview — and the second picks among one project's assets, not the
+ * whole company's.
  */
 export const OPTIONS_PAGE_SIZE = 100;

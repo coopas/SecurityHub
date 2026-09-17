@@ -31,7 +31,7 @@ describe('ErrorInterceptor', () => {
     traceId: 'trace-1',
   });
 
-  /** Sessão renovável: é o que distingue o 401 recuperável do 401 terminal. */
+  /** A refreshable session: it is what tells the recoverable 401 from the terminal 401. */
   const seedRefreshToken = (): void => {
     localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, makeRefreshToken());
   };
@@ -89,8 +89,8 @@ describe('ErrorInterceptor', () => {
       .get(`${environment.apiUrl}/vulnerabilities/export`, { responseType: 'blob' })
       .subscribe({
         error: () => {
-          // O corpo de erro também é um Blob, então a mensagem real só existe depois que o
-          // chamador o lê. Notificar aqui daria dois avisos para o mesmo evento.
+          // The error body is a Blob too, so the real message only exists after the
+          // caller reads it. Notifying here would give two warnings for the same event.
           expect(notifications.error).not.toHaveBeenCalled();
           done();
         },
@@ -266,8 +266,8 @@ describe('ErrorInterceptor', () => {
       .expectOne(`${environment.apiUrl}/vulnerabilities`)
       .flush(apiError(401, 'UNAUTHORIZED', 'Token expirado'), { status: 401, statusText: 'Unauthorized' });
 
-    // O 401 da própria renovação não pode disparar outra renovação: `httpMock.verify()`
-    // no afterEach reprova qualquer requisição pendente além desta.
+    // The 401 of the refresh itself must not fire another refresh: `httpMock.verify()`
+    // in the afterEach fails any pending request beyond this one.
     httpMock
       .expectOne(`${environment.apiUrl}/auth/refresh`)
       .flush(apiError(401, 'UNAUTHORIZED', 'Refresh token inválido'), {

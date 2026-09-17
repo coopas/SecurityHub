@@ -10,9 +10,9 @@
   gap: var(--sh-space-2);
   padding-inline: var(--sh-space-4);
 
-  // A barra não usa a cor cheia da marca. Uma faixa escura de 64px no topo de toda tela
-  // compete com o conteúdo pela atenção, e num painel o conteúdo é o produto. Fica na
-  // superfície, separada por uma linha, e a marca aparece pelo símbolo.
+  // The bar does not use the full brand color. A 64px dark band at the top of every screen
+  // competes with the content for attention, and in a panel the content is the product. It
+  // stays on the surface, separated by a line, and the brand shows through the symbol.
   background: var(--sh-surface);
   color: var(--sh-text);
   border-bottom: 1px solid var(--sh-border);
@@ -100,9 +100,9 @@
   }
 }
 
-// O item ativo ganha cor, peso e uma barra à esquerda. Só o fundo colorido seria uma
-// distinção por cor sozinha — some para quem não a enxerga e some de novo sob luz forte
-// numa tela de brilho baixo.
+// The active item gets color, weight and a bar on the left. The colored background alone
+// would be a distinction by color only — it vanishes for whoever cannot see it and vanishes
+// again in bright light on a low-brightness screen.
 .layout__link--active {
   background: var(--sh-primary-soft);
   color: var(--sh-primary);

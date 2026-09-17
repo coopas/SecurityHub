@@ -35,7 +35,7 @@ import {
 } from '../models/scan-import.model';
 import { ImportService } from '../services/import.service';
 
-/** Contadores do cabeçalho, na ordem em que a tela os mostra. */
+/** Header counters, in the order the screen shows them. */
 export interface CounterItem {
   key: string;
   label: string;
@@ -43,16 +43,16 @@ export interface CounterItem {
 }
 
 /**
- * Prévia da importação: o que a varredura encontrou, como o servidor classificou cada
- * achado e a decisão de confirmar ou descartar.
+ * Import preview: what the scan found, how the server classified each finding and the
+ * decision to confirm or discard.
  *
- * O filtro e a ordenação são de cliente (`MatTableDataSource` + `MatSort` +
- * `filterPredicate`), e não dirigidos pela URL, como em `UserListComponent`: os achados
- * já vieram todos dentro de `GET /scan-imports/{id}`, então espelhar o filtro na URL
- * significaria navegar para refazer um trabalho que o navegador faz sozinho.
+ * Filtering and sorting are client-side (`MatTableDataSource` + `MatSort` +
+ * `filterPredicate`), and not URL-driven as in `UserListComponent`: the findings all
+ * already came inside `GET /scan-imports/{id}`, so mirroring the filter in the URL would
+ * mean navigating to redo work the browser does on its own.
  *
- * Uma importação confirmada ou descartada é histórico: a tela a mostra inteira, sem
- * nenhum controle de ação, porque toda ação sobre ela já seria recusada com `CONFLICT`.
+ * A confirmed or discarded import is history: the screen shows it whole, with no action
+ * control at all, because every action on it would already be refused with `CONFLICT`.
  */
 @Component({
   selector: 'app-import-preview',
@@ -81,14 +81,14 @@ export class ImportPreviewComponent implements OnInit, OnDestroy {
 
   scanImport: ScanImport | null = null;
   state: ViewState | null = 'loading';
-  /** Estado próprio da tabela: um relatório sem achados ainda tem cabeçalho e ações. */
+  /** The table's own state: a report with no findings still has a header and actions. */
   findingsState: ViewState | null = null;
   errorMessage: string | null = null;
   actionError: string | null = null;
 
   assets: AssetOption[] = [];
   assetsState: ViewState | null = null;
-  /** Id do achado cujo vínculo está sendo salvo; desabilita só aquele seletor. */
+  /** Id of the finding whose link is being saved; disables only that one picker. */
   savingFindingId: number | null = null;
 
   submitting = false;
@@ -122,15 +122,16 @@ export class ImportPreviewComponent implements OnInit, OnDestroy {
     return this.scanImport?.status === 'PENDING';
   }
 
-  /** Só quem pode criar vulnerabilidades decide o destino de uma importação pendente. */
+  /** Only those who can create vulnerabilities decide the fate of a pending import. */
   get canAct(): boolean {
     return this.canImport && this.isPending && !this.submitting;
   }
 
   /**
-   * Achados que virarão vulnerabilidade ao confirmar: os que já têm ativo. Sem ativo ou
-   * já registrados são ignorados, e é isso que a confirmação precisa dizer em voz alta,
-   * porque é o que a pessoa perde se confirmar cedo demais.
+   * Findings that will become a vulnerability on confirm: the ones that already have an
+   * asset. Those with no asset or already recorded are skipped, and that is what the
+   * confirmation has to say out loud, because it is what the person loses by confirming
+   * too early.
    */
   get willCreateCount(): number {
     return this.scanImport?.matchedCount ?? 0;
@@ -178,15 +179,16 @@ export class ImportPreviewComponent implements OnInit, OnDestroy {
     this.dataSource.sortingDataAccessor = (finding, property): string | number => {
       switch (property) {
         case 'severity':
-          // Do risco maior para o menor, e não em ordem alfabética, que misturaria
-          // "Crítica" com "Baixa" sem significado nenhum para quem faz triagem.
+          // From the highest risk down to the lowest, and not in alphabetical order,
+          // which would mix "Crítica" with "Baixa" with no meaning at all for whoever
+          // does triage.
           return SEVERITIES_BY_RISK.length - SEVERITIES_BY_RISK.indexOf(finding.severity);
         case 'target':
           return finding.target;
         case 'status':
           return this.findingStatusLabels[finding.status];
         case 'asset':
-          // Sem ativo vai para o fim da ordem crescente, e não para o começo.
+          // No asset goes to the end of the ascending order, and not to the beginning.
           return finding.assetName ?? '';
         case 'discoveredAt':
           return finding.discoveredAt;
@@ -228,8 +230,8 @@ export class ImportPreviewComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (scanImport) => {
           this.apply(scanImport);
-          // Os ativos só servem ao seletor dos achados sem vínculo; uma importação
-          // encerrada não tem seletor algum para alimentar.
+          // The assets only serve the picker of the unlinked findings; a closed import
+          // has no picker at all to feed.
           if (this.isPending && this.canImport) {
             this.loadAssets(scanImport.projectId);
           }
@@ -264,24 +266,24 @@ export class ImportPreviewComponent implements OnInit, OnDestroy {
           this.assetsState = this.assets.length === 0 ? 'empty' : null;
         },
         error: () => {
-          // Uma falha aqui deixa os seletores vazios, mas não esconde a prévia; o
-          // ErrorInterceptor já avisou o usuário.
+          // A failure here leaves the pickers empty, but does not hide the preview; the
+          // ErrorInterceptor has already warned the user.
           this.assets = [];
           this.assetsState = 'error';
         },
       });
   }
 
-  /** Só um achado sem ativo pede escolha; os demais já estão resolvidos pelo servidor. */
+  /** Only a finding with no asset asks for a choice; the server already resolved the rest. */
   needsAsset(finding: ScanFinding): boolean {
     return finding.status === 'UNMATCHED';
   }
 
   /**
-   * `default-property-inclusion: non_null` faz a API omitir a chave em vez de mandar null,
-   * então o que chega num achado sem nota é `undefined`: comparar com `!== null` imprimiria
-   * "· CVSS" sem número. Truthiness resolveria isso e criaria outro furo, porque 0.0 é um
-   * CVSS válido e sumiria da tela.
+   * `default-property-inclusion: non_null` makes the API omit the key instead of sending
+   * null, so what arrives in a finding with no score is `undefined`: comparing with
+   * `!== null` would print "· CVSS" with no number. Truthiness would fix that and open
+   * another hole, because 0.0 is a valid CVSS and would vanish from the screen.
    */
   hasCvss(finding: ScanFinding): boolean {
     return finding.cvssScore !== null && finding.cvssScore !== undefined;
@@ -306,8 +308,8 @@ export class ImportPreviewComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (updated) => {
-          // A linha vira o que o servidor devolveu: ele pode ter reclassificado o achado
-          // como já registrado em vez de simplesmente vinculá-lo.
+          // The row becomes what the server returned: it may have reclassified the
+          // finding as already recorded instead of simply linking it.
           this.replaceFinding(updated);
           this.notifications.success(
             updated.assetName
@@ -372,7 +374,7 @@ export class ImportPreviewComponent implements OnInit, OnDestroy {
     return this.severityIcons[severity];
   }
 
-  /** Cor é sempre reforço: o ícone e o texto já identificam severidade e situação. */
+  /** Color is always reinforcement: the icon and the text already identify severity and status. */
   severityClass(severity: Severity): string {
     return `imports-severity--${severity.toLowerCase()}`;
   }
@@ -440,9 +442,9 @@ export class ImportPreviewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * `CONFLICT` significa que a importação já foi resolvida em outra aba ou por outra
-   * pessoa: recarregar é o que traz a tela de volta à verdade, e a partir daí ela mesma
-   * esconde os botões.
+   * `CONFLICT` means the import has already been resolved in another tab or by another
+   * person: reloading is what brings the screen back to the truth, and from there it
+   * hides the buttons on its own.
    */
   private handleActionError(error: unknown, verb: string): void {
     const apiError = toApiError(error);
@@ -476,8 +478,9 @@ export class ImportPreviewComponent implements OnInit, OnDestroy {
     const findings = scanImport.findings.map((finding) =>
       finding.id === updated.id ? updated : finding,
     );
-    // Os contadores do topo vêm do servidor e não são recalculados aqui: eles só voltam
-    // a bater no próximo `GET`, e inventá-los deixaria a tela discordar do backend.
+    // The counters at the top come from the server and are not recomputed here: they
+    // only add up again on the next `GET`, and inventing them would leave the screen
+    // disagreeing with the backend.
     this.scanImport = { ...scanImport, findings };
     this.dataSource.data = findings;
   }
@@ -489,7 +492,7 @@ export class ImportPreviewComponent implements OnInit, OnDestroy {
     this.findingsState = scanImport.findings.length === 0 ? 'empty' : null;
   }
 
-  /** Concordância verbal do diálogo: "1 vulnerabilidade será criada" e não "1 serão". */
+  /** Verb agreement in the dialog: "1 vulnerabilidade será criada" and not "1 serão". */
   private vulnerabilityCount(count: number): string {
     return count === 1
       ? '1 vulnerabilidade será criada'

@@ -8,8 +8,9 @@ import { RegisterComponent } from './register/register.component';
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
 
 /**
- * Todas herdam o `guestGuard` do carregamento lazy em `APP_ROUTES`: nenhuma delas faz
- * sentido para quem já tem sessão, e as três novas criam ou trocam credencial.
+ * All of them inherit the `guestGuard` from the lazy load in `APP_ROUTES`: none of them
+ * makes sense for someone who already has a session, and the three new ones create or
+ * swap a credential.
  */
 export const AUTH_ROUTES: Routes = [
   { path: 'login', component: LoginComponent, title: 'Entrar · SecurityHub' },

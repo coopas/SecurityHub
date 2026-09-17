@@ -1,7 +1,7 @@
 import { PageResponse } from '../../../core/models';
 import { Asset } from '../models/asset.model';
 
-/** Fixtures dos testes; nenhuma tela usa dados simulados. */
+/** Test fixtures; no screen uses simulated data. */
 export function makeAsset(overrides: Partial<Asset> = {}): Asset {
   return {
     id: 1,

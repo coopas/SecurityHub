@@ -73,7 +73,7 @@ describe('ImportPreviewComponent', () => {
     spyOn(router, 'navigate').and.resolveTo(true);
   };
 
-  /** Carrega a importação e, quando ela ainda está pendente, os ativos do projeto. */
+  /** Loads the import and, when it is still pending, the project's assets. */
   const setup = (scanImport: ScanImport = makeScanImport(), role: Role = 'ANALYST'): void => {
     create(role);
     fixture.detectChanges();
@@ -127,7 +127,7 @@ describe('ImportPreviewComponent', () => {
     ]) {
       expect(text()).withContext(label).toContain(label);
     }
-    // Situação e severidade nunca só por cor: cada marcador leva ícone e texto.
+    // Status and severity never by color alone: each marker carries an icon and text.
     expect(find('import-finding-status-2')?.querySelector('mat-icon')).not.toBeNull();
     expect(element().querySelector('.imports-chip mat-icon')).not.toBeNull();
   });
@@ -186,7 +186,7 @@ describe('ImportPreviewComponent', () => {
     expect(find('import-finding-asset-2')).toBeNull();
     expect(text()).toContain('Servidor de borda');
     expect(notifications.success).toHaveBeenCalled();
-    // A linha é substituída sem recarregar a importação inteira.
+    // The row is replaced without reloading the whole import.
     httpMock.expectNone(importUrl);
   });
 
@@ -297,7 +297,7 @@ describe('ImportPreviewComponent', () => {
     expect(find('import-discard')).toBeNull();
     expect(find('import-finding-asset-2')).toBeNull();
     expect(find('import-readonly-hint')).not.toBeNull();
-    // Os ativos nem chegam a ser buscados: não há seletor para alimentar.
+    // The assets are not even fetched: there is no picker to feed.
     httpMock.expectNone((candidate) => candidate.url === assetsUrl);
   });
 
@@ -309,9 +309,9 @@ describe('ImportPreviewComponent', () => {
   });
 
   it('um achado sem CVSS não imprime a nota: a API omite o campo em vez de mandar null', () => {
-    // Reproduz o corpo real: `default-property-inclusion: non_null` apaga a chave, então
-    // o que chega é `undefined`, e não o `null` que as outras fixtures usam. Um Nmap sem
-    // CVSS cai exatamente aqui.
+    // Reproduces the real body: `default-property-inclusion: non_null` drops the key, so
+    // what arrives is `undefined`, and not the `null` the other fixtures use. An Nmap
+    // with no CVSS lands exactly here.
     const semCvss = makeScanFinding({ id: 7, cve: null });
     delete (semCvss as Partial<ScanFinding>).cvssScore;
 
@@ -326,9 +326,9 @@ describe('ImportPreviewComponent', () => {
     expect(component.canImport).toBeFalse();
     expect(find('import-actions')).toBeNull();
     expect(find('import-no-permission')).not.toBeNull();
-    // O achado 2 chega UNMATCHED: sem esta asserção, `canAct` pode ser trocado por
-    // `true` sem quebrar teste nenhum, e um leitor ganha um seletor que só sabe
-    // responder 403. Esconder o botão de confirmar não basta se a linha continua editável.
+    // Finding 2 arrives UNMATCHED: without this assertion, `canAct` can be swapped for
+    // `true` without breaking a single test, and a viewer gets a picker that only knows
+    // how to answer 403. Hiding the confirm button is not enough if the row stays editable.
     expect(find('import-finding-asset-2')).toBeNull();
   });
 
@@ -348,7 +348,7 @@ describe('ImportPreviewComponent', () => {
 
     expect(component.actionError).toBe('Esta importação já foi confirmada');
 
-    // Recarregar é o que traz a tela de volta à verdade; a partir daí ela esconde tudo.
+    // Reloading is what brings the screen back to the truth; from there it hides it all.
     httpMock.expectOne(importUrl).flush(makeScanImport({ status: 'CONFIRMED' }));
     fixture.detectChanges();
 

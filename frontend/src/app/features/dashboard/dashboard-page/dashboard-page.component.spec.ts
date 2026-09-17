@@ -31,7 +31,7 @@ describe('DashboardPageComponent', () => {
   let component: DashboardPageComponent;
   let httpMock: HttpTestingController;
 
-  /** Sem papel não há sessão, que é o estado dos testes de layout desta tela. */
+  /** With no role there is no session, which is the state of this screen's layout tests. */
   const setup = (role?: Role): void => {
     if (role) {
       localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, makeJwt(3600));
@@ -60,7 +60,7 @@ describe('DashboardPageComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
   };
 
-  /** As quatro chamadas do dashboard mais a listagem dos recentes, que sempre disparam. */
+  /** The dashboard's four calls plus the recent items list, which always fire. */
   const flushDashboard = (): void => {
     httpMock.expectOne(`${dashboardUrl}/summary`).flush(makeDashboardSummary());
     httpMock

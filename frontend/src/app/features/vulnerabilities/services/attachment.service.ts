@@ -6,10 +6,10 @@ import { environment } from '../../../../environments/environment';
 import { Attachment } from '../models/attachment.model';
 
 /**
- * Anexos vivem sob a vulnerabilidade: nenhuma operação existe sem o id do pai.
+ * Attachments live under the vulnerability: no operation exists without the parent's id.
  *
- * A listagem devolve um array puro, e não o envelope paginado: o servidor limita a
- * `MAX_ATTACHMENTS` por vulnerabilidade, então nunca há uma segunda página.
+ * The listing returns a plain array, not the paginated envelope: the server caps it at
+ * `MAX_ATTACHMENTS` per vulnerability, so there is never a second page.
  */
 @Injectable({ providedIn: 'root' })
 export class AttachmentService {
@@ -22,17 +22,17 @@ export class AttachmentService {
   }
 
   /**
-   * Envia o arquivo como `multipart/form-data`, na parte `file` que o backend espera.
+   * Uploads the file as `multipart/form-data`, in the `file` part that the backend expects.
    *
-   * Nenhum `Content-Type` é definido aqui, e isso é deliberado: quem monta esse
-   * cabeçalho é o navegador, porque só ele conhece o boundary que separa as partes.
-   * Escrevê-lo à mão produz um `multipart/form-data` sem boundary, o servidor não
-   * consegue separar parte alguma e responde 400 ou 415 — um erro que parece defeito do
-   * backend e cuja causa está inteiramente nesta linha.
+   * No `Content-Type` is set here, and that is deliberate: the one who assembles that
+   * header is the browser, because only it knows the boundary that separates the parts.
+   * Writing it by hand produces a `multipart/form-data` with no boundary, the server
+   * cannot separate a single part and answers 400 or 415 — an error that looks like a
+   * backend defect and whose cause lies entirely in this line.
    *
-   * `observe: 'events'` com `reportProgress: true` devolve os eventos de progresso do
-   * upload, que é o que alimenta a barra determinada da tela; o último evento é a
-   * resposta com o anexo criado.
+   * `observe: 'events'` with `reportProgress: true` returns the upload progress events,
+   * which is what feeds the screen's determinate bar; the last event is the response with
+   * the created attachment.
    */
   upload(vulnerabilityId: number, file: File): Observable<HttpEvent<Attachment>> {
     const formData = new FormData();
@@ -45,8 +45,8 @@ export class AttachmentService {
   }
 
   /**
-   * `observe: 'response'` não é preferência: o nome do arquivo vem no
-   * `Content-Disposition`, e só a resposta inteira dá acesso aos cabeçalhos.
+   * `observe: 'response'` is not a preference: the file name comes in the
+   * `Content-Disposition`, and only the whole response gives access to the headers.
    */
   download(vulnerabilityId: number, attachmentId: number): Observable<HttpResponse<Blob>> {
     return this.http.get(`${this.attachmentsUrl(vulnerabilityId)}/${attachmentId}/download`, {

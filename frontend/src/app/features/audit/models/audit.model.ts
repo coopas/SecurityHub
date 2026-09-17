@@ -1,6 +1,6 @@
 /**
- * Espelha `AuditAction` do backend, na mesma ordem do enum Java. A tela nunca escreve
- * uma ação: o valor só viaja como filtro na query string.
+ * Mirrors the backend's `AuditAction`, in the same order as the Java enum. The screen
+ * never writes an action: the value only travels as a filter in the query string.
  */
 export type AuditAction =
   | 'LOGIN'
@@ -59,8 +59,9 @@ export const AUDIT_ACTION_LABELS: Readonly<Record<AuditAction, string>> = {
 };
 
 /**
- * Ícone acompanha sempre o rótulo em texto. Numa trilha de auditoria a ação é a
- * informação mais consultada da linha e ela nunca pode depender só da cor (WCAG 1.4.1).
+ * An icon always goes with the text label. In an audit trail the action is the most
+ * consulted piece of information in the row and it can never depend on color alone
+ * (WCAG 1.4.1).
  */
 export const AUDIT_ACTION_ICONS: Readonly<Record<AuditAction, string>> = {
   LOGIN: 'login',
@@ -82,10 +83,10 @@ export const AUDIT_ACTION_ICONS: Readonly<Record<AuditAction, string>> = {
 };
 
 /**
- * `entityType` é texto livre na coluna, não um enum: o filtro oferece os tipos que os
- * serviços do backend realmente gravam hoje (`ENTITY_TYPE` de cada `*Service`, mais
- * `User` e `Company`, usados pelos eventos de autenticação). Um tipo desconhecido
- * vindo da API continua sendo exibido, apenas sem tradução.
+ * `entityType` is free text in the column, not an enum: the filter offers the types the
+ * backend services actually record today (the `ENTITY_TYPE` of each `*Service`, plus
+ * `User` and `Company`, used by the authentication events). An unknown type coming from
+ * the API is still displayed, just without a translation.
  */
 export const AUDIT_ENTITY_TYPES: readonly string[] = [
   'Project',
@@ -108,16 +109,16 @@ export const AUDIT_ENTITY_TYPE_LABELS: Readonly<Record<string, string>> = {
 };
 
 /**
- * Conteúdo de `oldValue`/`newValue`. O backend serializa `Map<String, Object>`, então
- * chega como objeto JSON já desserializado pelo `HttpClient`; o tipo aceita `string`
- * porque a trilha guarda texto bruto e uma linha truncada ou de formato antigo não
- * pode derrubar a tela — ver `readAuditSide`.
+ * Content of `oldValue`/`newValue`. The backend serializes `Map<String, Object>`, so it
+ * arrives as a JSON object already deserialized by the `HttpClient`; the type accepts
+ * `string` because the trail stores raw text and a truncated row or one in an old format
+ * cannot bring the screen down — see `readAuditSide`.
  */
 export type AuditValues = Record<string, unknown>;
 
 /**
- * Espelha `AuditLogResponse`. Os campos anuláveis são opcionais porque o backend usa
- * `default-property-inclusion: non_null`: o que era nulo simplesmente não vem.
+ * Mirrors `AuditLogResponse`. The nullable fields are optional because the backend uses
+ * `default-property-inclusion: non_null`: what was null simply does not come.
  */
 export interface AuditLog {
   id: number;
@@ -132,21 +133,21 @@ export interface AuditLog {
   createdAt: string;
 }
 
-/** Espelha `AuditQueryService.SORTABLE`; o resto é descartado no servidor. */
+/** Mirrors `AuditQueryService.SORTABLE`; the rest is discarded on the server. */
 export const AUDIT_SORTABLE_PROPERTIES = ['createdAt', 'action', 'entityType'] as const;
 
 export type AuditSortProperty = (typeof AUDIT_SORTABLE_PROPERTIES)[number];
 
-/** Espelha `AuditQueryService.DEFAULT_SORT`. */
+/** Mirrors `AuditQueryService.DEFAULT_SORT`. */
 export const AUDIT_DEFAULT_SORT = 'createdAt,desc';
 
 /**
- * Filtros da trilha, espelhados nos query params da URL. `from` e `to` são datas
- * civis (`yyyy-MM-dd`), do jeito que o usuário escolhe no calendário e que a URL
- * fica legível; a conversão para instante ISO acontece no `AuditService`.
+ * Trail filters, mirrored in the URL query params. `from` and `to` are civil dates
+ * (`yyyy-MM-dd`), the way the user picks them in the calendar and the way the URL stays
+ * readable; the conversion to an ISO instant happens in the `AuditService`.
  *
- * Não existe `search`: `AuditController` aceita apenas entityType, actorId, action,
- * from e to, e um parâmetro inventado seria silenciosamente ignorado.
+ * There is no `search`: `AuditController` accepts only entityType, actorId, action, from
+ * and to, and an invented param would be silently ignored.
  */
 export interface AuditQuery {
   page: number;
@@ -159,7 +160,7 @@ export interface AuditQuery {
   to?: string;
 }
 
-/** Opção do filtro por ator. */
+/** Option of the actor filter. */
 export interface AuditActorOption {
   id: number;
   name: string;
@@ -168,8 +169,8 @@ export interface AuditActorOption {
 }
 
 /**
- * Rótulos das chaves gravadas pelos `snapshot(...)` de cada serviço do backend.
- * Uma chave fora desta lista é exibida com o próprio nome, sem quebrar a tela.
+ * Labels for the keys recorded by the `snapshot(...)` of each backend service.
+ * A key outside this list is displayed with its own name, without breaking the screen.
  */
 export const AUDIT_FIELD_LABELS: Readonly<Record<string, string>> = {
   name: 'Nome',

@@ -12,7 +12,7 @@ export interface User {
   createdAt: string;
 }
 
-/** Rótulos em português para os papéis, usados na toolbar e nas telas de administração. */
+/** Portuguese labels for the roles, used in the toolbar and in the administration screens. */
 export const ROLE_LABELS: Readonly<Record<Role, string>> = {
   ADMIN: 'Administrador',
   ANALYST: 'Analista',

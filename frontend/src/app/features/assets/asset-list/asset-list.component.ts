@@ -40,9 +40,9 @@ export const DEFAULT_SORT = 'createdAt,desc';
 export const SEARCH_DEBOUNCE_MS = 350;
 
 /**
- * Listagem de ativos. Os query params da URL são a única fonte de verdade dos
- * filtros, da paginação e da ordenação: qualquer interação navega e a navegação
- * é que dispara a busca, de modo que recarregar ou voltar restaura a mesma tela.
+ * Asset listing. The URL query params are the single source of truth for the filters,
+ * the pagination and the sorting: any interaction navigates and it is the navigation
+ * that triggers the fetch, so reloading or going back restores the same screen.
  */
 @Component({
   selector: 'app-asset-list',
@@ -129,10 +129,11 @@ export class AssetListComponent implements OnInit, OnDestroy {
       .pipe(
         debounceTime(SEARCH_DEBOUNCE_MS),
         map((value) => value.trim()),
-        // Comparado com o filtro já aplicado, e não com a emissão anterior do próprio
-        // stream: a rota reescreve o controle com emitEvent: false, então um
-        // distinctUntilChanged guardaria um valor que o usuário já não vê e engoliria a
-        // reaplicação de um termo idêntico depois de limpar os filtros.
+        // Compared against the filter already applied, and not against the previous
+        // emission of the stream itself: the route rewrites the control with
+        // emitEvent: false, so a distinctUntilChanged would hold a value the user no longer
+        // sees and would swallow the re-application of an identical term after the filters
+        // were cleared.
         filter((search) => search !== (this.query.search ?? '')),
         takeUntil(this.destroy$),
       )
@@ -229,7 +230,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
       });
   }
 
-  /** As células da tabela têm contexto `any`; os rótulos passam por aqui para manter o tipo. */
+  /** The table cells have an `any` context; the labels go through here to keep the type. */
   typeLabel(type: AssetType): string {
     return this.typeLabels[type];
   }
@@ -254,7 +255,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
     return CRITICALITY_ICONS[criticality];
   }
 
-  /** Cor é sempre reforço: o ícone e o texto já identificam a criticidade. */
+  /** Color is always reinforcement: the icon and the text already identify the criticality. */
   criticalityClass(criticality: Criticality): string {
     return `assets-criticality--${criticality.toLowerCase()}`;
   }
@@ -264,8 +265,8 @@ export class AssetListComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Opções do filtro por projeto. Uma falha aqui não impede a listagem: o filtro
-   * apenas fica sem opções, e o `ErrorInterceptor` já avisa o usuário.
+   * Options for the project filter. A failure here does not block the listing: the filter
+   * is simply left with no options, and the `ErrorInterceptor` already warns the user.
    */
   private loadProjects(): void {
     this.projectService
@@ -286,7 +287,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
     this.assetService.delete(asset.id).subscribe({
       next: () => {
         this.notifications.success('Ativo excluído.');
-        // Excluir o último item da página traria uma página vazia: volta uma página.
+        // Deleting the last item on the page would bring an empty page: step back one page.
         if (this.assets.length === 1 && this.query.page > 0) {
           this.patchQueryParams({ page: this.query.page - 1 || null });
           return;
@@ -300,7 +301,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** `null` remove o parâmetro da URL; os demais são mesclados aos existentes. */
+  /** `null` removes the parameter from the URL; the others are merged into the existing ones. */
   private patchQueryParams(queryParams: Params): void {
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -331,7 +332,7 @@ export class AssetListComponent implements OnInit, OnDestroy {
     };
   }
 
-  /** Mantém apenas `propriedade,direção` aceitos pelo backend; o resto vira o padrão. */
+  /** Keeps only a `property,direction` accepted by the backend; the rest becomes the default. */
   private parseSort(raw: string | null): string {
     const [property, direction] = (raw ?? '').split(',');
     const sortable = (ASSET_SORTABLE_PROPERTIES as readonly string[]).includes(property);

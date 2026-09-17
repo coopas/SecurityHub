@@ -1,14 +1,14 @@
 import { UserSummary } from './vulnerability.model';
 
-/** Comentário de uma vulnerabilidade. Não há exclusão de comentário na API. */
+/** Comment on a vulnerability. There is no comment deletion in the API. */
 export interface Comment {
   id: number;
   vulnerabilityId: number;
   content: string;
   author?: UserSummary;
   /**
-   * Calculado no servidor (autor ou ADMIN). A tela usa este campo em vez de refazer a
-   * regra no cliente, para que as duas nunca divirjam.
+   * Computed on the server (author or ADMIN). The screen uses this field instead of
+   * redoing the rule on the client, so that the two never diverge.
    */
   editable: boolean;
   createdAt: string;

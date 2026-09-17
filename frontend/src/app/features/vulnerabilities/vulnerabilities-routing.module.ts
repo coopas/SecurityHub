@@ -7,10 +7,10 @@ import { VulnerabilityFormComponent } from './vulnerability-form/vulnerability-f
 import { VulnerabilityListComponent } from './vulnerability-list/vulnerability-list.component';
 
 /**
- * `nova` precede `:id` para não ser capturado como identificador. Criar e editar são
- * restritos a ADMIN e ANALYST também no roteador; o backend valida de novo em cada
- * chamada. Status, responsável e comentários vivem no detalhe, aberto a todos os papéis,
- * porque cada ação de lá tem sua própria regra.
+ * `nova` comes before `:id` so that it is not captured as an identifier. Creating and
+ * editing are restricted to ADMIN and ANALYST in the router too; the backend validates
+ * again on every call. Status, assignee and comments live in the detail screen, open to
+ * every role, because each action there has a rule of its own.
  */
 const routes: Routes = [
   { path: '', component: VulnerabilityListComponent, title: 'Vulnerabilidades · SecurityHub' },

@@ -93,8 +93,8 @@ describe('MainLayoutComponent', () => {
 
     component.logout();
 
-    // Um observable frio não dispara sem assinante: sem o subscribe, a família de refresh
-    // token continuaria válida no servidor depois de o usuário sair.
+    // A cold observable does not fire without a subscriber: without the subscribe, the
+    // refresh token family would stay valid on the server after the user signed out.
     const request = httpMock.expectOne(`${environment.apiUrl}/auth/logout`);
     expect(request.request.method).toBe('POST');
     request.flush(null, { status: 204, statusText: 'No Content' });

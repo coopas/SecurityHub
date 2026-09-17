@@ -3,12 +3,12 @@ import { Role } from '../../../core/models';
 export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'REVOKED';
 
 /**
- * Espelha `InvitationResponse`. Nunca traz o token nem o seu hash — a listagem
- * administrativa não precisa do segredo, e devolvê-lo seria entregar a conta de
- * qualquer convidado a quem abrisse a tela.
+ * Mirrors `InvitationResponse`. It never carries the token nor its hash — the
+ * administrative listing does not need the secret, and returning it would hand any
+ * invitee's account to whoever opened the screen.
  *
- * Os campos anuláveis são opcionais porque o backend usa `non_null`: um convite ainda
- * pendente simplesmente não tem `acceptedAt`.
+ * The nullable fields are optional because the backend uses `non_null`: an invitation that
+ * is still pending simply has no `acceptedAt`.
  */
 export interface Invitation {
   id: number;
@@ -23,14 +23,14 @@ export interface Invitation {
   createdAt: string;
 }
 
-/** A empresa nunca viaja no corpo: é a do usuário autenticado. */
+/** The company never travels in the body: it is the authenticated user's. */
 export interface InvitationRequest {
   name: string;
   email: string;
   role: Role;
 }
 
-/** Prévia pública: o mínimo para a tela de aceite dizer para onde o convite leva. */
+/** Public preview: the minimum for the accept screen to say where the invitation leads. */
 export interface InvitationPreview {
   name: string;
   email: string;
@@ -38,7 +38,7 @@ export interface InvitationPreview {
   role: Role;
 }
 
-/** Nome, e-mail, papel e empresa vêm do convite; o convidado só escolhe a senha. */
+/** Name, e-mail, role and company come from the invitation; the invitee only picks a password. */
 export interface InvitationAcceptRequest {
   token: string;
   password: string;

@@ -1,9 +1,9 @@
-/* Auditoria: a trilha e a comparação antes/depois.
-   A trilha é somente leitura, então tudo aqui é leitura: nenhuma linha compete com a
-   outra e a cor entra só como reforço do ícone e do rótulo da ação. */
+/* Audit: the trail and the before/after comparison.
+   The trail is read-only, so everything here is reading: no row competes with another and
+   color comes in only as reinforcement of the icon and the label of the action. */
 
-/* Intervalo de datas invertido é aviso, não falha: a consulta é válida, só não pode
-   trazer nada. Daí o tom de atenção em vez do vermelho de erro. */
+/* An inverted date range is a warning, not a failure: the query is valid, it just cannot
+   bring anything back. Hence the attention tone instead of the error red. */
 .audit-alert {
   display: flex;
   align-items: flex-start;
@@ -44,11 +44,11 @@
   min-height: 44px;
 }
 
-/* Todos os selos das cinco telas seguem a mesma receita: preenchimento opaco, contorno
-   na cor do próprio significado e ícone ao lado do rótulo. O preenchimento é opaco de
-   propósito — uma tinta translúcida soma com o realce da linha sob o cursor e derruba o
-   contraste do texto medido no tema claro justamente nos tons médio e baixo. */
-/* Cor é sempre reforço: o ícone e o rótulo já identificam a ação. */
+/* All the badges across the five screens follow the same recipe: opaque fill, outline in
+   the color of their own meaning and an icon next to the label. The fill is opaque on
+   purpose — a translucent fill adds up with the highlight of a hovered row and drops the
+   text contrast measured in the light theme exactly at the medium and low tones. */
+/* Color is always reinforcement: the icon and the label already identify the action. */
 .audit-chip {
   background: var(--sh-surface-sunken);
   border-color: currentColor;
@@ -59,8 +59,8 @@
   color: var(--sh-low);
 }
 
-/* Grupo de perigo: exclusão, login recusado e reuso de refresh token — este último é o
-   sinal de família revogada por reapresentação, e nunca deve passar por evento de rotina. */
+/* Danger group: deletion, refused login and refresh token reuse — this last one is the
+   sign of a family revoked by replay, and must never pass for a routine event. */
 .audit-action--delete,
 .audit-action--login-failed,
 .audit-action--token-reuse-detected {
@@ -74,8 +74,8 @@
   color: var(--sh-medium);
 }
 
-/* Rotina: entrar, sair, comentar, exportar. Fica em cinza para que o grupo de perigo e
-   o de alteração apareçam sozinhos numa trilha de centenas de linhas. */
+/* Routine: log in, log out, comment, export. It stays gray so that the danger group and
+   the change group stand out alone in a trail of hundreds of rows. */
 .audit-action--login,
 .audit-action--logout,
 .audit-action--comment,
@@ -107,7 +107,7 @@
   text-align: right;
 }
 
-/* A linha de detalhe existe sempre no template; sem conteúdo ela não pode ocupar espaço. */
+/* The detail row always exists in the template; with no content it must take up no space. */
 .audit-table__detail-row {
   height: 0;
 }
@@ -117,8 +117,8 @@ td.audit-table__detail-cell {
   border-bottom-width: 0;
 }
 
-/* A comparação é um painel embutido na linha: fundo rebaixado e uma faixa na borda
-   esquerda mostram de onde ela saiu, sem virar um segundo card solto. */
+/* The comparison is a panel embedded in the row: a sunken background and a bar on the
+   left border show where it came from, without becoming a second loose card. */
 .audit-detail {
   padding: var(--sh-space-4) var(--sh-space-4) var(--sh-space-5);
   border-bottom: 1px solid var(--sh-border);
@@ -182,10 +182,11 @@ td.audit-table__detail-cell {
   gap: var(--sh-space-2);
 }
 
-/* Cada lado do par é marcado três vezes: pelo sinal (− e +), pelo traço ou pelo peso da
-   fonte e, só por último, pela cor. Assim o diff continua legível em tela monocromática,
-   para quem não distingue vermelho de verde e nos dois temas. O texto fica na cor normal
-   porque valor riscado em vermelho claro é o que some no tema escuro. */
+/* Each side of the pair is marked three times: by the sign (− and +), by the strike-through
+   or the font weight and, only last of all, by color. That way the diff stays legible on a
+   monochrome screen, for whoever cannot tell red from green and in both themes. The text
+   keeps the normal color because a struck-through value in light red is what vanishes in
+   the dark theme. */
 .audit-diff__value {
   display: inline-flex;
   align-items: baseline;
@@ -207,8 +208,8 @@ td.audit-table__detail-cell {
   border-color: var(--sh-danger);
   background: var(--sh-danger-soft);
 
-  /* O traço fica no valor, não na caixa: riscar também o sinal de menos o transformaria
-     num símbolo qualquer. */
+  /* The strike-through goes on the value, not on the box: striking the minus sign too
+     would turn it into just any symbol. */
   span {
     text-decoration: line-through;
   }

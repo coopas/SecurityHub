@@ -4,12 +4,13 @@ export const PASSWORD_CONTROL = 'password';
 export const PASSWORD_CONFIRMATION_CONTROL = 'confirmation';
 
 /**
- * Igualdade entre a senha e a confirmação. O erro é escrito no controle de confirmação,
- * e não apenas no grupo: `mat-error` só aparece quando o próprio controle do campo está
- * inválido, então um erro que vivesse só no grupo nunca seria exibido ao lado do campo
- * que o usuário precisa corrigir.
+ * Equality between the password and its confirmation. The error is written onto the
+ * confirmation control, and not only onto the group: `mat-error` only shows up when the
+ * field's own control is invalid, so an error that lived only on the group would never be
+ * displayed next to the field the user has to fix.
  *
- * Nada é escrito enquanto a confirmação está vazia: quem ainda não digitou não errou.
+ * Nothing is written while the confirmation is empty: whoever has not typed yet has not
+ * made a mistake.
  */
 export const passwordsMatchValidator: ValidatorFn = (
   group: AbstractControl,
@@ -24,8 +25,8 @@ export const passwordsMatchValidator: ValidatorFn = (
   const errors = { ...(confirmation.errors ?? {}) };
   const marked = 'passwordMismatch' in errors;
 
-  // Só reescreve quando o veredito mudou: `setErrors` propaga status para o grupo e
-  // repeti-lo a cada rodada seria trabalho puro.
+  // Only rewrites when the verdict changed: `setErrors` propagates status up to the group
+  // and repeating it every round would be pure busywork.
   if (mismatch !== marked) {
     if (mismatch) {
       errors['passwordMismatch'] = true;

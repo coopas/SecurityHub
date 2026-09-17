@@ -229,11 +229,11 @@ describe('AssetListComponent', () => {
     tick(SEARCH_DEBOUNCE_MS);
     expect(router.navigate).toHaveBeenCalledTimes(1);
 
-    // A navegação real devolveria o termo pela rota; o stub reproduz esse passo.
+    // Real navigation would hand the term back through the route; the stub replays that step.
     route.emit({ search: 'pagamentos' });
     fixture.detectChanges();
 
-    // "Limpar filtros" volta a rota ao estado sem parâmetros.
+    // "Limpar filtros" returns the route to the state with no parameters.
     route.emit({});
     fixture.detectChanges();
     expect(component.searchControl.value).toBe('');
@@ -341,7 +341,7 @@ describe('AssetListComponent', () => {
       jasmine.objectContaining({ queryParams: { sort: 'criticality,asc', page: null } }),
     );
 
-    // Fora da whitelist do backend: volta ao padrão em vez de viajar na URL.
+    // Outside the backend whitelist: falls back to the default instead of travelling in the URL.
     component.onSort({ active: 'projectName', direction: 'asc' });
     expect(router.navigate).toHaveBeenCalledWith(
       [],

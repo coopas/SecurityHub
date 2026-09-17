@@ -1,6 +1,6 @@
-// Folha das telas 403 e 404. As duas ficam fora do shell autenticado, então carregam a
-// marca por conta própria: sem toolbar e sem menu, elas seriam a única tela do produto em
-// que nada identifica o produto.
+// Stylesheet for the 403 and 404 screens. Both sit outside the authenticated shell, so they
+// carry the brand mark themselves: with no toolbar and no menu, they would be the only screen
+// in the product where nothing identifies the product.
 
 .error-page {
   min-height: 100vh;
@@ -21,8 +21,8 @@
   box-shadow: var(--sh-shadow-md);
 }
 
-// Mesma marca do painel público, no mesmo tamanho: são telas fora do shell, e é ela que
-// diz de qual produto é o erro.
+// Same mark as the public panel, at the same size: these screens sit outside the shell, and
+// the mark is what says which product the error belongs to.
 .error-card__mark {
   display: flex;
   align-items: center;
@@ -40,8 +40,9 @@
   gap: var(--sh-space-4);
 }
 
-// O selo dá a cor; o número dá a escala. Separar os dois papéis evita o número gigante e
-// colorido, que é o que faz uma tela de erro parecer brincadeira em vez de diagnóstico.
+// The badge carries the color; the number carries the scale. Splitting the two roles avoids
+// the giant colored number, which is what makes an error screen look like a prank rather than
+// a diagnosis.
 .error-card__icon {
   display: inline-flex;
   align-items: center;
@@ -75,7 +76,7 @@
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.04em;
-  // Algarismos de largura fixa: o 1 estreito do 403 abriria um buraco ao lado do selo.
+  // Fixed-width digits: the narrow 1 in 403 would open a gap next to the badge.
   font-variant-numeric: tabular-nums;
   color: var(--sh-text-muted);
 }
@@ -99,8 +100,8 @@
   gap: var(--sh-space-3);
   margin-top: var(--sh-space-6);
 
-  // A densidade -1 do tema deixa o botão abaixo do alvo mínimo de toque, e aqui ele é a
-  // única saída da tela.
+  // The theme's -1 density leaves the button below the minimum touch target, and here it is
+  // the only way out of the screen.
   a {
     display: inline-flex;
     align-items: center;

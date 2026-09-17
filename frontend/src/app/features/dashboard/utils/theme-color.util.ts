@@ -3,14 +3,14 @@ import { Observable, map, skip } from 'rxjs';
 import { Theme } from '../../../core/services/theme.service';
 
 /**
- * Cores dos gráficos lidas dos tokens do tema em `styles.scss`, e não duplicadas em
- * hexadecimal aqui: severidade e status precisam sair do gráfico com exatamente a mesma
- * cor dos chips das listagens, e dois lugares definindo a mesma cor divergem no primeiro
- * ajuste de contraste.
+ * Chart colors read from the theme tokens in `styles.scss`, and not duplicated in hex here:
+ * severity and status have to come out of the chart in exactly the same color as the chips
+ * in the lists, and two places defining the same color diverge at the first contrast
+ * adjustment.
  *
- * O valor de reserva existe porque `getComputedStyle` devolve string vazia quando o token
- * não está no documento — em um teste que não carregue `styles.scss`, por exemplo — e um
- * gráfico sem cor nenhuma seria pior do que um com a cor antiga.
+ * The fallback value exists because `getComputedStyle` returns an empty string when the
+ * token is not in the document — in a test that does not load `styles.scss`, for example —
+ * and a chart with no color at all would be worse than one with the old color.
  */
 export function readThemeColor(token: string, fallback: string): string {
   const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
@@ -18,22 +18,22 @@ export function readThemeColor(token: string, fallback: string): string {
 }
 
 /**
- * Tudo o que o Chart.js pinta fora das séries: eixos, grade, legenda e balão.
+ * Everything Chart.js paints outside the series: axes, grid, legend and tooltip.
  *
- * O Chart.js desenha em canvas e não enxerga CSS — sem estes valores ele cai nos cinzas
- * fixos da biblioteca, que somem contra o fundo do tema escuro. É por isso que o cromo
- * também sai dos tokens, e não só as barras e as linhas.
+ * Chart.js draws on canvas and cannot see CSS — without these values it falls back to the
+ * library's hard-coded grays, which vanish against the dark theme's background. That is why
+ * the chrome also comes out of the tokens, and not just the bars and the lines.
  */
 export interface ChartChrome {
-  /** Marcações dos eixos e rótulos da legenda. */
+  /** Axis ticks and legend labels. */
   ink: string;
-  /** Texto do balão, que fica sobre uma superfície e por isso pede o tom cheio. */
+  /** Tooltip text, which sits on a surface and therefore asks for the full shade. */
   inkStrong: string;
-  /** Linhas horizontais de grade: decoração, deliberadamente fraca. */
+  /** Horizontal grid lines: decoration, deliberately faint. */
   grid: string;
-  /** Fundo do balão. */
+  /** Tooltip background. */
   surface: string;
-  /** Contorno do balão e linha de base dos eixos. */
+  /** Tooltip border and the baseline of the axes. */
   border: string;
 }
 
@@ -48,16 +48,17 @@ export function readChartChrome(): ChartChrome {
 }
 
 /**
- * Avisa que o gráfico precisa ser repintado, uma vez por troca de tema.
+ * Signals that the chart needs repainting, once per theme switch.
  *
- * `skip(1)`: o `theme$` é um `BehaviorSubject` e entrega o tema atual já na assinatura;
- * esse primeiro valor não é uma troca, e o gráfico é montado logo em seguida com as cores
- * certas de qualquer forma.
+ * `skip(1)`: `theme$` is a `BehaviorSubject` and hands over the current theme on the
+ * subscription itself; that first value is not a switch, and the chart is built right
+ * afterwards with the right colors anyway.
  *
- * Ler `getComputedStyle` direto na assinatura é seguro: o `ThemeService` escreve
- * `data-theme` no documento antes de emitir, justamente para que quem reage à troca já
- * encontre os tokens novos. Foi preciso adiar por uma microtarefa enquanto a ordem era a
- * inversa, e o teste de repintura no tema escuro é o que guarda essa garantia.
+ * Reading `getComputedStyle` straight in the subscription is safe: `ThemeService` writes
+ * `data-theme` on the document before emitting, precisely so that whoever reacts to the
+ * switch already finds the new tokens. Deferring by a microtask was necessary while the
+ * order was the other way around, and the dark theme repaint test is what guards this
+ * guarantee.
  */
 export function themeRepaints(theme$: Observable<Theme>): Observable<void> {
   return theme$.pipe(

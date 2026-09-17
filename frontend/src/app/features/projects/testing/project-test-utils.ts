@@ -1,7 +1,7 @@
 import { PageResponse } from '../../../core/models';
 import { Project } from '../models/project.model';
 
-/** Fixtures dos testes; nenhuma tela usa dados simulados. */
+/** Test fixtures; no screen uses simulated data. */
 export function makeProject(overrides: Partial<Project> = {}): Project {
   return {
     id: 1,

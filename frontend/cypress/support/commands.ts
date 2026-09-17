@@ -1,11 +1,11 @@
 /// <reference types="cypress" />
 
 /**
- * Três comandos, e só três. Cada um existe porque a alternativa seria repetir a mesma
- * decisão em cinco arquivos e deixá-la divergir em um deles.
+ * Three commands, and only three. Each one exists because the alternative would be repeating
+ * the same decision in five files and letting it diverge in one of them.
  */
 
-/** Espelha `AuthResponse` do backend. Só os campos que a suíte realmente usa. */
+/** Mirrors the backend's `AuthResponse`. Only the fields the suite actually uses. */
 export interface AuthSession {
   accessToken: string;
   refreshToken: string;
@@ -25,24 +25,26 @@ export interface AuthSession {
 }
 
 export interface ApiRequestOptions extends Partial<Cypress.RequestOptions> {
-  /** Bearer token. Omitido, a chamada vai sem `Authorization` — que é como se testa o 401. */
+  /**
+   * Bearer token. Omitted, the call goes with no `Authorization` — that is how a 401 is tested.
+   */
   token?: string;
-  /** Caminho a partir de `/api/v1`, com a barra inicial: `/vulnerabilities/7`. */
+  /** Path from `/api/v1` onwards, with the leading slash: `/vulnerabilities/7`. */
   url: string;
 }
 
 /**
- * As três chaves que `AuthService` lê no construtor, em `restoreSession()`. Os nomes estão
- * repetidos aqui de propósito em vez de importados de `src/`: o teste precisa quebrar se
- * alguém renomear uma chave sem migrar as sessões já gravadas no navegador dos usuários.
- * Uma constante compartilhada renomearia os dois lados junto e a suíte continuaria verde
- * sobre uma mudança que desloga todo mundo.
+ * The three keys `AuthService` reads in its constructor, in `restoreSession()`. The names are
+ * repeated here deliberately instead of imported from `src/`: the test has to break if someone
+ * renames a key without migrating the sessions already written to the users' browsers. A shared
+ * constant would rename both sides together and the suite would stay green over a change that
+ * logs everybody out.
  */
 const ACCESS_TOKEN_KEY = 'securityhub.accessToken';
 const REFRESH_TOKEN_KEY = 'securityhub.refreshToken';
 const CURRENT_USER_KEY = 'securityhub.currentUser';
 
-/** `environment.apiUrl` é relativo, então o nginx do compose resolve o proxy. */
+/** `environment.apiUrl` is relative, so the compose nginx resolves the proxy. */
 const API_PREFIX = '/api/v1';
 
 export function demoPassword(): string {
@@ -54,31 +56,32 @@ declare global {
   namespace Cypress {
     interface Chainable {
       /**
-       * Autentica pela API e entrega a sessão pronta à aplicação, sem passar pelo formulário.
+       * Authenticates through the API and hands the application a ready session, without going
+       * through the form.
        *
-       * O `localStorage` é semeado dentro de `onBeforeLoad`, que roda **antes** de o bundle
-       * da aplicação executar. Isso não é um detalhe de conveniência: `AuthService` chama
-       * `restoreSession()` no próprio construtor, e o construtor roda uma única vez, no
-       * bootstrap do Angular. Gravar as chaves depois do `cy.visit` deixaria a aplicação de
-       * pé com sessão vazia, o `authGuard` mandaria para `/login`, e o teste falharia por um
-       * motivo que não tem nada a ver com o que ele testa.
+       * `localStorage` is seeded inside `onBeforeLoad`, which runs **before** the application
+       * bundle executes. That is not a convenience detail: `AuthService` calls
+       * `restoreSession()` in its own constructor, and the constructor runs exactly once, at
+       * Angular's bootstrap. Writing the keys after the `cy.visit` would leave the application
+       * standing with an empty session, `authGuard` would send it to `/login`, and the test
+       * would fail for a reason that has nothing to do with what it tests.
        *
-       * Entrega a `AuthSession`, porque quase todo teste precisa do `accessToken` depois para
-       * as chamadas diretas à API.
+       * Yields the `AuthSession`, because almost every test needs the `accessToken` afterwards
+       * for the direct API calls.
        */
       loginAs(email: string, visitPath?: string): Chainable<AuthSession>;
 
       /**
-       * `cy.request` com o prefixo `/api/v1` e o header `Authorization` montados em um lugar
-       * só. Sem `failOnStatusCode: false` embutido: quem espera um 403 ou um 404 diz isso
-       * explicitamente na chamada, e um teste que esperava 200 continua falhando alto.
+       * `cy.request` with the `/api/v1` prefix and the `Authorization` header assembled in a
+       * single place. No built-in `failOnStatusCode: false`: whoever expects a 403 or a 404 says
+       * so explicitly at the call site, and a test that expected 200 keeps failing loudly.
        */
       apiRequest<T = unknown>(options: ApiRequestOptions): Chainable<Cypress.Response<T>>;
 
       /**
-       * Seleciona pelo `data-testid` que os componentes já declaram. Classe de CSS e texto
-       * visível são decisões de design e mudam com o design; o `data-testid` é um contrato
-       * com o teste e só muda quando alguém quer que o teste mude.
+       * Selects by the `data-testid` the components already declare. A CSS class and visible
+       * text are design decisions and change with the design; the `data-testid` is a contract
+       * with the test and only changes when someone wants the test to change.
        */
       byTestId(id: string, options?: Partial<Cypress.Loggable & Cypress.Timeoutable>): Chainable<JQuery<HTMLElement>>;
     }

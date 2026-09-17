@@ -18,8 +18,8 @@
 
     <ng-container *ngIf="!state">
       <!--
-        O canvas é uma imagem para leitores de tela: um rótulo curto identifica o gráfico e a
-        tabela logo abaixo, visualmente oculta, carrega os mesmos números que as barras.
+        The canvas is an image to screen readers: a short label identifies the chart, and the
+        visually hidden table right below it carries the same numbers as the bars.
       -->
       <div class="dashboard-chart">
         <canvas
@@ -61,9 +61,9 @@
       </table>
 
       <!--
-        Legenda em HTML, e não a do Chart.js: fica fora do canvas, acompanha o zoom do
-        navegador e nomeia cada cor em texto, com a contagem e a participação ao lado.
-        `aria-hidden` porque a tabela acima já diz o mesmo a quem usa leitor de tela.
+        An HTML legend, and not Chart.js's: it sits outside the canvas, follows the browser
+        zoom and names each color in text, with the count and the share beside it.
+        `aria-hidden` because the table above already says the same to screen reader users.
       -->
       <ul class="dashboard-legend" aria-hidden="true">
         <li class="dashboard-legend__item" *ngFor="let category of categories">

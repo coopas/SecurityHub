@@ -21,12 +21,12 @@ import {
 import { ImportService } from '../services/import.service';
 
 /**
- * Envio do relatório de varredura. A tela termina navegando para a prévia: o envio não
- * cria nada além de uma importação aguardando revisão, e revisar é o passo seguinte.
+ * Upload of the scan report. The screen ends by navigating to the preview: the upload
+ * creates nothing beyond an import awaiting review, and reviewing is the next step.
  *
- * Projeto e formato são escolhidos antes do arquivo porque os dois mudam o que o
- * servidor faz com ele — o formato decide o interpretador, e o projeto decide entre
- * quais ativos os achados serão procurados.
+ * Project and format are chosen before the file because both change what the server does
+ * with it — the format decides the parser, and the project decides among which assets
+ * the findings will be looked for.
  */
 @Component({
   selector: 'app-import-upload',
@@ -45,7 +45,7 @@ export class ImportUploadComponent implements OnInit, OnDestroy {
   });
 
   projects: ProjectOption[] = [];
-  /** `null` quando o formulário pode ser exibido. */
+  /** `null` when the form can be displayed. */
   loadState: ViewState | null = 'loading';
   loadErrorMessage: string | null = null;
 
@@ -64,7 +64,7 @@ export class ImportUploadComponent implements OnInit, OnDestroy {
     private readonly router: Router,
   ) {}
 
-  /** Sem projeto não há importação: o backend exige `projectId` e o valida no tenant. */
+  /** No project, no import: the backend requires `projectId` and validates it in the tenant. */
   get hasNoProjects(): boolean {
     return this.loadState === null && this.projects.length === 0;
   }
@@ -73,7 +73,7 @@ export class ImportUploadComponent implements OnInit, OnDestroy {
     return this.form.value.format as ScanFormat;
   }
 
-  /** Sugestão ao seletor do sistema; o servidor é quem decide se o arquivo serve. */
+  /** A hint to the system picker; the server is the one who decides if the file is any good. */
   get accept(): string {
     return SCAN_FORMAT_ACCEPT[this.selectedFormat];
   }
@@ -116,8 +116,8 @@ export class ImportUploadComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * O valor do input é limpo depois de ler o arquivo: sem isso, escolher de novo o mesmo
-   * arquivo (depois de um erro, por exemplo) não dispararia evento algum.
+   * The input's value is cleared after reading the file: without that, picking the same
+   * file again (after an error, for instance) would fire no event at all.
    */
   onFileSelected(input: HTMLInputElement): void {
     const file = input.files?.[0] ?? null;
@@ -127,9 +127,9 @@ export class ImportUploadComponent implements OnInit, OnDestroy {
     }
 
     this.errorMessage = null;
-    // Checagem imediata de tamanho apenas para poupar um upload que já se sabe recusado.
-    // O limite que vale é o do servidor, que o reaplica sobre o que realmente chegou e
-    // responde `PAYLOAD_TOO_LARGE`; esta linha não protege nada, só economiza a espera.
+    // Immediate size check only to spare an upload already known to be refused. The
+    // limit that counts is the server's, which reapplies it over what actually arrived
+    // and answers `PAYLOAD_TOO_LARGE`; this line protects nothing, it only saves the wait.
     if (file.size > MAX_SCAN_FILE_BYTES) {
       this.file = null;
       this.errorMessage = `O arquivo tem ${this.formatSize(
@@ -173,7 +173,7 @@ export class ImportUploadComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (event) => {
           if (event.type === HttpEventType.UploadProgress) {
-            // `total` só existe quando o corpo é mensurável; sem ele a barra não avança.
+            // `total` only exists when the body is measurable; without it the bar does not move.
             this.progress = event.total ? Math.round((100 * event.loaded) / event.total) : 0;
             return;
           }
@@ -197,15 +197,15 @@ export class ImportUploadComponent implements OnInit, OnDestroy {
 
     switch (apiError?.code) {
       case 'PAYLOAD_TOO_LARGE':
-        // Um 413 pode vir do proxy, sem envelope nenhum, então a mensagem é própria.
+        // A 413 can come from the proxy, with no envelope at all, so the message is our own.
         this.errorMessage =
           apiError.message ||
           'O relatório excede o tamanho aceito pelo servidor. Divida a varredura e envie em partes.';
         break;
       case 'BAD_REQUEST':
-        // Arquivo ilegível para o formato escolhido, ou achados demais em um relatório
-        // só. A mensagem do servidor diz qual dos dois é e o que fazer; reescrevê-la
-        // aqui trocaria uma instrução por um palpite.
+        // File unreadable for the chosen format, or too many findings in a single
+        // report. The server's message says which of the two it is and what to do;
+        // rewriting it here would swap an instruction for a guess.
         this.errorMessage = apiError.message;
         break;
       default:

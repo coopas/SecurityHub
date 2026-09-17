@@ -62,8 +62,8 @@ export class AcceptInvitationComponent implements OnInit {
       return;
     }
 
-    // Mesma razão da redefinição de senha: o token do convite é uma credencial de uso
-    // único e não pode ficar no histórico nem viajar como Referer.
+    // Same reason as the password reset: the invitation token is a single-use credential
+    // and must not stay in the history nor travel as a Referer.
     void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
 
     this.invitationService
@@ -105,7 +105,7 @@ export class AcceptInvitationComponent implements OnInit {
       .pipe(finalize(() => (this.submitting = false)))
       .subscribe({
         next: (response) => {
-          // O aceite já devolve a sessão pronta: não há por que passar pelo login.
+          // Accepting already returns a ready session: no reason to go through login.
           this.authService.storeSession(response);
           this.notifications.success('Convite aceito. Bem-vindo ao SecurityHub.');
           void this.router.navigateByUrl('/dashboard');

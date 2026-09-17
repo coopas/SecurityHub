@@ -1,30 +1,30 @@
 import { AuthSession, demoPassword } from '../support/commands';
 
 /**
- * Exportação em CSV e relatório executivo em PDF.
+ * CSV export and executive report in PDF.
  *
- * O teste afirma sobre o **conteúdo** do arquivo, e não sobre o fato de um download ter
- * acontecido. Um arquivo que baixa é o requisito mais fácil de satisfazer e o menos útil de
- * verificar: o que pode dar errado é o filtro da exportação divergir do filtro da listagem, e
- * uma célula hostil chegar à planilha de quem abrir o arquivo.
+ * The test asserts on the **content** of the file, and not on the fact that a download happened.
+ * A file that downloads is the easiest requirement to satisfy and the least useful to check:
+ * what can go wrong is the export filter diverging from the listing filter, and a hostile cell
+ * reaching the spreadsheet of whoever opens the file.
  *
- * O título hostil é o caso que dá nome a esse segundo risco. `=cmd|' /C calc'!A0` numa célula
- * de CSV é executado pelo Excel ao abrir o arquivo — o achado registrado por um invasor vira
- * código rodando na máquina do analista que exportou o relatório. A defesa do backend é dupla:
- * aspas em toda célula, para que uma vírgula não parta a linha, e apóstrofo antes do caractere
- * que dispara fórmula. O teste exige as duas.
+ * The hostile title is the case that gives that second risk its name. `=cmd|' /C calc'!A0` in a
+ * CSV cell is executed by Excel when the file is opened — the finding registered by an attacker
+ * becomes code running on the machine of the analyst who exported the report. The backend's
+ * defence is twofold: quotes around every cell, so that a comma does not split the row, and an
+ * apostrophe before the character that triggers a formula. The test demands both.
  */
 
-/** Índices do cabeçalho de `VulnerabilityExportService.HEADER`. */
+/** Header indexes from `VulnerabilityExportService.HEADER`. */
 const TITLE_COLUMN = 1;
 const SEVERITY_COLUMN = 3;
 
 /**
- * Leitor RFC 4180 mínimo. Existe porque a asserção que interessa é "toda linha do arquivo tem
- * a severidade pedida", e isso exige separar células de verdade: um `split(',')` cairia dentro
- * da primeira descrição que contivesse uma vírgula — que é justamente o caso que o escape do
- * backend existe para tratar, e o que o teste precisa enxergar corretamente para não dar um
- * verde falso.
+ * Minimal RFC 4180 reader. It exists because the assertion that matters is "every row in the
+ * file has the requested severity", and that requires splitting cells for real: a `split(',')`
+ * would fall inside the first description that contained a comma — which is exactly the case the
+ * backend's escaping exists to handle, and what the test has to see correctly so as not to give
+ * a false green.
  */
 function parseCsv(raw: string): string[][] {
   const text = raw.replace(/^\uFEFF/, '');
@@ -78,8 +78,8 @@ describe('Exportação em CSV e relatório executivo', () => {
     cy.loginAs('analyst@demo.test', '/vulnerabilities').then((session) => {
       analyst = session;
 
-      // Criado pela API: o assunto deste arquivo é o arquivo exportado, e passar pelo
-      // formulário aqui só acrescentaria motivos de falha que `02` já cobre.
+      // Created through the API: the subject of this file is the exported file, and going
+      // through the form here would only add failure reasons that `02` already covers.
       cy.apiRequest<{ content: Array<{ id: number }> }>({
         url: '/assets?size=1',
         token: session.accessToken,
@@ -136,26 +136,26 @@ describe('Exportação em CSV e relatório executivo', () => {
       expect(rows[0][TITLE_COLUMN]).to.eq('título');
       expect(rows[0][SEVERITY_COLUMN]).to.eq('severidade');
 
-      // Regra 1 de `support/e2e.ts`: nada de número absoluto — o seed é datado de forma
-      // relativa e a contagem muda com o relógio. O que se afirma é a relação: o arquivo
-      // pedido com `severity=CRITICAL` não pode conter nenhuma outra severidade.
+      // Rule 1 of `support/e2e.ts`: no absolute numbers — the seed is dated relatively and the
+      // count changes with the clock. What is asserted is the relation: the file requested with
+      // `severity=CRITICAL` cannot contain any other severity.
       rows.slice(1).forEach((row) => {
         expect(row[SEVERITY_COLUMN], `linha ${row[0]}: o filtro do arquivo é o da tela`).to.eq(
           'CRITICAL',
         );
       });
 
-      // O título hostil: o apóstrofo à frente é o que impede o Excel de executar a célula.
-      // Chega aqui já sem as aspas externas porque o leitor acima as consumiu — e o fato de
-      // o valor ter voltado como **uma** célula, com a vírgula e as aspas internas intactas,
-      // é a outra metade da defesa.
+      // The hostile title: the leading apostrophe is what stops Excel from executing the cell.
+      // It arrives here already without the outer quotes because the reader above consumed them
+      // — and the fact that the value came back as **one** cell, with the comma and the inner
+      // quotes intact, is the other half of the defence.
       const hostileRow = rows.slice(1).find((row) => row[TITLE_COLUMN].includes('/C calc'));
       expect(hostileRow, 'a linha do título hostil precisa estar no arquivo').to.not.be.undefined;
       expect((hostileRow as string[])[TITLE_COLUMN]).to.eq(`'${hostileTitle}`);
 
-      // O arquivo que chegou ao disco, pelo caminho real do produto (`saveBlob`). O nome vem
-      // do cabeçalho que o servidor mandou, e não de uma data montada aqui: ela dependeria do
-      // relógio do contêiner (regra 2 de `support/e2e.ts`).
+      // The file that reached the disk, through the real product path (`saveBlob`). The name
+      // comes from the header the server sent, and not from a date assembled here: that would
+      // depend on the container's clock (rule 2 of `support/e2e.ts`).
       const disposition = interception.response?.headers['content-disposition'];
       const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(String(disposition ?? ''));
       expect(match, `nome do arquivo em ${String(disposition)}`).to.not.be.null;
@@ -176,8 +176,8 @@ describe('Exportação em CSV e relatório executivo', () => {
     }).then((response) => {
       expect(response.status).to.eq(200);
       expect(response.headers['content-type']).to.contain('application/pdf');
-      // A assinatura, e não o content-type: o cabeçalho é o que o servidor afirma, os cinco
-      // primeiros bytes são o que ele realmente produziu.
+      // The signature, and not the content-type: the header is what the server claims, the
+      // first five bytes are what it actually produced.
       expect(response.body.slice(0, 5)).to.eq('%PDF-');
       expect(response.body.length, 'um PDF de uma página já passa de 1 kB').to.be.greaterThan(1000);
     });

@@ -1,56 +1,56 @@
 /**
- * Suíte end-to-end do SecurityHub.
+ * SecurityHub end-to-end suite.
  *
  * ============================================================================
- * COMO ESCREVER UM TESTE AQUI SEM CRIAR UM FALSO VERMELHO
+ * HOW TO WRITE A TEST HERE WITHOUT CREATING A FALSE RED
  * ============================================================================
  *
- * O alvo é a pilha do `docker compose` com o seed do perfil `demo`, e esse seed é datado de
- * forma **relativa**: as vulnerabilidades nascem com `discoveredAt` e `dueDate` calculados a
- * partir de `Instant.now()` no momento em que o contêiner subiu. Isso significa que o conjunto
- * de dados muda sozinho conforme o relógio anda — uma vulnerabilidade que hoje está dentro do
- * prazo vence amanhã, e o número do cartão "Atrasadas" do dashboard é diferente a cada dia.
- * Um teste que fixe esses números quebra sem que nada no produto tenha mudado, e um teste que
- * quebra sozinho é um teste que alguém vai acabar desligando.
+ * The target is the `docker compose` stack with the `demo` profile seed, and that seed is dated
+ * **relatively**: vulnerabilities are born with `discoveredAt` and `dueDate` computed from
+ * `Instant.now()` at the moment the container came up. That means the data set changes on its
+ * own as the clock moves — a vulnerability that is within its deadline today is overdue tomorrow,
+ * and the number on the dashboard's "Atrasadas" card is different every day. A test that pins
+ * those numbers breaks without anything in the product having changed, and a test that breaks on
+ * its own is a test somebody will end up switching off.
  *
- * As cinco regras abaixo são o que mantém esta suíte determinística. Elas valem para todo
- * arquivo em `cypress/e2e`.
+ * The five rules below are what keeps this suite deterministic. They hold for every file in
+ * `cypress/e2e`.
  *
- * 1. **Nunca afirme um número absoluto que dependa do relógio.** Afirme uma *relação* entre
- *    dois valores que o produto calcula por caminhos diferentes. O exemplo canônico é o
- *    cartão "Atrasadas" do dashboard contra o `totalElements` de
- *    `GET /vulnerabilities?overdue=true`: são a agregação do banco e a listagem paginada,
- *    e uma divergência entre elas é o defeito mais visível que essa tela pode ter. A relação
- *    é verdadeira em qualquer dia; o número, não.
+ * 1. **Never assert an absolute number that depends on the clock.** Assert a *relation* between
+ *    two values the product computes by different paths. The canonical example is the
+ *    dashboard's "Atrasadas" card against the `totalElements` of
+ *    `GET /vulnerabilities?overdue=true`: they are the database aggregation and the paginated
+ *    listing, and a divergence between them is the most visible defect this screen can have. The
+ *    relation is true on any day; the number is not.
  *
- * 2. **Nunca afirme uma data formatada.** "17/09/2026" depende do relógio, do fuso do
- *    contêiner e do locale do navegador. Se a data importa, afirme que o campo existe e não
- *    está vazio, ou compare com o valor que a própria API devolveu.
+ * 2. **Never assert a formatted date.** "17/09/2026" depends on the clock, on the container's
+ *    timezone and on the browser's locale. If the date matters, assert that the field exists and
+ *    is not empty, or compare it with the value the API itself returned.
  *
- * 3. **Crie o dado sobre o qual você afirma.** Toda linha criada por um teste leva um título
- *    único — o padrão é `Cypress ${Date.now()}` — e é apagada no `after()` do próprio arquivo.
- *    Assim dois testes nunca disputam a mesma linha, uma execução não deixa resíduo para a
- *    seguinte, e a afirmação não depende de o seed ter exatamente o conteúdo de hoje.
+ * 3. **Create the data you assert on.** Every row created by a test carries a unique title —
+ *    the pattern is `Cypress ${Date.now()}` — and is deleted in the `after()` of its own file.
+ *    That way two tests never fight over the same row, one run leaves no residue for the next,
+ *    and the assertion does not depend on the seed having exactly today's content.
  *
- * 4. **Autentique pela API, exceto no teste do formulário de login.** `cy.loginAs()` faz o
- *    `POST /auth/login` e semeia o `localStorage` antes de a aplicação inicializar. Passar pelo
- *    formulário em todo teste acrescentaria a cada um deles a chance de falhar por um motivo
- *    que `01-login.cy.ts` já cobre — e que só ele deveria cobrir.
+ * 4. **Authenticate through the API, except in the login form test.** `cy.loginAs()` does the
+ *    `POST /auth/login` and seeds `localStorage` before the application bootstraps. Going through
+ *    the form in every test would add to each of them the chance of failing for a reason that
+ *    `01-login.cy.ts` already covers — and that only it should cover.
  *
- * 5. **Permissão se testa na API, não no CSS.** Esconder um botão não é um controle: é
- *    conveniência. Um teste que só verifica a ausência do botão estaria testando a camada
- *    errada, e passaria intacto com o backend completamente aberto. Toda afirmação de
- *    permissão nesta suíte tem um par: a ausência da afordância **e** o 403 da rota
- *    correspondente, chamada direto com o token do papel.
+ * 5. **Permission is tested on the API, not on the CSS.** Hiding a button is not a control: it
+ *    is convenience. A test that only checks the button's absence would be testing the wrong
+ *    layer, and would pass untouched with the backend completely open. Every permission
+ *    assertion in this suite has a pair: the absence of the affordance **and** the 403 of the
+ *    corresponding route, called directly with the role's token.
  */
 
 import './commands';
 
 /**
- * O `ResizeObserver loop limit exceeded` vem do Angular Material (sidenav e mat-table
- * remedindo no mesmo quadro). É ruído do navegador, não uma exceção da aplicação: nenhum
- * código nosso está no stack e nada quebra. Qualquer outra exceção não tratada continua
- * derrubando o teste, que é exatamente o que se quer de um erro de verdade.
+ * The `ResizeObserver loop limit exceeded` comes from Angular Material (sidenav and mat-table
+ * remeasuring in the same frame). It is browser noise, not an application exception: none of our
+ * code is on the stack and nothing breaks. Any other unhandled exception still brings the test
+ * down, which is exactly what you want from a real error.
  */
 Cypress.on('uncaught:exception', (error) => {
   if (/ResizeObserver loop/i.test(error.message)) {

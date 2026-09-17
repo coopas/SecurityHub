@@ -11,7 +11,7 @@ describe('file-download.util', () => {
     });
 
     it('recupera os acentos que só o filename* carrega', () => {
-      // O mesmo cabeçalho que o backend monta com ContentDisposition.filename(nome, UTF_8).
+      // The same header the backend builds with ContentDisposition.filename(nome, UTF_8).
       const header = "attachment; filename*=UTF-8''relat%C3%B3rio%20executivo.pdf";
 
       expect(filenameFromContentDisposition(header, 'fallback.pdf')).toBe(
@@ -79,7 +79,7 @@ describe('file-download.util', () => {
         this: HTMLAnchorElement,
       ) {
         anchors.push(this);
-        // Uma âncora fora do documento não dispara download algum no Firefox.
+        // An anchor outside the document fires no download at all in Firefox.
         connected.push(this.isConnected);
       });
 
@@ -90,7 +90,7 @@ describe('file-download.util', () => {
       expect(connected).toEqual([true]);
       expect(anchors[0].download).toBe('vulnerabilidades.csv');
       expect(anchors[0].getAttribute('href')).toBe('blob:objeto');
-      // E nada fica para trás no DOM depois da chamada.
+      // And nothing is left behind in the DOM after the call.
       expect(anchors[0].isConnected).toBeFalse();
     });
 
@@ -99,7 +99,7 @@ describe('file-download.util', () => {
 
       saveBlob(new Blob(['x']), 'arquivo.csv');
 
-      // Revogar de forma síncrona cancelaria o download recém-iniciado no Firefox.
+      // Revoking synchronously would cancel the just-started download in Firefox.
       expect(revokeObjectURL).not.toHaveBeenCalled();
 
       jasmine.clock().tick(0);

@@ -69,14 +69,14 @@ describe('TrendChartComponent', () => {
     expect(resolved.label).toBe('Resolvidas');
     expect(resolved.data).toEqual([0, 3, 1]);
     expect(resolved.borderColor).toBe(themeColor('--sh-resolved'));
-    // Segunda série também tracejada: as linhas não se distinguem só pela cor.
+    // The second series is dashed as well: the lines are not told apart by color alone.
     expect(resolved.borderDash).toEqual([6, 4]);
   });
 
   /**
-   * O canvas é bitmap: a cor vira pixel na hora do desenho e não acompanha a troca de
-   * tokens como o CSS acompanharia. Sem repintar, a linha do tema claro ficaria desenhada
-   * sobre o fundo escuro.
+   * The canvas is a bitmap: the color becomes a pixel at drawing time and does not follow a
+   * token switch the way CSS would. Without a repaint, the light theme's line would stay
+   * drawn over the dark background.
    */
   it('repinta as séries com os tokens do novo tema quando o tema muda', fakeAsync(() => {
     fixture.detectChanges();
@@ -84,16 +84,16 @@ describe('TrendChartComponent', () => {
     const before = component.chartData.datasets[0].borderColor;
 
     theme.set('dark');
-    // O ThemeService emite antes de escrever `data-theme`; o repintor espera uma
-    // microtarefa justamente para ler os tokens já trocados. Sem esse `tick` — e sem a
-    // espera no componente — a cor lida ainda seria a do tema que saiu.
+    // The ThemeService emits before writing `data-theme`; the repainter waits a microtask
+    // precisely so it reads the tokens already swapped. Without this `tick` — and without
+    // the wait in the component — the color read would still be the outgoing theme's.
     tick();
     fixture.detectChanges();
 
     expect(component.chartData.datasets[0].borderColor).toBe(themeColor('--sh-open'));
     expect(component.chartData.datasets[0].borderColor).not.toBe(before);
     expect(component.chartData.datasets[1].borderColor).toBe(themeColor('--sh-resolved'));
-    // Uma troca de tema não é motivo para pedir a série de novo ao servidor.
+    // A theme switch is no reason to ask the server for the series again.
     expect(dashboardService.trend).toHaveBeenCalledTimes(1);
 
     theme.set('light');
@@ -110,7 +110,7 @@ describe('TrendChartComponent', () => {
       ['01/04/2026', '1', '1'],
     ]);
 
-    // Mesmos números do gráfico, dia a dia.
+    // The same numbers as the chart, day by day.
     expect(tableRows().map((row) => Number(row[1]))).toEqual(
       component.chartData.datasets[0].data as number[],
     );
@@ -126,7 +126,7 @@ describe('TrendChartComponent', () => {
   it('formata as datas sem converter fuso, mantendo o dia que o servidor mandou', () => {
     fixture.detectChanges();
 
-    // `2026-03-30` vira 30/03 mesmo em fusos negativos: a formatação recorta a string.
+    // `2026-03-30` becomes 30/03 even in negative timezones: the formatting slices the string.
     expect(component.formatDate('2026-03-30')).toBe('30/03/2026');
     expect(element().querySelector('[data-testid="trend-period"]')?.textContent).toContain(
       'de 30/03/2026 a 01/04/2026',
@@ -177,7 +177,7 @@ describe('TrendChartComponent', () => {
     );
     fixture.detectChanges();
 
-    // O backend devolve todos os dias com zeros: vazio é a série sem movimento.
+    // The backend returns every day with zeros: empty is the series with no movement.
     expect(component.state).toBe('empty');
     expect(element().querySelector('canvas')).toBeNull();
     expect(element().textContent).toContain('Nenhuma vulnerabilidade foi aberta ou resolvida');

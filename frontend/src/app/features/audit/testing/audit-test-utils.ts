@@ -1,7 +1,7 @@
 import { PageResponse } from '../../../core/models';
 import { AuditActorOption, AuditLog } from '../models/audit.model';
 
-/** Fixtures dos testes; nenhuma tela usa dados simulados. */
+/** Test fixtures; no screen uses simulated data. */
 export function makeAuditLog(overrides: Partial<AuditLog> = {}): AuditLog {
   return {
     id: 1,
@@ -36,8 +36,8 @@ export function makeAuditActor(overrides: Partial<AuditActorOption> = {}): Audit
 }
 
 /**
- * Snapshot de vulnerabilidade como o backend grava: o objeto inteiro em CREATE, UPDATE
- * e DELETE. O `non_null` do Jackson significa que uma chave nula simplesmente não existe.
+ * Vulnerability snapshot the way the backend records it: the whole object on CREATE,
+ * UPDATE and DELETE. Jackson's `non_null` means a null key simply does not exist.
  */
 export function makeVulnerabilitySnapshot(
   overrides: Record<string, unknown> = {},

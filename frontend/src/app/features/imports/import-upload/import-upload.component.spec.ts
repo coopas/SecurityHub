@@ -62,7 +62,7 @@ describe('ImportUploadComponent', () => {
   const find = (testId: string): HTMLElement | null =>
     element().querySelector<HTMLElement>(`[data-testid="${testId}"]`);
 
-  /** Simula a escolha de um arquivo: o componente lê `input.files` e limpa `input.value`. */
+  /** Simulates picking a file: the component reads `input.files` and clears `input.value`. */
   const pick = (file: File): HTMLInputElement => {
     const input = find('import-file-input') as HTMLInputElement;
     const transfer = new DataTransfer();
@@ -111,7 +111,7 @@ describe('ImportUploadComponent', () => {
     const input = pick(makeFile());
 
     expect(component.file?.name).toBe('varredura.xml');
-    // Sem isso, reescolher o mesmo arquivo depois de um erro não emitiria `change`.
+    // Without this, re-picking the same file after an error would emit no `change`.
     expect(input.value).toBe('');
   });
 
@@ -180,7 +180,7 @@ describe('ImportUploadComponent', () => {
     submitWith().flush(null, { status: 413, statusText: 'Payload Too Large' });
     fixture.detectChanges();
 
-    // Sem envelope não há `code`, então a mensagem padrão é a que sobra.
+    // With no envelope there is no `code`, so the default message is what is left.
     expect(find('import-upload-error')?.textContent).toContain(
       'Não foi possível enviar o relatório.',
     );

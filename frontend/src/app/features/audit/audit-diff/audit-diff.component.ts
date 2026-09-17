@@ -3,18 +3,18 @@ import { Component, Input, OnChanges } from '@angular/core';
 import { AUDIT_ACTION_LABELS, AuditLog } from '../models/audit.model';
 import { AuditDiff, AuditFieldRow, buildAuditDiff } from '../utils/audit-diff.util';
 
-/** Texto exibido no lugar de um valor ausente. */
+/** Text displayed in place of a missing value. */
 export const EMPTY_VALUE = '—';
 
 /**
- * Comparação "antes e depois" de uma linha da trilha.
+ * "Before and after" comparison of a row of the trail.
  *
- * A união discriminada do utilitário é achatada em campos simples porque o template
- * não estreita tipos dentro de um `*ngIf`; o `ngSwitch` sobre `kind` faz o resto.
+ * The utility's discriminated union is flattened into plain fields because the template
+ * does not narrow types inside an `*ngIf`; the `ngSwitch` over `kind` does the rest.
  *
- * Nada aqui usa `innerHTML`: todo valor é interpolado, porque os campos comparados vêm
- * de texto digitado por usuários (título de vulnerabilidade, nome de projeto) e esta é
- * a tela onde um XSS armazenado teria o administrador como alvo.
+ * Nothing here uses `innerHTML`: every value is interpolated, because the compared fields
+ * come from text typed by users (vulnerability title, project name) and this is the
+ * screen where a stored XSS would have the administrator as its target.
  */
 @Component({
   selector: 'app-audit-diff',
@@ -27,7 +27,7 @@ export class AuditDiffComponent implements OnChanges {
   readonly emptyValue = EMPTY_VALUE;
 
   kind: AuditDiff['kind'] = 'empty';
-  /** Campos de um CREATE ou de um DELETE, que têm um lado só. */
+  /** Fields of a CREATE or of a DELETE, which have a single side. */
   fields: AuditFieldRow[] = [];
   changed: AuditFieldRow[] = [];
   unchanged: AuditFieldRow[] = [];
@@ -40,9 +40,10 @@ export class AuditDiffComponent implements OnChanges {
   }
 
   /**
-   * Uma ação sem campos dos dois lados é o registro correto de LOGIN, LOGIN_FAILED ou
-   * REGISTER: quem, quando e de onde já é a informação completa. Dizer isso em texto
-   * evita que o operador leia um painel vazio como falha da tela.
+   * An action with no fields on either side is the correct record of LOGIN, LOGIN_FAILED
+   * or REGISTER: who, when and from where is already the complete information. Saying
+   * that in text keeps the operator from reading an empty panel as a failure of the
+   * screen.
    */
   get emptyExplanation(): string {
     const action = AUDIT_ACTION_LABELS[this.log.action] ?? this.log.action;
@@ -63,7 +64,7 @@ export class AuditDiffComponent implements OnChanges {
     return value ?? EMPTY_VALUE;
   }
 
-  /** Resumo em texto da mudança, para quem lê a comparação com leitor de tela. */
+  /** Text summary of the change, for whoever reads the comparison with a screen reader. */
   changeLabel(row: AuditFieldRow): string {
     return `${row.label}: de ${this.text(row.oldText)} para ${this.text(row.newText)}`;
   }

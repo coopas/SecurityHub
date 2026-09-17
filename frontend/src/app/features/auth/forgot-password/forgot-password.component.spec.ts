@@ -81,8 +81,8 @@ describe('ForgotPasswordComponent', () => {
     submitWith('ninguem@exemplo.com');
     const desconhecido = renderedPanel();
 
-    // O backend responde 202 nos dois casos; qualquer diferença aqui viraria um
-    // enumerador de contas.
+    // The backend answers 202 in both cases; any difference here would turn into an account
+    // enumerator.
     expect(conhecido).toBe(desconhecido);
     expect(conhecido).toBe(PASSWORD_RESET_NEUTRAL_MESSAGE);
   });
@@ -107,7 +107,7 @@ describe('ForgotPasswordComponent', () => {
       );
     fixture.detectChanges();
 
-    // Esconder a falha deixaria o usuário esperando um e-mail que não foi enviado.
+    // Hiding the failure would leave the user waiting for an e-mail that was never sent.
     expect(component.submitted).toBeFalse();
     expect(component.generalError).toBe('Falha ao enviar o e-mail');
     expect(

@@ -1,9 +1,9 @@
 import { demoPassword } from '../support/commands';
 
 /**
- * O único arquivo desta suíte que passa pelo formulário de login. Todos os outros autenticam
- * pela API com `cy.loginAs()`, pela razão dita em `support/e2e.ts`: se o formulário quebrar,
- * exatamente um arquivo fica vermelho e o motivo está na primeira linha do relatório.
+ * The only file in this suite that goes through the login form. All the others authenticate
+ * through the API with `cy.loginAs()`, for the reason stated in `support/e2e.ts`: if the form
+ * breaks, exactly one file goes red and the reason is on the first line of the report.
  */
 
 const ROLES = [
@@ -25,10 +25,11 @@ describe('Login', () => {
       cy.byTestId('login-submit').click();
 
       cy.location('pathname').should('eq', '/dashboard');
-      // O nome e o papel vêm da sessão devolvida pelo backend, não de nada montado na tela.
+      // The name and the role come from the session the backend returned, not from anything
+      // assembled on screen.
       cy.get('.layout__user-trigger').should('be.visible').click();
       cy.get('.layout__user-info-meta').should('contain.text', role);
-      // Fecha o menu para não deixar o overlay sobre a próxima asserção.
+      // Close the menu so the overlay is not left sitting over the next assertion.
       cy.get('body').type('{esc}');
 
       cy.window().then((win) => {
@@ -54,8 +55,8 @@ describe('Login', () => {
       expect(win.localStorage.getItem('securityhub.accessToken')).to.be.null;
     });
 
-    // A mesma mensagem para um e-mail que nunca existiu: uma resposta diferente aqui seria
-    // enumeração de contas pela tela, que é o mesmo defeito que o backend evita na API.
+    // The same message for an e-mail that never existed: a different response here would be
+    // account enumeration through the screen, the same defect the backend avoids on the API.
     cy.byTestId('login-email').clear().type('ninguem@demo.test');
     cy.byTestId('login-password').clear().type('senha-que-nao-e-a-dele', { log: false });
     cy.byTestId('login-submit').click();
@@ -63,7 +64,7 @@ describe('Login', () => {
   });
 
   it('leva ao destino original depois do login (returnUrl)', () => {
-    // Sem sessão, o authGuard manda para /login guardando o destino.
+    // With no session, authGuard sends you to /login keeping the destination.
     cy.visit('/vulnerabilities');
     cy.location('pathname').should('eq', '/login');
     cy.location('search').should('contain', 'returnUrl=%2Fvulnerabilities');
@@ -86,14 +87,14 @@ describe('Login', () => {
 
     cy.location('pathname').should('eq', '/login');
     cy.window().then((win) => {
-      // As três, e não só o access token: é o que faz o laço de renovação terminar
-      // (ver o comentário de `isAuthenticated()` em AuthService).
+      // All three, and not just the access token: it is what makes the refresh loop stop
+      // (see the comment on `isAuthenticated()` in AuthService).
       expect(win.localStorage.getItem('securityhub.accessToken')).to.be.null;
       expect(win.localStorage.getItem('securityhub.refreshToken')).to.be.null;
       expect(win.localStorage.getItem('securityhub.currentUser')).to.be.null;
     });
 
-    // E o guard continua de pé: voltar para uma rota autenticada não restaura nada.
+    // And the guard is still standing: going back to an authenticated route restores nothing.
     cy.visit('/dashboard');
     cy.location('pathname').should('eq', '/login');
   });

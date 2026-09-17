@@ -19,9 +19,9 @@ export class ResetPasswordComponent implements OnInit {
   readonly maxLength = PASSWORD_MAX_LENGTH;
 
   /**
-   * Os limites são os de `PasswordResetConfirmRequest`. Repetidos aqui de propósito: a
-   * tela evita uma ida ao servidor para dizer o óbvio, e o servidor continua sendo quem
-   * decide — um formulário adulterado esbarra na mesma regra lá.
+   * The limits are the ones from `PasswordResetConfirmRequest`. Repeated here on purpose:
+   * the screen avoids a round trip to the server just to state the obvious, and the server
+   * is still the one that decides — a tampered form hits the same rule over there.
    */
   readonly form: FormGroup = this.formBuilder.group(
     {
@@ -59,10 +59,10 @@ export class ResetPasswordComponent implements OnInit {
     this.token = this.route.snapshot.queryParamMap.get('token') ?? '';
 
     if (this.hasToken) {
-      // O token é uma credencial de uso único: deixá-lo na barra de endereços o
-      // espalharia pelo histórico, pelos favoritos e pelo cabeçalho Referer de qualquer
-      // recurso externo que a página viesse a carregar. `replaceUrl` apaga também a
-      // entrada do histórico que já o continha.
+      // The token is a single-use credential: leaving it in the address bar would spread
+      // it through the history, the bookmarks and the Referer header of any external
+      // resource the page happened to load. `replaceUrl` also wipes the history entry
+      // that already held it.
       void this.router.navigate([], {
         relativeTo: this.route,
         queryParams: {},
@@ -88,7 +88,7 @@ export class ResetPasswordComponent implements OnInit {
       .pipe(finalize(() => (this.submitting = false)))
       .subscribe({
         next: () => {
-          // A confirmação não abre sessão no backend: entrar é o próximo passo.
+          // The confirmation does not open a session on the backend: logging in is the next step.
           this.notifications.success('Senha redefinida. Entre com a senha nova.');
           void this.router.navigateByUrl('/login');
         },

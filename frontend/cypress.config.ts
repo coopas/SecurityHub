@@ -1,18 +1,18 @@
 import { defineConfig } from 'cypress';
 
 /**
- * A suíte roda contra a pilha do `docker compose`, em http://localhost:8081, e não contra
+ * The suite runs against the `docker compose` stack, at http://localhost:8081, and not against
  * `ng serve`.
  *
- * O motivo é o que está sendo testado. O job `compose` da CI já sobe backend, banco e
- * frontend com `--wait` e com o seed do perfil `demo`; apontar o Cypress para ele exercita o
- * bundle de produção servido pelo nginx real, com o proxy de `/api` que existe só ali. Um
- * `ng serve` testaria um bundle de desenvolvimento e um proxy que não vai para produção —
- * seria a camada errada.
+ * The reason is what is being tested. The CI `compose` job already brings up backend, database
+ * and frontend with `--wait` and with the `demo` profile seed; pointing Cypress at it exercises
+ * the production bundle served by the real nginx, with the `/api` proxy that only exists there.
+ * An `ng serve` would test a development bundle and a proxy that never reaches production — it
+ * would be the wrong layer.
  *
- * `baseUrl` é sobrescrevível por `CYPRESS_BASE_URL`, sem nenhum código aqui: o Cypress
- * converte toda variável `CYPRESS_*` cujo nome casa com uma chave de configuração na própria
- * configuração. As que não casam — `CYPRESS_DEMO_PASSWORD` — chegam em `Cypress.env()`.
+ * `baseUrl` is overridable by `CYPRESS_BASE_URL`, with no code here: Cypress turns every
+ * `CYPRESS_*` variable whose name matches a configuration key into that configuration itself.
+ * The ones that do not match — `CYPRESS_DEMO_PASSWORD` — arrive in `Cypress.env()`.
  */
 export default defineConfig({
   e2e: {
@@ -28,14 +28,14 @@ export default defineConfig({
     viewportHeight: 900,
 
     /**
-     * Duas tentativas no modo headless, nenhuma no modo interativo. O alvo é uma pilha real:
-     * o backend acabou de subir, o primeiro acesso a uma rota lazy baixa um chunk, e uma
-     * falha isolada por esse tipo de latência não é um defeito do produto. No modo
-     * interativo a repetição só esconderia do desenvolvedor o passo que falhou.
+     * Two retries in headless mode, none in interactive mode. The target is a real stack: the
+     * backend has just come up, the first hit on a lazy route downloads a chunk, and an isolated
+     * failure caused by that kind of latency is not a product defect. In interactive mode the
+     * retry would only hide the failing step from the developer.
      */
     retries: { runMode: 2, openMode: 0 },
 
-    /** O backend faz BCrypt com custo 12: um login leva algumas centenas de milissegundos. */
+    /** The backend does BCrypt at cost 12: a login takes a few hundred milliseconds. */
     defaultCommandTimeout: 12000,
     requestTimeout: 15000,
     responseTimeout: 30000,
@@ -44,9 +44,9 @@ export default defineConfig({
 
   env: {
     /**
-     * Senha pública das contas do seed `demo`, a mesma de `docker-compose.yml`. Não é
-     * segredo: o tenant `demo` só existe no banco que o compose acabou de criar na máquina de
-     * quem clonou o repositório. Sobrescrevível por `CYPRESS_DEMO_PASSWORD`.
+     * Public password of the `demo` seed accounts, the same one as in `docker-compose.yml`. It
+     * is not a secret: the `demo` tenant only exists in the database compose has just created on
+     * the machine of whoever cloned the repository. Overridable by `CYPRESS_DEMO_PASSWORD`.
      */
     DEMO_PASSWORD: 'Demo@SecurityHub2026',
   },

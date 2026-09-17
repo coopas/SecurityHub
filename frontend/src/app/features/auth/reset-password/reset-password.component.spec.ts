@@ -56,7 +56,7 @@ describe('ResetPasswordComponent', () => {
     setup({ token: 'token-do-email' });
 
     expect(component.token).toBe('token-do-email');
-    // Sem isso o token ficaria no histórico, nos favoritos e em qualquer Referer.
+    // Without this the token would stay in the history, in the bookmarks and in any Referer.
     expect(router.navigate).toHaveBeenCalledWith(
       [],
       jasmine.objectContaining({ queryParams: {}, replaceUrl: true }),

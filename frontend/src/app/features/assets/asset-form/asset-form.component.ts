@@ -29,7 +29,7 @@ import {
 } from '../models/asset.model';
 import { AssetService } from '../services/asset.service';
 
-/** Criação e edição compartilham o formulário; a rota define o modo. */
+/** Creation and editing share the form; the route defines the mode. */
 @Component({
   selector: 'app-asset-form',
   templateUrl: './asset-form.component.html',
@@ -60,7 +60,7 @@ export class AssetFormComponent implements OnInit {
   projects: ProjectOption[] = [];
   submitting = false;
   generalError: string | null = null;
-  /** `null` quando o formulário pode ser exibido. */
+  /** `null` when the form can be displayed. */
   loadState: ViewState | null = 'loading';
   loadErrorMessage: string | null = null;
 
@@ -89,7 +89,7 @@ export class AssetFormComponent implements OnInit {
     return this.loadErrorMessage === 'Ativo não encontrado.';
   }
 
-  /** Sem projeto não há ativo: o backend exige `projectId` e o valida no tenant. */
+  /** No project, no asset: the backend requires `projectId` and validates it in the tenant. */
   get hasNoProjects(): boolean {
     return this.loadState === null && this.projects.length === 0;
   }
@@ -109,7 +109,7 @@ export class AssetFormComponent implements OnInit {
     this.loadForm();
   }
 
-  /** Carrega as opções de projeto e, na edição, o ativo, em uma única espera. */
+  /** Loads the project options and, when editing, the asset, in a single wait. */
   loadForm(): void {
     this.loadState = 'loading';
     this.loadErrorMessage = null;
@@ -197,8 +197,9 @@ export class AssetFormComponent implements OnInit {
   }
 
   /**
-   * Com mais projetos que uma página, o projeto do ativo em edição pode ficar de fora
-   * das opções; sem isso o seletor abriria vazio e a edição perderia o vínculo.
+   * With more projects than fit in one page, the project of the asset being edited can
+   * fall outside the options; without this the selector would open empty and the edit
+   * would lose the link.
    */
   private ensureProjectOption(asset: Asset): void {
     if (!this.projects.some((project) => project.id === asset.projectId)) {
@@ -207,8 +208,8 @@ export class AssetFormComponent implements OnInit {
   }
 
   /**
-   * `fieldErrors` viram erros inline dos controles; só sobra mensagem geral quando
-   * nenhum campo do formulário corresponde (ou quando o erro não é de validação).
+   * `fieldErrors` turn into inline errors on the controls; a general message is only left
+   * over when no field of the form matches (or when the error is not a validation one).
    */
   private handleError(error: unknown): void {
     const apiError = toApiError(error);

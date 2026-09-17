@@ -1,28 +1,28 @@
 /**
- * Duas funções puras para respostas de download (`responseType: 'blob'`): descobrir o
- * nome do arquivo no `Content-Disposition` e entregá-lo ao navegador.
+ * Two pure functions for download responses (`responseType: 'blob'`): finding the file
+ * name in the `Content-Disposition` and handing it to the browser.
  *
- * Vivem aqui, e não dentro de um serviço, porque nada nelas depende de Angular: são
- * usadas pela exportação em CSV, pelo download de anexos e pelo relatório executivo.
+ * They live here, and not inside a service, because nothing in them depends on Angular:
+ * they are used by the CSV export, by the attachment download and by the executive report.
  */
 
 /**
- * `filename*=UTF-8''nome%20com%20acento.csv`, a forma da RFC 5987. Os três grupos são
- * charset, idioma (quase sempre vazio) e o valor percent-encoded.
+ * `filename*=UTF-8''nome%20com%20acento.csv`, the RFC 5987 form. The three groups are
+ * charset, language (almost always empty) and the percent-encoded value.
  */
 const EXTENDED_FILENAME = /filename\*\s*=\s*([^']*)'([^']*)'([^;]*)/i;
 
-/** `filename="nome.csv"` ou `filename=nome.csv`, a forma antiga. */
+/** `filename="nome.csv"` or `filename=nome.csv`, the old form. */
 const PLAIN_FILENAME = /filename\s*=\s*(?:"([^"]*)"|([^;]*))/i;
 
 /**
- * Nome do arquivo anunciado pelo servidor, ou `fallback` quando o cabeçalho não traz um
- * nome aproveitável.
+ * The file name announced by the server, or `fallback` when the header carries no usable
+ * name.
  *
- * `filename*` tem precedência sobre `filename` porque é a única forma que carrega o
- * charset: os servidores que mandam as duas repetem em `filename` uma versão degradada,
- * sem acentos, para clientes antigos. O valor estendido é percent-encoded e por isso
- * passa por `decodeURIComponent`.
+ * `filename*` takes precedence over `filename` because it is the only form that carries
+ * the charset: the servers that send both repeat in `filename` a degraded version, with no
+ * accents, for old clients. The extended value is percent-encoded and therefore goes
+ * through `decodeURIComponent`.
  */
 export function filenameFromContentDisposition(header: string | null, fallback: string): string {
   if (!header) {
@@ -33,16 +33,16 @@ export function filenameFromContentDisposition(header: string | null, fallback: 
 }
 
 /**
- * Entrega o blob ao navegador como um download com o nome informado.
+ * Hands the blob to the browser as a download under the given name.
  *
- * Duas sutilezas do Firefox, ambas silenciosas no Chrome, que é onde o erro passaria
- * despercebido:
+ * Two Firefox subtleties, both silent in Chrome, which is where the mistake would go
+ * unnoticed:
  *
- * - a âncora precisa estar no documento no momento do clique (uma âncora solta não
- *   dispara nada), e é removida no mesmo tique para não deixar lixo no DOM;
- * - revogar a URL de objeto de forma síncrona cancela o download que acabou de começar,
- *   então a revogação vai para um `setTimeout(..., 0)`. Sem revogar, o blob ficaria
- *   retido até a página ser descarregada.
+ * - the anchor has to be in the document at the moment of the click (a detached anchor
+ *   fires nothing), and it is removed on the same tick so as not to leave junk in the DOM;
+ * - revoking the object URL synchronously cancels the download that has just started, so
+ *   the revocation goes into a `setTimeout(..., 0)`. Without revoking, the blob would stay
+ *   retained until the page is unloaded.
  */
 export function saveBlob(blob: Blob, filename: string): void {
   const objectUrl = URL.createObjectURL(blob);
@@ -66,7 +66,7 @@ function extendedFilename(header: string): string | null {
   try {
     return decodeURIComponent(match[3].trim());
   } catch {
-    // Percent-encoding malformado: o cabeçalho não serve, e o chamador usa o fallback.
+    // Malformed percent-encoding: the header is no good, and the caller uses the fallback.
     return null;
   }
 }
@@ -81,18 +81,18 @@ function plainFilename(header: string): string | null {
 }
 
 /**
- * Hoje quem gera o nome é o próprio backend, mas esta função é genérica e o cabeçalho é
- * o único ponto em que um nome de origem hostil chegaria ao sistema de arquivos do
- * usuário. Barra, contrabarra e caracteres de controle saem de cena: são o que
- * transformaria um nome em um caminho (ou em um nome que o gerenciador de downloads
- * interpreta). Qualquer nome recusado vira o fallback, que é sempre do nosso lado.
+ * Today it is the backend itself that generates the name, but this function is generic and
+ * the header is the only point at which a hostile-origin name would reach the user's file
+ * system. Slash, backslash and control characters are off the table: they are what would
+ * turn a name into a path (or into a name the download manager interprets). Any refused
+ * name becomes the fallback, which is always on our side.
  */
 function isSafeFilename(filename: string): boolean {
   if (filename.length === 0 || filename.includes('/') || filename.includes('\\')) {
     return false;
   }
-  // C0 e DEL, escritos em código e não como regex: um literal com caracteres de
-  // controle é ilegível e a própria regra de lint o recusa.
+  // C0 and DEL, written in code and not as a regex: a literal with control characters
+  // is unreadable and the lint rule itself refuses it.
   for (const character of filename) {
     const code = character.charCodeAt(0);
     if (code < 0x20 || code === 0x7f) {

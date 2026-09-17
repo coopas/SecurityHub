@@ -36,7 +36,7 @@ describe('InvitationService', () => {
 
     const request = httpMock.expectOne(baseUrl);
     expect(request.request.method).toBe('POST');
-    // A empresa é sempre a do autenticado; um campo aqui seria ignorado pelo backend.
+    // The company is always the authenticated user's; a field here would be ignored by the backend.
     expect(request.request.body).toEqual({
       name: 'Bruno Lima',
       email: 'bruno@empresa.com',

@@ -38,8 +38,8 @@ describe('AuditActorService', () => {
 
     const request = httpMock.expectOne((candidate) => candidate.url === baseUrl);
     expect(request.request.method).toBe('GET');
-    // Sem `active=true`: esconder um usuário desativado tornaria as linhas que ele
-    // gerou inalcançáveis pelo filtro, e a trilha é histórica.
+    // No `active=true`: hiding a deactivated user would make the rows he generated
+    // unreachable by the filter, and the trail is historical.
     expect(request.request.params.has('active')).toBeFalse();
 
     request.flush([user(), user({ id: 8, name: 'Bruno', email: 'bruno@empresa.com', active: false })]);

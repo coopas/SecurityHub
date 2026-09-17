@@ -10,7 +10,7 @@ import {
   Trend,
 } from '../models/dashboard.model';
 
-/** Fixtures dos testes; nenhuma tela usa dados simulados. */
+/** Test fixtures; no screen uses simulated data. */
 export function makeProjectSummary(overrides: Partial<ProjectSummary> = {}): ProjectSummary {
   return {
     projectId: 3,
@@ -36,7 +36,7 @@ export function makeDashboardSummary(overrides: Partial<DashboardSummary> = {}):
   };
 }
 
-/** Resumo de empresa recém-criada: tudo zero, que é uma resposta legítima do backend. */
+/** Summary of a freshly created company: all zeros, a legitimate response from the backend. */
 export function makeEmptyDashboardSummary(): DashboardSummary {
   return {
     totalVulnerabilities: 0,
@@ -51,8 +51,8 @@ export function makeEmptyDashboardSummary(): DashboardSummary {
 }
 
 /**
- * O backend devolve sempre as quatro severidades, na ordem do enum; `counts` segue essa
- * mesma ordem e por padrão traz zeros.
+ * The backend always returns the four severities, in enum order; `counts` follows that same
+ * order and brings zeros by default.
  */
 export function makeSeverityDistribution(
   counts: readonly number[] = [0, 0, 0, 0],
@@ -60,7 +60,7 @@ export function makeSeverityDistribution(
   return SEVERITIES.map((severity, index) => ({ severity, count: counts[index] ?? 0 }));
 }
 
-/** Idem para os quatro status. */
+/** Same for the four statuses. */
 export function makeStatusDistribution(
   counts: readonly number[] = [0, 0, 0, 0],
 ): StatusDistributionEntry[] {
@@ -68,8 +68,8 @@ export function makeStatusDistribution(
 }
 
 /**
- * Série contígua a partir de `from`, com um par `[abertas, resolvidas]` por dia. As datas
- * são montadas em UTC porque é assim que o backend fecha a janela.
+ * A contiguous series starting at `from`, with one `[opened, resolved]` pair per day. The
+ * dates are built in UTC because that is how the backend closes the window.
  */
 export function makeTrend(pairs: readonly (readonly number[])[], from = '2026-01-01'): Trend {
   const start = new Date(`${from}T00:00:00Z`);

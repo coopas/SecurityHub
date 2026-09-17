@@ -7,9 +7,9 @@ import { Role, User } from '../../../core/models';
 import { UserQuery, UserUpdateRequest } from '../models/user-admin.model';
 
 /**
- * `GET /users` devolve um array puro, não uma página: a lista é a da empresa do
- * autenticado e o backend a ordena por nome. Envelopá-la em `PageResponse` quebraria
- * também os outros dois consumidores, que já a leem como array.
+ * `GET /users` returns a plain array, not a page: the list is the one for the authenticated
+ * user's company and the backend sorts it by name. Wrapping it in `PageResponse` would also
+ * break the other two consumers, which already read it as an array.
  */
 @Injectable({ providedIn: 'root' })
 export class UserService {
@@ -40,12 +40,12 @@ export class UserService {
     return this.http.patch<User>(`${this.baseUrl}/${id}`, request);
   }
 
-  /** Encerra as sessões do usuário no servidor: o papel viaja dentro do access token. */
+  /** Ends the user's sessions on the server: the role travels inside the access token. */
   changeRole(id: number, role: Role): Observable<User> {
     return this.http.patch<User>(`${this.baseUrl}/${id}/role`, { role });
   }
 
-  /** Desativar encerra as sessões; reativar não tem o que encerrar. */
+  /** Deactivating ends the sessions; reactivating has nothing to end. */
   changeActive(id: number, active: boolean): Observable<User> {
     return this.http.patch<User>(`${this.baseUrl}/${id}/active`, { active });
   }

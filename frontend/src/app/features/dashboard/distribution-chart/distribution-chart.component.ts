@@ -15,7 +15,7 @@ import { readChartChrome, readThemeColor, themeRepaints } from '../utils/theme-c
 
 export type DistributionKind = 'severity' | 'status';
 
-/** Uma barra: rótulo, contagem, participação no total e a cor do tema. */
+/** One bar: label, count, share of the total and the theme color. */
 export interface DistributionCategory {
   key: string;
   label: string;
@@ -32,14 +32,15 @@ interface CategoryDefinition {
 }
 
 /**
- * Definições fixas por tipo, na ordem de declaração do enum do backend — que é a ordem em
- * que as respostas chegam. As contagens são casadas por chave e não por posição: a tela
- * continua correta se a ordem da resposta mudar, e uma categoria ausente vira zero em vez
- * de sumir da legenda.
+ * Fixed definitions per kind, in the declaration order of the backend enum — which is the
+ * order the responses arrive in. The counts are matched by key and not by position: the
+ * screen stays correct if the response order changes, and a missing category becomes zero
+ * instead of disappearing from the legend.
  */
-// O fallback só entra em cena se o token não resolver — na prática, num teste que monte o
-// componente sem a folha global. É sempre o valor do tema claro, porque uma constante não
-// tem como saber o tema; o caminho real passa pelo token e troca junto com ele.
+// The fallback only comes into play if the token does not resolve — in practice, in a test
+// that mounts the component without the global stylesheet. It is always the light theme
+// value, because a constant has no way of knowing the theme; the real path goes through the
+// token and switches along with it.
 const DEFINITIONS: Readonly<Record<DistributionKind, readonly CategoryDefinition[]>> = {
   severity: SEVERITIES.map((severity) => ({
     key: severity,
@@ -66,11 +67,11 @@ const AXIS_TITLES: Readonly<Record<DistributionKind, string>> = {
 };
 
 /**
- * Opções do canvas, remontadas a cada tema porque o cromo também é tokenizado.
+ * Canvas options, rebuilt on every theme because the chrome is tokenized too.
  *
- * `maintainAspectRatio: false` com altura fixa no CSS é o que impede o canvas de estourar a
- * coluna do grid em telas estreitas: sem isso o Chart.js mantém a proporção e cresce além
- * do contêiner.
+ * `maintainAspectRatio: false` with a fixed height in CSS is what keeps the canvas from
+ * blowing out the grid column on narrow screens: without it Chart.js keeps the ratio and
+ * grows beyond the container.
  */
 function buildOptions(): ChartConfiguration<'bar'>['options'] {
   const chrome = readChartChrome();
@@ -80,8 +81,8 @@ function buildOptions(): ChartConfiguration<'bar'>['options'] {
     maintainAspectRatio: false,
     animation: false,
     plugins: {
-      // A legenda nativa do Chart.js descreveria o dataset, não as categorias; os rótulos
-      // ficam no eixo e na legenda em HTML, que sobrevivem a qualquer daltonismo.
+      // Chart.js's native legend would describe the dataset, not the categories; the labels
+      // live on the axis and in the HTML legend, which survive any color blindness.
       legend: { display: false },
       tooltip: {
         backgroundColor: chrome.surface,
@@ -110,12 +111,12 @@ function buildOptions(): ChartConfiguration<'bar'>['options'] {
 }
 
 /**
- * Distribuição por severidade ou por status. Um componente só porque as duas respostas têm
- * exatamente a mesma forma (categoria + contagem) e o desenho é o mesmo; o que muda é o
- * endpoint, os rótulos e as cores, todos tabelados acima.
+ * Distribution by severity or by status. A single component because both responses have
+ * exactly the same shape (category + count) and the drawing is the same; what changes is the
+ * endpoint, the labels and the colors, all tabulated above.
  *
- * Região assíncrona independente: carrega, falha e é recarregada sozinha, sem afetar os
- * cards nem os outros gráficos.
+ * An independent async region: it loads, fails and is reloaded on its own, without affecting
+ * the cards or the other charts.
  */
 @Component({
   selector: 'app-distribution-chart',
@@ -132,7 +133,7 @@ export class DistributionChartComponent implements OnInit, OnDestroy {
   chartData: ChartConfiguration<'bar'>['data'] = { labels: [], datasets: [] };
   chartOptions: ChartConfiguration<'bar'>['options'] = buildOptions();
 
-  /** Última resposta aceita, guardada para repintar sem pedir os números de novo. */
+  /** Last accepted response, kept so a repaint does not ask for the numbers again. */
   private counts: Map<string, number> | null = null;
 
   private readonly destroy$ = new Subject<void>();
@@ -156,7 +157,7 @@ export class DistributionChartComponent implements OnInit, OnDestroy {
       : 'Nenhuma vulnerabilidade cadastrada ainda: os quatro status estão zerados.';
   }
 
-  /** Resumo curto no canvas; os números completos ficam na tabela ao lado dele. */
+  /** Short summary on the canvas; the full numbers live in the table next to it. */
   get chartLabel(): string {
     return `Gráfico de barras: ${this.title.toLowerCase()}, ${this.total} no total. Os valores estão na tabela seguinte.`;
   }
@@ -164,9 +165,9 @@ export class DistributionChartComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.load();
 
-    // Trocar de tema troca os tokens, e o canvas não se repinta sozinho: as cores viram
-    // pixels no momento do desenho. Aqui o gráfico é remontado com os tokens novos, sem
-    // uma segunda ida ao servidor.
+    // Switching theme switches the tokens, and the canvas does not repaint itself: the
+    // colors become pixels at drawing time. Here the chart is rebuilt with the new tokens,
+    // without a second trip to the server.
     themeRepaints(this.themeService.theme$)
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.repaint());
@@ -204,7 +205,7 @@ export class DistributionChartComponent implements OnInit, OnDestroy {
       .pipe(map((entries) => new Map(entries.map((entry) => [entry.status, entry.count]))));
   }
 
-  /** Mesmos números, tokens novos. Nada é recarregado: só as cores mudaram. */
+  /** Same numbers, new tokens. Nothing is reloaded: only the colors changed. */
   private repaint(): void {
     this.chartOptions = buildOptions();
     if (this.counts) {
@@ -213,9 +214,9 @@ export class DistributionChartComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * "Vazio" aqui é "tudo zero", e não "nenhuma linha": o backend sempre devolve as quatro
-   * categorias. Nesse caso a tela diz isso em palavras em vez de desenhar um canvas em
-   * branco que ninguém consegue interpretar.
+   * "Empty" here means "all zeros", and not "no rows": the backend always returns the four
+   * categories. In that case the screen says so in words instead of drawing a blank canvas
+   * that nobody can interpret.
    */
   private apply(counts: Map<string, number>): void {
     this.counts = counts;
@@ -238,8 +239,8 @@ export class DistributionChartComponent implements OnInit, OnDestroy {
         {
           label: this.axisTitle,
           data: values,
-          // Um array de cores, uma por barra: a categoria zerada mantém sua cor e sua
-          // posição, então a legenda não se reordena entre dois carregamentos.
+          // An array of colors, one per bar: the zeroed category keeps its color and its
+          // position, so the legend does not reorder itself between two loads.
           backgroundColor: this.categories.map((category) => category.color),
           borderColor: this.categories.map((category) => category.color),
           borderWidth: 1,

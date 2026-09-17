@@ -3,8 +3,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 export type ViewState = 'loading' | 'empty' | 'error';
 
 /**
- * Estados assíncronos (carregando, vazio e erro) exigidos em todas as telas.
- * Anunciado por leitores de tela via `role="status"` + `aria-live="polite"`.
+ * Async states (loading, empty and error) required on every screen.
+ * Announced by screen readers via `role="status"` + `aria-live="polite"`.
  */
 @Component({
   selector: 'app-state-message',

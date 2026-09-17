@@ -1,15 +1,15 @@
 import { AuthResponse, Role, User } from '../models';
 
-/** Monta um JWT sintético (assinatura fictícia) com o `exp` desejado. Apenas para testes. */
+/** Builds a synthetic JWT (fake signature) with the desired `exp`. For tests only. */
 export function makeJwt(expiresInSeconds: number): string {
   const payload = { sub: 'ana@empresa.com', exp: Math.floor(Date.now() / 1000) + expiresInSeconds };
   return `header.${btoa(JSON.stringify(payload))}.signature`;
 }
 
 /**
- * O refresh token é opaco para o frontend: nada o decodifica, então uma string qualquer
- * basta. O sufixo torna as asserções legíveis quando um teste compara antes e depois de
- * uma renovação.
+ * The refresh token is opaque to the frontend: nothing decodes it, so any string will do.
+ * The suffix keeps the assertions readable when a test compares before and after a
+ * refresh.
  */
 export function makeRefreshToken(suffix = '1'): string {
   return `refresh-token-${suffix}`;

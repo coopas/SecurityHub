@@ -1,28 +1,28 @@
-// Folha única da funcionalidade, como nas demais telas: cada componente a declara em
-// styleUrls e o Angular a isola por componente.
+// Single stylesheet for the feature, as on the other screens: every component declares it
+// in styleUrls and Angular scopes it per component.
 //
-// Duas regras da casa aqui:
+// Two house rules here:
 //
-// 1. Nenhuma cor literal. Todo valor cromático sai de um token `--sh-*` de `styles.scss`,
-//    que é quem sabe o que cada tom vira no tema escuro. Cor escrita à mão passa
-//    despercebida no claro e reaparece ilegível no escuro.
-// 2. Os tokens `--sh-*-soft` são tinta translúcida: servem de fundo para área grande, como
-//    a faixa de erro do relatório, e nunca atrás de texto miúdo e negrito — ali eles
-//    empilham com o que estiver embaixo e derrubam o contraste. Selo é `.sh-badge`, que já
-//    vem com fundo opaco e contorno em `currentColor`.
+// 1. No literal colors. Every chromatic value comes from a `--sh-*` token in `styles.scss`,
+//    which is what knows what each shade becomes in the dark theme. A hand-written color
+//    slips by unnoticed in the light theme and comes back illegible in the dark one.
+// 2. The `--sh-*-soft` tokens are translucent fill: they serve as the background of a large
+//    area, like the report's error bar, and never behind small, bold text — there they
+//    stack with whatever is underneath and sink the contrast. A badge is `.sh-badge`, which
+//    already comes with an opaque background and a `currentColor` outline.
 //
-// O agrupamento por propriedade compartilhada abaixo não é economia à toa: é o que mantém
-// um mesmo papel de texto com um mesmo tamanho em toda a tela.
+// The grouping by shared property below is not thrift for its own sake: it is what keeps one
+// and the same text role at one and the same size across the whole screen.
 
 :host {
   display: block;
 }
 
 // ------------------------------------------------------------------------------------
-// Papéis de texto da tela
+// Text roles on the screen
 // ------------------------------------------------------------------------------------
 
-// Texto explicativo de topo: a linha do cabeçalho e as notas de painel.
+// Explanatory text at the top: the header line and the panel notes.
 .dashboard-subtitle,
 .dashboard-note {
   margin: var(--sh-space-1) 0 0;
@@ -35,7 +35,7 @@
   margin: 0 0 var(--sh-space-4);
 }
 
-// Linha de apoio: identifica o recorte de um painel sem disputar com o título.
+// Supporting line: identifies a panel's slice without competing with the title.
 .dashboard-panel__subtitle,
 .dashboard-panel__totals,
 .dashboard-legend__item {
@@ -43,7 +43,7 @@
   font-size: var(--sh-text-sm);
 }
 
-// Letra miúda: o que só é lido depois que o número já foi.
+// Small print: what is only read after the number already has been.
 .dashboard-card__hint,
 .dashboard-recent__context {
   margin: 0;
@@ -52,8 +52,8 @@
   line-height: 1.4;
 }
 
-// Rótulo em caixa alta pequena, no card e no cabeçalho da tabela: identifica o dado sem
-// ganhar peso visual. Reduzir o tamanho separa melhor do que engrossar.
+// Small uppercase label, on the card and in the table header: identifies the data without
+// gaining visual weight. Shrinking the size separates better than thickening it.
 .dashboard-card__label,
 .dashboard-table thead th {
   color: var(--sh-text-muted);
@@ -64,8 +64,8 @@
   line-height: 1.3;
 }
 
-// Dígitos de largura fixa em tudo que é contagem: é o que permite comparar uma coluna de
-// relance, e o que impede a fila de cards de dançar quando um contador passa de 9 para 10.
+// Fixed-width digits on everything that is a count: it is what lets a column be compared at
+// a glance, and what keeps the row of cards from dancing when a counter goes from 9 to 10.
 .dashboard-card__value,
 .dashboard-legend__value,
 .dashboard-legend__percent,
@@ -91,24 +91,24 @@
   flex-direction: column;
 }
 
-// Impede que um título longo estoure o cabeçalho ou o card.
+// Keeps a long title from overflowing the header or the card.
 .dashboard-panel__heading,
 .dashboard-card__head {
   min-width: 0;
 }
 
 // ------------------------------------------------------------------------------------
-// Arranjo da página
+// Page layout
 // ------------------------------------------------------------------------------------
 
-// Alvo de toque do botão do relatório: a densidade -1 do Material o deixaria abaixo dos
-// 44px que a norma pede para um dedo.
+// Touch target of the report button: Material's density -1 would leave it below the 44px
+// the standard asks for a finger.
 .dashboard-export {
   min-height: 44px;
 }
 
-// Barra de progresso e aviso de falha ocupam o mesmo lugar sob o cabeçalho e guardam o
-// mesmo respiro em relação aos painéis.
+// The progress bar and the failure notice take the same place under the header and keep the
+// same breathing room from the panels.
 .dashboard-progress,
 .dashboard-alert {
   margin: 0 0 var(--sh-space-4);
@@ -119,8 +119,8 @@
   gap: var(--sh-space-5);
 }
 
-// auto-fit + minmax é o que faz os dois gráficos caírem um sob o outro no tablet;
-// min-width: 0 impede que o canvas force a coluna a crescer além da tela.
+// auto-fit + minmax is what makes the two charts drop one below the other on a tablet;
+// min-width: 0 keeps the canvas from forcing the column to grow beyond the screen.
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
@@ -132,7 +132,7 @@
 }
 
 // ------------------------------------------------------------------------------------
-// Cards do resumo
+// Summary cards
 // ------------------------------------------------------------------------------------
 
 .dashboard-cards {
@@ -142,24 +142,24 @@
   margin-bottom: var(--sh-space-5);
 }
 
-// Os sete números são a âncora da tela e valem mais lidos de uma vez, lado a lado, do que
-// distribuídos em duas fileiras desiguais. Abaixo desta largura o auto-fit reorganiza.
+// The seven numbers are the anchor of the screen and are worth more read in one go, side by
+// side, than spread over two uneven rows. Below this width auto-fit rearranges them.
 //
-// O limiar é da janela, mas a grade não vive na janela: descontados o menu lateral (248px)
-// e o recuo da página (48px), sobram 296px a menos. A 1160px de janela restariam 864px para
-// sete cartões — eles transbordavam o contêiner e o sétimo saía cortado. 1400px é a largura
-// em que os sete cabem de fato.
+// The threshold is the window's, but the grid does not live in the window: discounting the
+// side menu (248px) and the page inset (48px), 296px fewer are left. At a 1160px window
+// there would be 864px left for seven cards — they overflowed the container and the seventh
+// came out clipped. 1400px is the width at which all seven actually fit.
 //
-// `minmax(0, 1fr)` e não `1fr`: o segundo é `minmax(auto, 1fr)` e recusa encolher abaixo do
-// conteúdo, então um rótulo longo volta a empurrar a fileira para fora da tela.
+// `minmax(0, 1fr)` and not `1fr`: the latter is `minmax(auto, 1fr)` and refuses to shrink
+// below the content, so a long label pushes the row off the screen again.
 @media (min-width: 1400px) {
   .dashboard-cards {
     grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 }
 
-// `--card-ink` é o tom do card, e é ele — não uma cor literal — que as variantes trocam.
-// O neutro é o padrão de quem só informa.
+// `--card-ink` is the card's shade, and it is what the variants swap — not a literal color.
+// Neutral is the default for the ones that only inform.
 .dashboard-card {
   --card-ink: var(--sh-text-muted);
 
@@ -174,8 +174,8 @@
   color: var(--sh-text);
   text-decoration: none;
   overflow: hidden;
-  // Filete lateral: dá o tom do card sem tingir a superfície inteira, que roubaria o
-  // contraste do número.
+  // Side hairline: gives the card its shade without tinting the whole surface, which would
+  // steal the number's contrast.
   &::before {
     content: '';
     position: absolute;
@@ -188,8 +188,8 @@
     box-shadow: var(--sh-shadow-md);
   }
 
-  // A regra global de foco arredonda o elemento em 2px; aqui o card precisa manter o
-  // próprio raio para o contorno não desenhar um retângulo diferente do card.
+  // The global focus rule rounds the element by 2px; here the card has to keep its own
+  // radius so the outline does not draw a rectangle different from the card.
   &:focus-visible {
     border-radius: var(--sh-radius-md);
   }
@@ -207,8 +207,8 @@
   --card-ink: var(--sh-resolved);
 }
 
-// Zero não é alarme. Declarada depois das variantes de propósito: com a mesma
-// especificidade, a última vence e devolve o card ao tom neutro.
+// Zero is not an alarm. Declared after the variants on purpose: with the same specificity,
+// the last one wins and returns the card to the neutral shade.
 .dashboard-card--quiet {
   --card-ink: var(--sh-text-muted);
 }
@@ -219,14 +219,15 @@
   gap: var(--sh-space-2);
 }
 
-// O ícone toma o tom do card. Sem caixinha em volta: o filete lateral já marca o tom, e
-// uma segunda superfície atrás do ícone só traria outra pilha de contraste para medir.
+// The icon takes the card's shade. No little box around it: the side hairline already marks
+// the shade, and a second surface behind the icon would only bring another contrast stack to
+// measure.
 .dashboard-card__icon {
   flex: 0 0 auto;
   color: var(--card-ink);
 }
 
-// O número domina.
+// The number dominates.
 .dashboard-card__value {
   margin-top: var(--sh-space-1);
   font-size: 2.125rem;
@@ -235,19 +236,19 @@
   letter-spacing: -0.03em;
 }
 
-// Só o que está acontecendo ganha a cor do risco; o ícone e o rótulo dizem a mesma coisa
-// para quem não separa os tons.
+// Only what is actually happening gets the risk color; the icon and the label say the same
+// thing to whoever cannot tell the shades apart.
 .dashboard-card--critical .dashboard-card__value,
 .dashboard-card--high .dashboard-card__value {
   color: var(--card-ink);
 }
 
 // ------------------------------------------------------------------------------------
-// Painéis
+// Panels
 // ------------------------------------------------------------------------------------
 
-// O `.sh-card` traz o preenchimento pronto; aqui ele é zerado para que o filete do
-// cabeçalho atravesse o card de ponta a ponta, em vez de flutuar recuado no meio dele.
+// `.sh-card` comes with the padding already set; here it is zeroed so the header's hairline
+// crosses the card edge to edge, instead of floating inset in the middle of it.
 .dashboard-panel {
   height: 100%;
   padding: 0;
@@ -284,8 +285,8 @@
   margin: 0 0 var(--sh-space-3);
 }
 
-// Link do cabeçalho com área de toque de verdade: 44px de altura e contorno próprio, em
-// vez de um texto sublinhado de 16px de alvo.
+// Header link with a real touch area: 44px tall and an outline of its own, instead of
+// underlined text with a 16px target.
 .dashboard-panel__action {
   display: inline-flex;
   align-items: center;
@@ -304,7 +305,7 @@
   }
 }
 
-// Um tamanho de ícone para a tela inteira, reunido aqui em vez de repetido em cada bloco.
+// One icon size for the whole screen, gathered here instead of repeated in every block.
 .dashboard-card__icon,
 .dashboard-panel__action .mat-icon,
 .dashboard-alert .mat-icon {
@@ -314,14 +315,14 @@
   line-height: 18px;
 }
 
-// Seletor de janela da tendência. A altura vem da variável do próprio Material: mexer nela
-// chega ao botão interno sem `::ng-deep`, que atravessaria o encapsulamento do componente.
+// Trend window selector. The height comes from Material's own variable: touching it reaches
+// the inner button without `::ng-deep`, which would cut through the component encapsulation.
 .dashboard-days {
   --mat-standard-button-toggle-height: 44px;
 }
 
-// Altura fixa no contêiner + maintainAspectRatio: false no Chart.js: sem isso o canvas
-// cresce a cada redesenho e transborda a coluna.
+// Fixed height on the container + maintainAspectRatio: false in Chart.js: without it the
+// canvas grows on every redraw and overflows the column.
 .dashboard-chart {
   position: relative;
   width: 100%;
@@ -333,7 +334,7 @@
 }
 
 // ------------------------------------------------------------------------------------
-// Legenda dos gráficos de distribuição
+// Legend of the distribution charts
 // ------------------------------------------------------------------------------------
 
 .dashboard-legend {
@@ -352,8 +353,9 @@
   gap: var(--sh-space-2);
 }
 
-// O contorno do quadradinho era `rgba(0, 0, 0, 0.25)`: no escuro virava uma moldura preta
-// em volta de cada amostra. `--sh-border-strong` é o token que já vale 3:1 nos dois temas.
+// The little square's outline used to be `rgba(0, 0, 0, 0.25)`: in the dark theme it became
+// a black frame around every swatch. `--sh-border-strong` is the token that already holds
+// 3:1 in both themes.
 .dashboard-legend__swatch {
   width: 10px;
   height: 10px;
@@ -367,11 +369,11 @@
 }
 
 // ------------------------------------------------------------------------------------
-// Tabela dos projetos
+// Projects table
 // ------------------------------------------------------------------------------------
 
-// A tabela já está dentro de um card: um segundo contorno em volta dela seria moldura
-// sobre moldura. O invólucro fica só pela rolagem horizontal em telas estreitas.
+// The table is already inside a card: a second border around it would be frame on top of
+// frame. The wrapper stays only for the horizontal scrolling on narrow screens.
 .dashboard-panel__body .sh-table-wrapper {
   border: 0;
   background: transparent;
@@ -385,8 +387,8 @@
     border-bottom: 1px solid var(--sh-border);
   }
 
-  // Números à direita: é assim que uma coluna de contagens é comparada de relance, sem ler
-  // valor por valor.
+  // Numbers to the right: that is how a column of counts is compared at a glance, without
+  // reading value by value.
   td,
   thead th:not(:first-child) {
     text-align: right;
@@ -401,7 +403,7 @@
 }
 
 // ------------------------------------------------------------------------------------
-// Itens recentes
+// Recent items
 // ------------------------------------------------------------------------------------
 
 .dashboard-recent__item {
@@ -419,8 +421,8 @@
   }
 }
 
-// O link ocupa a linha inteira e tem 44px de altura mínima: o alvo é a faixa, não as
-// poucas letras do título.
+// The link takes up the whole row and has a 44px minimum height: the target is the strip,
+// not the few letters of the title.
 .dashboard-recent__title {
   display: flex;
   align-items: center;
@@ -441,9 +443,9 @@
   margin: 0;
 }
 
-// Os selos usam `.sh-badge`, que já traz fundo opaco e contorno em `currentColor`. Aqui
-// cada classe define só a tinta, e é dela que o contorno também sai. Ícone + texto em todos
-// eles: severidade, situação e atraso nunca dependem só da cor.
+// The badges use `.sh-badge`, which already brings an opaque background and a `currentColor`
+// outline. Here each class defines only the ink, and the outline comes out of it too. Icon +
+// text on all of them: severity, state and lateness never depend on color alone.
 .dashboard-severity--low {
   color: var(--sh-low);
 }
@@ -478,14 +480,14 @@
 }
 
 // ------------------------------------------------------------------------------------
-// Falha do relatório
+// Report failure
 // ------------------------------------------------------------------------------------
 
-// Fica no cabeçalho, sem apagar painel algum. É faixa larga, e não selo: aqui o token
-// translúcido é legítimo. Medido com a translucidez já empilhada sobre `--sh-background`,
-// que é o que fica atrás: `--sh-danger` sobre `--sh-danger-soft` dá 5.00:1 no claro e
-// 6.89:1 no escuro, e nada passa por baixo dela em nenhum estado. O ícone acompanha o
-// texto para o aviso não depender do vermelho.
+// It lives in the header, without wiping out any panel. It is a wide bar, not a badge: here
+// the translucent token is legitimate. Measured with the translucency already stacked over
+// `--sh-background`, which is what sits behind it: `--sh-danger` over `--sh-danger-soft`
+// gives 5.00:1 in the light theme and 6.89:1 in the dark one, and nothing passes underneath
+// it in any state. The icon goes along with the text so the notice does not depend on red.
 .dashboard-alert {
   display: flex;
   align-items: center;

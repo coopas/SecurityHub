@@ -7,8 +7,8 @@ import { User } from '../../../core/models';
 import { UserSummary } from '../models/vulnerability.model';
 
 /**
- * Opções de responsável. `GET /users` é liberado apenas para ADMIN e ANALYST, então
- * quem não pode atribuir também não deve chamar este serviço — a tela decide antes.
+ * Assignee options. `GET /users` is allowed only for ADMIN and ANALYST, so whoever cannot
+ * assign should not call this service either — the screen decides beforehand.
  */
 @Injectable({ providedIn: 'root' })
 export class UserOptionService {
@@ -16,7 +16,7 @@ export class UserOptionService {
 
   constructor(private readonly http: HttpClient) {}
 
-  /** Somente usuários ativos: o backend recusa atribuir a um usuário desativado. */
+  /** Active users only: the backend refuses to assign to a deactivated user. */
   listActive(): Observable<UserSummary[]> {
     const params = new HttpParams().set('active', 'true');
     return this.http

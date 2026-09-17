@@ -5,7 +5,7 @@ import {
   ScanImportSummary,
 } from '../models/scan-import.model';
 
-/** Fixtures dos testes; nenhuma tela usa dados simulados. */
+/** Test fixtures; no screen uses simulated data. */
 export function makeScanFinding(overrides: Partial<ScanFinding> = {}): ScanFinding {
   return {
     id: 1,

@@ -7,12 +7,12 @@ import { User } from '../../../core/models';
 import { AuditActorOption } from '../models/audit.model';
 
 /**
- * Opções do filtro por ator. Ao contrário do seletor de responsável das
- * vulnerabilidades, aqui **não** se filtra por `active=true`: a trilha é histórica e um
- * usuário desativado continua sendo o autor das linhas que ele gerou. Escondê-lo
- * tornaria essas linhas inalcançáveis pelo filtro.
+ * Options of the actor filter. Unlike the assignee picker of the vulnerabilities, here we
+ * do **not** filter by `active=true`: the trail is historical and a deactivated user is
+ * still the author of the rows he generated. Hiding him would make those rows unreachable
+ * by the filter.
  *
- * `GET /users` é liberado a ADMIN e ANALYST, e esta tela já é exclusiva de ADMIN.
+ * `GET /users` is open to ADMIN and ANALYST, and this screen is already ADMIN-only.
  */
 @Injectable({ providedIn: 'root' })
 export class AuditActorService {

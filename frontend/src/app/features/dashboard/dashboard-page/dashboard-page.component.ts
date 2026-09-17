@@ -6,17 +6,17 @@ import { toApiError } from '../../../core/utils/api-error.util';
 import { filenameFromContentDisposition, saveBlob } from '../../../core/utils/file-download.util';
 import { ReportService } from '../services/report.service';
 
-/** Usado quando o `Content-Disposition` não traz um nome aproveitável. */
+/** Used when `Content-Disposition` does not bring a usable name. */
 export const REPORT_FALLBACK_FILENAME = 'relatorio-executivo.pdf';
 
 /**
- * Página do dashboard: o cabeçalho, o botão do relatório executivo e o arranjo das
- * regiões.
+ * The dashboard page: the header, the executive report button and the layout of the
+ * regions.
  *
- * Cada região carrega os próprios dados e trata o próprio erro. Não há um `forkJoin` de
- * todas as chamadas nem um estado único de tela: uma tendência que falha não pode apagar
- * os cards, e cada painel tem seu próprio "tentar novamente". O relatório segue a mesma
- * regra: ele falha sozinho, dentro do cabeçalho.
+ * Each region loads its own data and handles its own error. There is no `forkJoin` over all
+ * the calls and no single screen-wide state: a trend that fails cannot wipe out the cards,
+ * and each panel has its own "tentar novamente". The report follows the same rule: it fails
+ * on its own, inside the header.
  */
 @Component({
   selector: 'app-dashboard-page',
@@ -24,7 +24,7 @@ export const REPORT_FALLBACK_FILENAME = 'relatorio-executivo.pdf';
   styleUrls: ['../dashboard.scss'],
 })
 export class DashboardPageComponent implements OnDestroy {
-  /** O endpoint é de ADMIN e ANALYST; para os demais o botão nem aparece. */
+  /** The endpoint is for ADMIN and ANALYST; for everyone else the button does not appear. */
   readonly canExportReport = this.authService.hasRole('ADMIN', 'ANALYST');
 
   exporting = false;
@@ -70,9 +70,9 @@ export class DashboardPageComponent implements OnDestroy {
           );
         },
         error: (error: unknown) => {
-          // Com `responseType: 'blob'` o corpo de erro também é um Blob, que nem o
-          // `ErrorInterceptor` nem `toApiError` conseguem ler; a mensagem fixa é o que
-          // resta, e aqui não há nada acionável além de tentar de novo.
+          // With `responseType: 'blob'` the error body is also a Blob, which neither the
+          // `ErrorInterceptor` nor `toApiError` can read; the fixed message is what is
+          // left, and there is nothing actionable here beyond trying again.
           this.exportError = toApiError(error)?.message ?? 'Não foi possível gerar o relatório.';
         },
       });

@@ -4,7 +4,7 @@ export type Environment = 'PRODUCTION' | 'STAGING' | 'DEVELOPMENT' | 'TEST';
 
 export type Criticality = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
-/** Ativo retornado pela API. O backend omite campos nulos, daí os opcionais. */
+/** Asset returned by the API. The backend omits null fields, hence the optionals. */
 export interface Asset {
   id: number;
   name: string;
@@ -15,7 +15,7 @@ export interface Asset {
   criticality: Criticality;
   projectId: number;
   projectName: string;
-  /** Sempre 0 até o módulo de vulnerabilidades preencher a contagem real. */
+  /** Always 0 until the vulnerabilities module fills in the real count. */
   vulnerabilityCount: number;
   createdAt: string;
   updatedAt: string;
@@ -31,7 +31,7 @@ export interface AssetRequest {
   criticality: Criticality;
 }
 
-/** Espelha `AssetService.SORTABLE_PROPERTIES` do backend; o resto é descartado lá. */
+/** Mirrors the backend's `AssetService.SORTABLE_PROPERTIES`; the rest is discarded there. */
 export const ASSET_SORTABLE_PROPERTIES = [
   'name',
   'type',
@@ -43,7 +43,7 @@ export const ASSET_SORTABLE_PROPERTIES = [
 
 export type AssetSortProperty = (typeof ASSET_SORTABLE_PROPERTIES)[number];
 
-/** Filtros da listagem, espelhados nos query params da URL. */
+/** Listing filters, mirrored in the URL query params. */
 export interface AssetQuery {
   page: number;
   size: number;
@@ -97,8 +97,8 @@ export const CRITICALITY_LABELS: Readonly<Record<Criticality, string>> = {
 };
 
 /**
- * Ícones acompanham sempre o rótulo em texto: criticidade e ambiente nunca são
- * comunicados apenas por cor (WCAG 1.4.1).
+ * Icons always go along with the text label: criticality and environment are never
+ * communicated by color alone (WCAG 1.4.1).
  */
 export const ASSET_TYPE_ICONS: Readonly<Record<AssetType, string>> = {
   API: 'settings_ethernet',
@@ -123,15 +123,15 @@ export const CRITICALITY_ICONS: Readonly<Record<Criticality, string>> = {
   CRITICAL: 'priority_high',
 };
 
-/** Opção mínima do seletor de projetos, montada a partir do `ProjectService`. */
+/** Minimal option for the project selector, built from the `ProjectService`. */
 export interface ProjectOption {
   id: number;
   name: string;
 }
 
 /**
- * Página única de projetos carregada para o seletor e para o filtro. O backend limita
- * `size` a 100; empresas com mais projetos que isso ainda enxergam o projeto do ativo
- * em edição, que é acrescentado à lista quando não vem nesta página.
+ * Single page of projects loaded for the selector and for the filter. The backend caps
+ * `size` at 100; companies with more projects than that still see the project of the asset
+ * being edited, which is appended to the list when it does not come in this page.
  */
 export const PROJECT_OPTIONS_PAGE_SIZE = 100;

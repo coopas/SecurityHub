@@ -3,7 +3,7 @@ import { CanActivateFn, Router, UrlTree } from '@angular/router';
 
 import { AuthService } from '../services/auth.service';
 
-/** Exige sessão válida; caso contrário envia ao login preservando o destino. */
+/** Requires a valid session; otherwise sends to the login preserving the destination. */
 export const authGuard: CanActivateFn = (_route, state): boolean | UrlTree => {
   const authService = inject(AuthService);
   const router = inject(Router);

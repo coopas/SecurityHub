@@ -8,7 +8,7 @@ import { DEFAULT_TREND_DAYS, TREND_DAYS_OPTIONS, Trend } from '../models/dashboa
 import { DashboardService } from '../services/dashboard.service';
 import { readChartChrome, readThemeColor, themeRepaints } from '../utils/theme-color.util';
 
-/** Uma linha da tabela textual: o dia já formatado e as duas contagens. */
+/** One row of the textual table: the day already formatted and the two counts. */
 export interface TrendRow {
   date: string;
   label: string;
@@ -20,8 +20,9 @@ const OPENED_LABEL = 'Abertas';
 const RESOLVED_LABEL = 'Resolvidas';
 
 /**
- * Opções do canvas, remontadas a cada tema porque o cromo também sai dos tokens — o
- * Chart.js não lê CSS e cairia nos cinzas fixos da biblioteca, invisíveis no escuro.
+ * Canvas options, rebuilt on every theme because the chrome also comes out of the tokens —
+ * Chart.js does not read CSS and would fall back to the library's hard-coded grays, which
+ * are invisible in the dark theme.
  */
 function buildOptions(): ChartConfiguration<'line'>['options'] {
   const chrome = readChartChrome();
@@ -32,9 +33,9 @@ function buildOptions(): ChartConfiguration<'line'>['options'] {
     animation: false,
     interaction: { mode: 'index', intersect: false },
     plugins: {
-      // Legenda nativa com texto ao lado de cada marcador: as séries nunca são distinguidas
-      // apenas pela cor. O marcador tem forma própria por série e o traçado também difere,
-      // contínuo para abertas e tracejado para resolvidas.
+      // Native legend with text beside each marker: the series are never distinguished by
+      // color alone. The marker has its own shape per series and the stroke differs too,
+      // solid for opened and dashed for resolved.
       legend: {
         display: true,
         position: 'top',
@@ -73,11 +74,12 @@ function buildOptions(): ChartConfiguration<'line'>['options'] {
 }
 
 /**
- * Tendência diária de aberturas e resoluções.
+ * Daily trend of openings and resolutions.
  *
- * As datas nunca passam por `Date`: o backend manda `yyyy-MM-dd` em UTC e converter isso
- * para o fuso do navegador deslocaria cada ponto um dia para trás no Brasil. Formatar por
- * recorte de string mantém o eixo, a tabela e o período do título falando do mesmo dia.
+ * The dates never go through `Date`: the backend sends `yyyy-MM-dd` in UTC, and converting
+ * that to the browser's timezone would shift every point one day back in Brazil. Formatting
+ * by string slicing keeps the axis, the table and the period in the title talking about the
+ * same day.
  */
 @Component({
   selector: 'app-trend-chart',
@@ -87,7 +89,7 @@ function buildOptions(): ChartConfiguration<'line'>['options'] {
 export class TrendChartComponent implements OnInit, OnDestroy {
   readonly daysOptions = TREND_DAYS_OPTIONS;
 
-  /** Janela pedida; a efetiva é sempre a que voltou na resposta. */
+  /** The requested window; the effective one is always the one that came back. */
   selectedDays = DEFAULT_TREND_DAYS;
 
   state: ViewState | null = 'loading';
@@ -106,7 +108,7 @@ export class TrendChartComponent implements OnInit, OnDestroy {
     private readonly themeService: ThemeService,
   ) {}
 
-  /** Rótulo do período tirado da resposta: `days` pode ter sido limitado pelo servidor. */
+  /** Period label taken from the response: `days` may have been clamped by the server. */
   get periodLabel(): string {
     if (!this.trend) {
       return '';
@@ -127,8 +129,8 @@ export class TrendChartComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.load();
 
-    // As cores das duas séries são pixels no canvas, não CSS: sem repintar, a linha do
-    // tema claro continuaria desenhada sobre o fundo escuro.
+    // The two series' colors are pixels on the canvas, not CSS: without a repaint, the
+    // light theme's line would stay drawn over the dark background.
     themeRepaints(this.themeService.theme$)
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.repaint());
@@ -163,19 +165,19 @@ export class TrendChartComponent implements OnInit, OnDestroy {
     return row.date;
   }
 
-  /** `yyyy-MM-dd` → `dd/MM/yyyy`, sem `Date` e portanto sem deslocamento de fuso. */
+  /** `yyyy-MM-dd` → `dd/MM/yyyy`, without `Date` and therefore without a timezone shift. */
   formatDate(date: string): string {
     const [year, month, day] = date.split('-');
     return day && month && year ? `${day}/${month}/${year}` : date;
   }
 
-  /** Eixo horizontal: só dia e mês, que é o que cabe em 90 pontos. */
+  /** Horizontal axis: day and month only, which is what fits across 90 points. */
   private formatAxisDate(date: string): string {
     const [, month, day] = date.split('-');
     return day && month ? `${day}/${month}` : date;
   }
 
-  /** Mesma série, tokens novos. Nada é recarregado: só as cores mudaram. */
+  /** Same series, new tokens. Nothing is reloaded: only the colors changed. */
   private repaint(): void {
     this.chartOptions = buildOptions();
     if (this.trend) {
@@ -221,14 +223,14 @@ export class TrendChartComponent implements OnInit, OnDestroy {
           borderColor: resolvedColor,
           backgroundColor: resolvedColor,
           pointBackgroundColor: resolvedColor,
-          // Losango contra círculo: a forma do marcador separa as séries na legenda e no
-          // balão mesmo para quem não distingue as duas cores.
+          // Diamond against circle: the marker shape separates the series in the legend and
+          // in the tooltip even for whoever cannot tell the two colors apart.
           pointStyle: 'rectRot',
           pointRadius: 2,
           pointHoverRadius: 5,
           borderWidth: 2,
-          // Traço diferente para a segunda série: quem não distingue as duas cores ainda
-          // separa as linhas.
+          // A different stroke for the second series: whoever cannot tell the two colors
+          // apart still separates the lines.
           borderDash: [6, 4],
           tension: 0.25,
           fill: false,
@@ -236,8 +238,8 @@ export class TrendChartComponent implements OnInit, OnDestroy {
       ],
     };
 
-    // O backend devolve a série completa, com zeros nos dias parados: "vazio" é a série
-    // inteira zerada, e não a ausência de pontos.
+    // The backend returns the complete series, with zeros on the idle days: "empty" is the
+    // whole series zeroed, and not the absence of points.
     this.state = this.totalOpened === 0 && this.totalResolved === 0 ? 'empty' : null;
   }
 }

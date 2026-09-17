@@ -68,7 +68,7 @@ const MATERIAL_MODULES = [
   MatTooltipModule,
 ];
 
-/** Importado por todos os módulos de funcionalidade: Angular, formulários, rotas e Material. */
+/** Imported by every feature module: Angular, forms, routing and Material. */
 @NgModule({
   declarations: [ConfirmDialogComponent, StateMessageComponent],
   imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, ...MATERIAL_MODULES],

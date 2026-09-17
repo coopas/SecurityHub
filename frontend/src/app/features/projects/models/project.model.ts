@@ -1,6 +1,6 @@
 export type ProjectStatus = 'ACTIVE' | 'ARCHIVED';
 
-/** Projeto retornado pela API. O backend omite campos nulos, daí os opcionais. */
+/** Project returned by the API. The backend omits null fields, hence the optionals. */
 export interface Project {
   id: number;
   name: string;
@@ -18,14 +18,14 @@ export interface ProjectRequest {
   status?: ProjectStatus;
 }
 
-/** Propriedades aceitas pelo backend em `sort`; qualquer outra é ignorada pelo servidor. */
+/** Properties the backend accepts in `sort`; any other one is ignored by the server. */
 export const PROJECT_SORTABLE_PROPERTIES = ['name', 'status', 'createdAt', 'updatedAt'] as const;
 
 export type ProjectSortProperty = (typeof PROJECT_SORTABLE_PROPERTIES)[number];
 
 export type SortDirection = 'asc' | 'desc';
 
-/** Filtros da listagem, espelhados nos query params da URL. */
+/** Listing filters, mirrored in the URL query params. */
 export interface ProjectQuery {
   page: number;
   size: number;

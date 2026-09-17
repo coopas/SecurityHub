@@ -78,8 +78,8 @@ describe('AuditService', () => {
     expect(from.getHours()).toBe(0);
     expect(from.getMinutes()).toBe(0);
 
-    // O ponto crítico: `AuditSpecifications` compara `createdAt <= to`. Meia-noite do
-    // dia 17 esconderia todo o dia 17, que é justamente o que o usuário pediu.
+    // The critical point: `AuditSpecifications` compares `createdAt <= to`. Midnight of
+    // the 17th would hide the whole 17th, which is exactly what the user asked for.
     expect(toCivilDate(to)).toBe('2026-09-17');
     expect(to.getHours()).toBe(23);
     expect(to.getMinutes()).toBe(59);

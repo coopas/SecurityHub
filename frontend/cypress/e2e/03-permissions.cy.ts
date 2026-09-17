@@ -1,16 +1,16 @@
 import { AuthSession } from '../support/commands';
 
 /**
- * Permissão do papel VIEWER, verificada nas duas camadas em que ela existe.
+ * The VIEWER role's permissions, checked on both layers where they exist.
  *
- * A metade de cima olha a tela: nenhuma afordância de escrita, e `/403` na navegação direta.
- * A metade de baixo chama a API com o token do próprio VIEWER e exige 403.
+ * The top half looks at the screen: no write affordance, and `/403` on direct navigation. The
+ * bottom half calls the API with the VIEWER's own token and demands a 403.
  *
- * As duas são necessárias, e é a de baixo que importa. Esconder um botão não é um controle —
- * é conveniência; quem quiser escrever não precisa do botão, precisa de um `curl`. Uma suíte
- * que só verificasse o CSS estaria testando a camada errada e passaria intacta com o backend
- * completamente aberto. É o próprio princípio que este projeto aplica no backend, e vale aqui
- * também.
+ * Both are necessary, and it is the bottom one that matters. Hiding a button is not a control —
+ * it is convenience; whoever wants to write does not need the button, they need a `curl`. A
+ * suite that only checked the CSS would be testing the wrong layer and would pass untouched with
+ * the backend completely open. It is the very principle this project applies on the backend, and
+ * it holds here too.
  */
 describe('VIEWER não escreve, nem pela tela nem pela API', () => {
   let viewer: AuthSession;
@@ -19,9 +19,9 @@ describe('VIEWER não escreve, nem pela tela nem pela API', () => {
   before(() => {
     cy.loginAs('viewer@demo.test').then((session) => {
       viewer = session;
-      // Ler é permitido a todo papel, então a própria sessão do VIEWER serve para achar um
-      // alvo existente da empresa dele — que é o que torna um 403 significativo: o recurso
-      // existe e é da empresa certa, e ainda assim a escrita é recusada.
+      // Reading is allowed to every role, so the VIEWER's own session serves to find an
+      // existing target from their company — which is what makes a 403 meaningful: the resource
+      // exists and belongs to the right company, and the write is refused all the same.
       cy.apiRequest<{ content: Array<{ id: number }> }>({
         url: '/vulnerabilities?size=1',
         token: session.accessToken,
@@ -33,7 +33,7 @@ describe('VIEWER não escreve, nem pela tela nem pela API', () => {
     });
   });
 
-  // --- a tela ---------------------------------------------------------------
+  // --- the screen -----------------------------------------------------------
 
   it('não mostra as afordâncias de escrita', () => {
     cy.loginAs('viewer@demo.test', '/dashboard');
@@ -64,7 +64,7 @@ describe('VIEWER não escreve, nem pela tela nem pela API', () => {
     );
   });
 
-  // --- a API, que é onde o controle de verdade está -------------------------
+  // --- the API, which is where the real control lives -----------------------
 
   it('recebe 403 do backend em toda rota de escrita ou de exportação', () => {
     cy.apiRequest({
@@ -99,9 +99,9 @@ describe('VIEWER não escreve, nem pela tela nem pela API', () => {
   });
 
   it('recebe 403 ao tentar anexar um arquivo', () => {
-    // Multipart montado à mão porque o `@RequestPart("file")` do controller resolve o
-    // argumento antes de o `@PreAuthorize` do serviço rodar: um corpo sem a parte `file`
-    // devolveria 400 e o teste concluiria, erradamente, que a regra de papel funcionou.
+    // Multipart assembled by hand because the controller's `@RequestPart("file")` resolves the
+    // argument before the service's `@PreAuthorize` runs: a body without the `file` part would
+    // return 400 and the test would conclude, wrongly, that the role rule worked.
     const boundary = '----securityhubCypressBoundary';
     const body = [
       `--${boundary}`,

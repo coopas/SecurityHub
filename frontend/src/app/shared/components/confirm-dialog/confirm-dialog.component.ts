@@ -6,11 +6,11 @@ export interface ConfirmDialogData {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  /** Destaca a ação como destrutiva (exclusões). */
+  /** Highlights the action as destructive (deletions). */
   destructive?: boolean;
 }
 
-/** Confirmação reutilizável, obrigatória antes de qualquer ação destrutiva. */
+/** Reusable confirmation, mandatory before any destructive action. */
 @Component({
   selector: 'app-confirm-dialog',
   templateUrl: './confirm-dialog.component.html',

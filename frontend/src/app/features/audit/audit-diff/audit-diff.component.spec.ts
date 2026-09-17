@@ -10,7 +10,7 @@ describe('AuditDiffComponent', () => {
   let fixture: ComponentFixture<AuditDiffComponent>;
   let component: AuditDiffComponent;
 
-  /** O input não é ligado por template aqui, então `ngOnChanges` é acionado à mão. */
+  /** The input is not bound by template here, so `ngOnChanges` is fired by hand. */
   const render = (log: AuditLog): void => {
     component.log = log;
     component.ngOnChanges();
@@ -79,7 +79,7 @@ describe('AuditDiffComponent', () => {
     expect(changed?.textContent).toContain('HIGH');
     expect(changed?.textContent).toContain('CRITICAL');
 
-    // O despejo dos demais campos é justamente o que torna uma trilha ilegível.
+    // The dump of the remaining fields is exactly what makes a trail illegible.
     expect(changed?.textContent).not.toContain('SQL Injection no login');
     expect(find('audit-diff-unchanged')).toBeNull();
 
@@ -108,7 +108,7 @@ describe('AuditDiffComponent', () => {
     expect(changed?.querySelectorAll('li').length).toBe(2);
     expect(changed?.textContent).toContain('OPEN');
     expect(changed?.textContent).toContain('RESOLVED');
-    // Chave ausente antes da mudança: exibida como vazio, não como erro.
+    // Key missing before the change: displayed as empty, not as an error.
     expect(changed?.textContent).toContain(component.emptyValue);
     expect(find('audit-diff-unchanged-toggle')).toBeNull();
   });

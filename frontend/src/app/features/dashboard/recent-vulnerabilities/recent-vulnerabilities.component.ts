@@ -14,12 +14,12 @@ import { VulnerabilityService } from '../../vulnerabilities/services/vulnerabili
 import { RECENT_VULNERABILITIES_SIZE, RECENT_VULNERABILITIES_SORT } from '../models/dashboard.model';
 
 /**
- * "Itens recentes" do dashboard.
+ * The dashboard's "Itens recentes".
  *
- * Não existe endpoint de atividade recente no backend, e de propósito: este painel é a
- * primeira página de `GET /vulnerabilities` ordenada por criação, um endpoint que já é
- * paginado, isolado por empresa e testado. Por isso aqui se usa o `VulnerabilityService`
- * das vulnerabilidades em vez de um serviço novo.
+ * There is no recent-activity endpoint on the backend, and that is deliberate: this panel is
+ * the first page of `GET /vulnerabilities` sorted by creation, an endpoint that is already
+ * paginated, isolated per company and tested. That is why the vulnerabilities'
+ * `VulnerabilityService` is used here instead of a new service.
  */
 @Component({
   selector: 'app-recent-vulnerabilities',
@@ -62,7 +62,7 @@ export class RecentVulnerabilitiesComponent implements OnInit {
     return SEVERITY_ICONS[severity];
   }
 
-  /** Cor é reforço: o ícone e o texto já dizem a severidade. */
+  /** Color is reinforcement: the icon and the text already say the severity. */
   severityClass(severity: Severity): string {
     return `dashboard-severity--${severity.toLowerCase()}`;
   }

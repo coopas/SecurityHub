@@ -5,8 +5,8 @@ import { Role } from '../models';
 import { AuthService } from '../services/auth.service';
 
 /**
- * Autorização por papel a partir de `data.roles`. A verificação real continua
- * no backend; aqui apenas evitamos telas às quais o usuário não tem acesso.
+ * Role-based authorization from `data.roles`. The real check still lives in the
+ * backend; here we only keep the user off screens they have no access to.
  */
 export const roleGuard: CanActivateFn = (route, state): boolean | UrlTree => {
   const authService = inject(AuthService);

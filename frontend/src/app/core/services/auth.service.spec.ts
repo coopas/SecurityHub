@@ -98,7 +98,7 @@ describe('AuthService', () => {
 
     service.logout().subscribe(() => done());
 
-    // A limpeza local não espera a rede: o token já saiu do armazenamento.
+    // The local cleanup does not wait for the network: the token has already left storage.
     expect(localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)).toBeNull();
 
     const request = httpMock.expectOne(`${environment.apiUrl}/auth/logout`);
@@ -195,8 +195,8 @@ describe('AuthService', () => {
 
     const service = configure();
 
-    // A sessão é recuperável: mandá-la ao login seria descartar o que só precisava
-    // de uma renovação.
+    // The session is recoverable: sending it to the login would throw away what only
+    // needed a refresh.
     expect(service.currentUser?.role).toBe('ANALYST');
     expect(service.isAuthenticated()).toBeTrue();
   });
@@ -208,7 +208,7 @@ describe('AuthService', () => {
     const service = configure();
     expect(service.isAuthenticated()).toBeTrue();
 
-    // É isto que faz o desvio para /login terminar: some também o refresh token.
+    // This is what makes the detour to /login terminate: the refresh token goes too.
     service.clearSession();
 
     expect(service.isAuthenticated()).toBeFalse();
@@ -221,7 +221,7 @@ describe('AuthService', () => {
       service
         .confirmPasswordReset({ token: 'token-do-email', password: 'senha-super-secreta' })
         .subscribe(() => {
-          // Confirmar não abre sessão: o usuário volta ao login.
+          // Confirming opens no session: the user goes back to the login.
           expect(localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY)).toBeNull();
           done();
         });

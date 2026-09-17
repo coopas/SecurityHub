@@ -11,11 +11,11 @@ export interface NavItem {
   label: string;
   icon: string;
   route: string;
-  /** Vazio significa visível para qualquer usuário autenticado. */
+  /** Empty means visible to any authenticated user. */
   roles: Role[];
 }
 
-/** Abaixo deste ponto a navegação vira gaveta sobreposta com botão hambúrguer. */
+/** Below this point the navigation turns into an overlay drawer with a hamburger button. */
 export const HANDSET_QUERY = '(max-width: 959.98px)';
 
 @Component({
@@ -73,12 +73,13 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * O observable de logout precisa ser assinado: a limpeza local é síncrona, mas a revogação
-   * no servidor viaja nele, e um observable frio nunca dispara sem assinante. Sem isso a
-   * família de refresh token sobreviveria no servidor até expirar.
+   * The logout observable has to be subscribed to: the local cleanup is synchronous, but the
+   * revocation on the server travels in it, and a cold observable never fires without a
+   * subscriber. Without this the refresh token family would survive on the server until it
+   * expired.
    *
-   * A navegação acontece nos dois desfechos, porque a sessão local já foi encerrada de
-   * qualquer forma e prender o usuário na tela por um erro de rede não ajudaria ninguém.
+   * The navigation happens on both outcomes, because the local session has been ended either
+   * way and trapping the user on the screen over a network error would help nobody.
    */
   logout(): void {
     this.authService.logout().subscribe({

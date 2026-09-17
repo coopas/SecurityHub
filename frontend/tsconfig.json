@@ -25,9 +25,9 @@
     ]
   },
   /*
-    Este arquivo não tem "include", então por padrão ele abrange tudo — inclusive o
-    `cypress/` de primeiro nível, que tem tsconfig próprio com outros `types`. Sem esta
-    exclusão os globais de Mocha/Chai do Cypress e os de Jasmine colidiriam aqui.
+    This file has no "include", so by default it covers everything — including the
+    top-level `cypress/`, which has a tsconfig of its own with different `types`. Without
+    this exclusion Cypress's Mocha/Chai globals and Jasmine's would collide here.
   */
   "exclude": ["cypress", "cypress.config.ts", "dist", "out-tsc"],
   "angularCompilerOptions": {

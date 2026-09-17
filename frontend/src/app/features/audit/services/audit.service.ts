@@ -8,9 +8,9 @@ import { AuditLog, AuditQuery } from '../models/audit.model';
 import { endOfDayInstant, startOfDayInstant } from '../utils/audit-date.util';
 
 /**
- * Trilha de auditoria. Somente leitura: o recurso é append-only e não existe endpoint
- * por linha para nenhum verbo, então este serviço tem uma única operação de propósito.
- * O backend também exige ADMIN (`@PreAuthorize` em `AuditQueryService.search`).
+ * Audit trail. Read-only: the resource is append-only and there is no per-row endpoint
+ * for any verb, so this service has a single operation on purpose. The backend also
+ * requires ADMIN (`@PreAuthorize` on `AuditQueryService.search`).
  */
 @Injectable({ providedIn: 'root' })
 export class AuditService {
@@ -34,9 +34,10 @@ export class AuditService {
       params = params.set('action', query.action);
     }
 
-    // A data civil escolhida vira instante aqui, e não no componente: o controller
-    // declara `Instant` com `ISO.DATE_TIME`, e o `to` precisa do fim do dia porque a
-    // especificação compara com `<=` — a meia-noite esconderia o último dia inteiro.
+    // The chosen civil date becomes an instant here, and not in the component: the
+    // controller declares `Instant` with `ISO.DATE_TIME`, and `to` needs the end of the
+    // day because the specification compares with `<=` — midnight would hide the whole
+    // last day.
     const from = query.from ? startOfDayInstant(query.from) : null;
     if (from) {
       params = params.set('from', from);

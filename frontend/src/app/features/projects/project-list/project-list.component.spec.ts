@@ -181,11 +181,11 @@ describe('ProjectListComponent', () => {
     tick(SEARCH_DEBOUNCE_MS);
     expect(router.navigate).toHaveBeenCalledTimes(1);
 
-    // A navegação real devolveria o termo pela rota; o stub reproduz esse passo.
+    // Real navigation would hand the term back through the route; the stub replays that step.
     route.emit({ search: 'portal' });
     fixture.detectChanges();
 
-    // "Limpar filtros" volta a rota ao estado sem parâmetros.
+    // "Limpar filtros" returns the route to the state with no parameters.
     route.emit({});
     fixture.detectChanges();
     expect(component.searchControl.value).toBe('');

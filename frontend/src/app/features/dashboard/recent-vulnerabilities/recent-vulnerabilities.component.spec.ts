@@ -41,7 +41,7 @@ describe('RecentVulnerabilitiesComponent', () => {
   it('usa a listagem de vulnerabilidades, primeira página por criação desc', () => {
     fixture.detectChanges();
 
-    // Não existe endpoint de "atividade recente": o painel é a listagem que já existe.
+    // There is no "recent activity" endpoint: the panel is the list that already exists.
     expect(vulnerabilityService.list).toHaveBeenCalledOnceWith({
       page: 0,
       size: 5,
@@ -56,7 +56,7 @@ describe('RecentVulnerabilitiesComponent', () => {
     expect(items.length).toBe(2);
     expect(items[0].querySelector('a')?.getAttribute('href')).toBe('/vulnerabilities/1');
     expect(items[0].textContent).toContain('SQL Injection no login');
-    // Ícone e texto juntos: severidade e status nunca só pela cor.
+    // Icon and text together: severity and status never by color alone.
     expect(items[0].textContent).toContain('Alta');
     expect(items[0].textContent).toContain('Aberta');
     expect(items[0].textContent).toContain('API de pagamentos');

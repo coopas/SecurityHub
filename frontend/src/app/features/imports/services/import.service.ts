@@ -13,12 +13,12 @@ import {
 } from '../models/scan-import.model';
 
 /**
- * Importação de relatórios de varredura. O recurso é uma área de espera: o envio cria
- * uma importação `PENDING` com os achados já normalizados, a revisão acontece na tela de
- * prévia e só o `confirm` transforma os achados em vulnerabilidades.
+ * Import of scan reports. The resource is a waiting area: the upload creates a `PENDING`
+ * import with the findings already normalized, the review happens on the preview screen
+ * and only `confirm` turns the findings into vulnerabilities.
  *
- * A listagem devolve resumos paginados; o detalhe é o único lugar que traz os achados,
- * porque uma varredura grande não cabe numa linha de histórico.
+ * The listing returns paginated summaries; the detail is the only place that brings the
+ * findings, because a large scan does not fit in a history row.
  */
 @Injectable({ providedIn: 'root' })
 export class ImportService {
@@ -26,7 +26,7 @@ export class ImportService {
 
   constructor(private readonly http: HttpClient) {}
 
-  /** Histórico paginado; `page`, `size` e `sort` vêm dos query params da tela. */
+  /** Paginated history; `page`, `size` and `sort` come from the screen's query params. */
   list(query: ScanImportQuery): Observable<PageResponse<ScanImportSummary>> {
     const params = new HttpParams()
       .set('page', String(query.page))
@@ -41,18 +41,18 @@ export class ImportService {
   }
 
   /**
-   * Envia o relatório como `multipart/form-data`, nas partes `file`, `projectId` e
-   * `format` que o backend espera.
+   * Sends the report as `multipart/form-data`, in the `file`, `projectId` and `format`
+   * parts the backend expects.
    *
-   * Nenhum `Content-Type` é definido aqui, e isso é deliberado: quem monta esse
-   * cabeçalho é o navegador, porque só ele conhece o boundary que separa as partes.
-   * Escrevê-lo à mão produz um `multipart/form-data` sem boundary, o servidor não
-   * consegue separar parte alguma e responde 400 ou 415 — um erro que parece defeito do
-   * backend e cuja causa está inteiramente nesta linha.
+   * No `Content-Type` is set here, and that is deliberate: the one who builds that
+   * header is the browser, because only it knows the boundary that separates the parts.
+   * Writing it by hand produces a `multipart/form-data` with no boundary, the server
+   * cannot separate a single part and answers 400 or 415 — an error that looks like a
+   * backend defect and whose cause lies entirely in this line.
    *
-   * `observe: 'events'` com `reportProgress: true` devolve os eventos de progresso do
-   * upload, que é o que alimenta a barra determinada da tela; o último evento é a
-   * resposta com a importação criada.
+   * `observe: 'events'` with `reportProgress: true` returns the upload progress events,
+   * which is what feeds the determinate bar on the screen; the last event is the
+   * response with the created import.
    */
   upload(projectId: number, format: ScanFormat, file: File): Observable<HttpEvent<ScanImport>> {
     const formData = new FormData();
@@ -67,20 +67,21 @@ export class ImportService {
   }
 
   /**
-   * Vincula um achado sem ativo ao ativo escolhido. A resposta é o achado inteiro já
-   * reclassificado pelo servidor — que pode devolver `DUPLICATE` em vez de `MATCHED` —,
-   * então a linha é substituída pelo que volta, e não pelo que a tela supôs.
+   * Links a finding with no asset to the chosen asset. The response is the whole finding
+   * already reclassified by the server — which may return `DUPLICATE` instead of
+   * `MATCHED` —, so the row is replaced by what comes back, not by what the screen
+   * assumed.
    */
   mapFinding(id: number, findingId: number, assetId: number): Observable<ScanFinding> {
     return this.http.patch<ScanFinding>(`${this.baseUrl}/${id}/findings/${findingId}`, { assetId });
   }
 
-  /** Cria as vulnerabilidades dos achados revisados; recusa com `CONFLICT` se repetido. */
+  /** Creates vulnerabilities from the reviewed findings; refuses with `CONFLICT` if repeated. */
   confirm(id: number): Observable<ScanImport> {
     return this.http.post<ScanImport>(`${this.baseUrl}/${id}/confirm`, {});
   }
 
-  /** Descarta a importação inteira. Nada foi criado ainda, então não há o que desfazer. */
+  /** Discards the whole import. Nothing was created yet, so there is nothing to undo. */
   discard(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }

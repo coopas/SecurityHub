@@ -6,8 +6,8 @@ import { environment } from '../../../environments/environment';
 import { AuthService } from '../services/auth.service';
 
 /**
- * Anexa o bearer token somente às chamadas da própria API; qualquer outra origem
- * (assets, CDNs) segue sem o cabeçalho.
+ * Attaches the bearer token only to calls to our own API; any other origin
+ * (assets, CDNs) goes on without the header.
  */
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
@@ -18,7 +18,7 @@ export class AuthInterceptor implements HttpInterceptor {
       return next.handle(request);
     }
 
-    // Resolvido sob demanda para evitar dependência cíclica com o HttpClient.
+    // Resolved lazily to avoid a cyclic dependency with the HttpClient.
     const token = this.injector.get(AuthService).accessToken;
     if (!token) {
       return next.handle(request);

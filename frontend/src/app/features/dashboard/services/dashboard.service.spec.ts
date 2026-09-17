@@ -82,8 +82,8 @@ describe('DashboardService', () => {
 
     const request = httpMock.expectOne((candidate) => candidate.url === `${baseUrl}/trend`);
     expect(request.request.method).toBe('GET');
-    // O valor pedido viaja como está: o limite [1, 90] é do servidor, e é o eco dele que
-    // a tela usa.
+    // The requested value travels as is: the [1, 90] limit is the server's, and it is its
+    // echo that the screen uses.
     expect(request.request.params.get('days')).toBe('365');
 
     const trend = makeTrend([

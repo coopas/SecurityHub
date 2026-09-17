@@ -10,7 +10,7 @@ import { MainLayoutComponent } from './layout/main-layout/main-layout.component'
 export const APP_ROUTES: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
 
-  // Shell autenticado: toolbar + sidenav. Cada funcionalidade entra como filho lazy.
+  // Authenticated shell: toolbar + sidenav. Every feature comes in as a lazy child.
   {
     path: '',
     component: MainLayoutComponent,
@@ -39,30 +39,30 @@ export const APP_ROUTES: Routes = [
           ),
       },
       {
-        // O histórico e a revisão são leitura, liberadas a qualquer papel — é o backend
-        // que restringe enviar, mapear, confirmar e descartar. O roleGuard cobre só a
-        // rota de envio, no roteador da própria funcionalidade.
+        // The history and the review are read-only, open to any role — it is the backend
+        // that restricts uploading, mapping, confirming and discarding. The roleGuard covers
+        // only the upload route, in the feature's own router.
         path: 'imports',
         loadChildren: () => import('./features/imports/imports.module').then((m) => m.ImportsModule),
       },
       {
-        // O roleGuard com data.roles fica no roteador da própria funcionalidade, junto
-        // do componente que ele protege; aqui basta o carregamento sob demanda.
+        // The roleGuard with data.roles lives in the feature's own router, next to the
+        // component it protects; here the lazy loading is all that is needed.
         path: 'audit',
         loadChildren: () => import('./features/audit/audit.module').then((m) => m.AuditModule),
       },
       {
-        // Como em 'audit', o roleGuard com data.roles fica no roteador da própria
-        // funcionalidade — aqui em todas as rotas dela, porque a administração de
-        // usuários é inteira restrita a ADMIN.
+        // As in 'audit', the roleGuard with data.roles lives in the feature's own
+        // router — here on every one of its routes, because user administration is
+        // restricted to ADMIN in its entirety.
         path: 'users',
         loadChildren: () => import('./features/users/users.module').then((m) => m.UsersModule),
       },
     ],
   },
 
-  // Telas públicas (/login e /register): card centralizado, fora do shell.
-  // Declaradas após o shell para que o casamento de rotas autenticadas ocorra primeiro.
+  // Public screens (/login and /register): centered card, outside the shell.
+  // Declared after the shell so that matching the authenticated routes happens first.
   {
     path: '',
     canActivate: [guestGuard],

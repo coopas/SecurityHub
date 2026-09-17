@@ -5,11 +5,11 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
 /**
- * O relatório executivo em PDF. Mora no dashboard, e não em uma funcionalidade
- * `reports` própria, porque é um botão: os números do relatório são as mesmas agregações
- * que esta tela já mostra, e um módulo com rota, roteamento e carregamento tardio para
- * uma única chamada seria estrutura sem conteúdo. No dia em que existir uma tela de
- * relatórios — com escolha de período, histórico ou formatos — ela leva este serviço.
+ * The executive report as a PDF. It lives in the dashboard, and not in a `reports` feature
+ * of its own, because it is a button: the report's numbers are the same aggregations this
+ * screen already shows, and a module with a route, routing and lazy loading for a single
+ * call would be structure without content. The day a reports screen exists — with a period
+ * picker, history or formats — it takes this service with it.
  */
 @Injectable({ providedIn: 'root' })
 export class ReportService {
@@ -18,11 +18,11 @@ export class ReportService {
   constructor(private readonly http: HttpClient) {}
 
   /**
-   * Sem parâmetros de propósito: o endpoint não aceita intervalo de datas, e todos os
-   * números são do momento da geração.
+   * No parameters, on purpose: the endpoint does not accept a date range, and every number
+   * is from the moment of generation.
    *
-   * `observe: 'response'` não é preferência: o nome do arquivo vem no
-   * `Content-Disposition`, e só a resposta inteira dá acesso aos cabeçalhos.
+   * `observe: 'response'` is not a preference: the file name comes in the
+   * `Content-Disposition`, and only the whole response gives access to the headers.
    */
   executive(): Observable<HttpResponse<Blob>> {
     return this.http.get(`${this.baseUrl}/executive`, {

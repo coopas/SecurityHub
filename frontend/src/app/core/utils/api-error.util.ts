@@ -3,7 +3,7 @@ import { AbstractControl, FormGroup } from '@angular/forms';
 
 import { ApiError } from '../models';
 
-/** Extrai o envelope de erro padronizado do backend, quando presente. */
+/** Extracts the backend's standardized error envelope, when present. */
 export function toApiError(error: unknown): ApiError | null {
   if (!(error instanceof HttpErrorResponse)) {
     return null;
@@ -16,9 +16,9 @@ export function toApiError(error: unknown): ApiError | null {
 }
 
 /**
- * Move os `fieldErrors` retornados pela API para os controles correspondentes,
- * de modo que apareçam inline no formulário. Retorna os erros sem controle
- * correspondente, que a tela deve exibir como mensagem geral.
+ * Moves the `fieldErrors` returned by the API onto the matching controls, so that
+ * they show up inline in the form. Returns the errors with no matching control,
+ * which the screen should display as a general message.
  */
 export function applyFieldErrors(form: FormGroup, apiError: ApiError | null): string[] {
   const unmatched: string[] = [];

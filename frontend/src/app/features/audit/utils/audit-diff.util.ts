@@ -1,14 +1,14 @@
 import { AuditValues, auditFieldLabel } from '../models/audit.model';
 
 /**
- * Um dos lados da comparação, já normalizado.
+ * One of the sides of the comparison, already normalized.
  *
- * - `absent`: não houve valor. É o caso legítimo de LOGIN e REGISTER (os dois lados),
- *   do lado antigo de um CREATE e do lado novo de um DELETE.
- * - `values`: objeto de campos, o caso normal.
- * - `raw`: veio algo que não é um objeto de campos — tipicamente um JSON truncado
- *   (o backend corta em 8000 caracteres) ou malformado. Exibido como texto bruto,
- *   nunca como panel vazio e nunca como exceção.
+ * - `absent`: there was no value. It is the legitimate case of LOGIN and REGISTER (both
+ *   sides), of the old side of a CREATE and of the new side of a DELETE.
+ * - `values`: object of fields, the normal case.
+ * - `raw`: something that is not an object of fields came in — typically a truncated JSON
+ *   (the backend cuts at 8000 characters) or a malformed one. Displayed as raw text,
+ *   never as an empty panel and never as an exception.
  */
 export type AuditSide =
   | { kind: 'absent' }
@@ -18,14 +18,14 @@ export type AuditSide =
 export interface AuditFieldRow {
   field: string;
   label: string;
-  /** `null` significa "chave ausente", que na trilha equivale a valor nulo. */
+  /** `null` means "missing key", which in the trail amounts to a null value. */
   oldText: string | null;
   newText: string | null;
   changed: boolean;
 }
 
 export type AuditDiff =
-  /** Ação sem campos dos dois lados: correto e deliberado, não um erro. */
+  /** Action with no fields on either side: correct and deliberate, not an error. */
   | { kind: 'empty' }
   | { kind: 'created'; fields: AuditFieldRow[] }
   | { kind: 'deleted'; fields: AuditFieldRow[] }
@@ -35,13 +35,13 @@ export type AuditDiff =
 const ABSENT: AuditSide = { kind: 'absent' };
 
 /**
- * Normaliza um lado da comparação sem nunca lançar.
+ * Normalizes one side of the comparison without ever throwing.
  *
- * O contrato atual entrega um objeto já desserializado (`AuditLogResponse` expõe
- * `Map<String, Object>`), mas a coluna do banco guarda texto e o mapper devolve `null`
- * quando não consegue parsear. Aceitar `string` aqui é o que garante que uma linha
- * truncada, de formato antigo ou vinda de outro serializador apareça como texto bruto
- * em vez de quebrar a página inteira.
+ * The current contract delivers an already deserialized object (`AuditLogResponse`
+ * exposes `Map<String, Object>`), but the database column stores text and the mapper
+ * returns `null` when it cannot parse. Accepting `string` here is what guarantees that a
+ * truncated row, one in an old format or one coming from another serializer shows up as
+ * raw text instead of breaking the whole page.
  */
 export function readAuditSide(value: unknown): AuditSide {
   if (value === null || value === undefined) {
@@ -57,7 +57,7 @@ export function readAuditSide(value: unknown): AuditSide {
       const parsed: unknown = JSON.parse(text);
       return isValues(parsed) ? { kind: 'values', values: parsed } : { kind: 'raw', text };
     } catch {
-      // JSON truncado ou malformado: o texto cru ainda é informação de auditoria.
+      // Truncated or malformed JSON: the raw text is still audit information.
       return { kind: 'raw', text };
     }
   }
@@ -66,11 +66,11 @@ export function readAuditSide(value: unknown): AuditSide {
     return Object.keys(value).length === 0 ? ABSENT : { kind: 'values', values: value };
   }
 
-  // Array ou escalar: não é um mapa de campos, então vira texto.
+  // Array or scalar: it is not a map of fields, so it becomes text.
   return { kind: 'raw', text: formatValue(value) };
 }
 
-/** Monta a comparação exibida na tela a partir dos dois lados brutos da API. */
+/** Builds the comparison shown on screen from the two raw sides of the API. */
 export function buildAuditDiff(oldValue: unknown, newValue: unknown): AuditDiff {
   const before = readAuditSide(oldValue);
   const after = readAuditSide(newValue);
@@ -79,8 +79,8 @@ export function buildAuditDiff(oldValue: unknown, newValue: unknown): AuditDiff 
     return { kind: 'empty' };
   }
 
-  // Basta um lado ilegível para que a comparação campo a campo deixe de ser confiável:
-  // mostramos os dois lados como texto e deixamos o operador julgar.
+  // One unreadable side is enough for the field-by-field comparison to stop being
+  // trustworthy: we show both sides as text and let the operator judge.
   if (before.kind === 'raw' || after.kind === 'raw') {
     return { kind: 'raw', oldText: sideText(before), newText: sideText(after) };
   }
@@ -94,8 +94,8 @@ export function buildAuditDiff(oldValue: unknown, newValue: unknown): AuditDiff 
   }
 
   if (before.kind !== 'values' || after.kind !== 'values') {
-    // Inalcançável: os casos acima cobrem todas as combinações restantes. Fica aqui
-    // para que o compilador feche a união sem um cast.
+    // Unreachable: the cases above cover all the remaining combinations. It stays here
+    // so the compiler closes the union without a cast.
     return { kind: 'empty' };
   }
 
@@ -116,8 +116,8 @@ function compareField(field: string, before: AuditValues, after: AuditValues): A
     label: auditFieldLabel(field),
     oldText,
     newText,
-    // Comparar o texto exibido, e não as referências: dois valores que a tela desenha
-    // de forma idêntica não podem aparecer marcados como alterados.
+    // Compare the displayed text, and not the references: two values the screen draws
+    // identically cannot show up marked as changed.
     changed: oldText !== newText,
   };
 }
@@ -135,7 +135,7 @@ function singleSideRows(values: AuditValues, side: 'old' | 'new'): AuditFieldRow
   });
 }
 
-/** Chaves do lado antigo primeiro, preservando a ordem em que o backend as gravou. */
+/** Old-side keys first, preserving the order in which the backend recorded them. */
 function mergeKeys(before: AuditValues, after: AuditValues): string[] {
   const keys = Object.keys(before);
   for (const key of Object.keys(after)) {
@@ -146,7 +146,7 @@ function mergeKeys(before: AuditValues, after: AuditValues): string[] {
   return keys;
 }
 
-/** `null` para chave ausente ou valor nulo — os dois significam "sem valor" na trilha. */
+/** `null` for a missing key or a null value — both mean "no value" in the trail. */
 function textOf(values: AuditValues, field: string): string | null {
   if (!Object.prototype.hasOwnProperty.call(values, field)) {
     return null;
@@ -163,10 +163,10 @@ function sideText(side: AuditSide): string | null {
 }
 
 /**
- * Texto de um valor. O resultado é sempre interpolado no template (`{{ }}`), nunca
- * `innerHTML`: os valores vêm de campos preenchidos por usuários — título de
- * vulnerabilidade, nome de projeto — e essa é exatamente a tela onde um XSS
- * armazenado seria disparado por um administrador.
+ * Text of a value. The result is always interpolated in the template (`{{ }}`), never
+ * `innerHTML`: the values come from fields filled in by users — vulnerability title,
+ * project name — and this is exactly the screen where a stored XSS would be fired by an
+ * administrator.
  */
 export function formatValue(value: unknown): string {
   if (typeof value === 'string') {

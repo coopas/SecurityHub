@@ -39,7 +39,7 @@ describe('UserListComponent', () => {
     traceId: 'trace-1',
   });
 
-  /** A sessão é a de Ana (id 1), que também é a primeira linha da tabela. */
+  /** The session is Ana's (id 1), who is also the first row of the table. */
   const setup = (
     users: User[] = [makeAdminUser(), makeCompanyUser(2, 'ANALYST')],
     invitations = [makeInvitation()],
@@ -99,7 +99,7 @@ describe('UserListComponent', () => {
     expect(component.state).toBeNull();
     expect(component.dataSource.data.length).toBe(2);
     expect(component.pendingInvitations.length).toBe(1);
-    // Paginação e ordenação são de cliente: o dataSource é quem as conhece.
+    // Pagination and sorting are client-side: the dataSource is the one that knows them.
     expect(component.dataSource.paginator).toBeTruthy();
     expect(component.dataSource.sort).toBeTruthy();
   });
@@ -173,7 +173,7 @@ describe('UserListComponent', () => {
       });
     fixture.detectChanges();
 
-    // O controle é otimista: sem desfazer, a tela mostraria um estado que o servidor recusou.
+    // The control is optimistic: without undoing, the screen would show a state the server refused.
     expect(toggle.checked).toBeTrue();
     expect(component.dataSource.data[1].active).toBeTrue();
     expect(component.actionError).toBe('A empresa precisa de ao menos um administrador ativo');

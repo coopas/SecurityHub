@@ -25,7 +25,7 @@ interface JwtPayload {
 export class AuthService {
   private readonly currentUserSubject = new BehaviorSubject<User | null>(null);
 
-  /** Usuário autenticado corrente; emite `null` quando não há sessão. */
+  /** The current authenticated user; emits `null` when there is no session. */
   readonly currentUser$: Observable<User | null> = this.currentUserSubject.asObservable();
 
   constructor(private readonly http: HttpClient) {
@@ -40,7 +40,7 @@ export class AuthService {
     return this.readStorage(ACCESS_TOKEN_STORAGE_KEY);
   }
 
-  /** Opaco para o frontend: só viaja de volta ao backend, nunca é decodificado aqui. */
+  /** Opaque to the frontend: it only travels back to the backend, never decoded here. */
   get refreshToken(): string | null {
     return this.readStorage(REFRESH_TOKEN_STORAGE_KEY);
   }
@@ -58,14 +58,14 @@ export class AuthService {
   }
 
   /**
-   * Troca o refresh token por um par novo. Chamado pelo `ErrorInterceptor` diante de um
-   * 401, e por mais ninguém: a tela não sabe que a renovação existe.
+   * Trades the refresh token for a new pair. Called by the `ErrorInterceptor` in the face
+   * of a 401, and by nobody else: the screen does not know the refresh exists.
    */
   refresh(): Observable<AuthResponse> {
     const refreshToken = this.refreshToken;
     if (!refreshToken) {
-      // Não chega ao servidor: sem o token a chamada seria um 400 garantido, e o
-      // interceptador já decide antes se vale a pena tentar.
+      // Never reaches the server: without the token the call would be a guaranteed 400,
+      // and the interceptor already decides beforehand whether it is worth trying.
       return throwError(() => new Error('Sessão sem refresh token para renovar.'));
     }
 
@@ -74,7 +74,7 @@ export class AuthService {
       .pipe(tap((response) => this.storeSession(response)));
   }
 
-  /** Recarrega o usuário autenticado a partir do backend. */
+  /** Reloads the authenticated user from the backend. */
   me(): Observable<User> {
     return this.http
       .get<User>(`${environment.apiUrl}/auth/me`)
@@ -82,14 +82,14 @@ export class AuthService {
   }
 
   /**
-   * Encerra a sessão dos dois lados. A limpeza local é síncrona e acontece antes da
-   * chamada: ela não depende da rede, e um servidor fora do ar não pode ser motivo para
-   * o usuário continuar com uma sessão aberta no próprio navegador. O Observable carrega
-   * apenas a revogação remota do refresh token — e, por ser frio, exige inscrição do
-   * chamador para acontecer.
+   * Ends the session on both sides. The local cleanup is synchronous and happens before the
+   * call: it does not depend on the network, and a server that is down cannot be a reason
+   * for the user to stay with a session open in their own browser. The Observable carries
+   * only the remote revocation of the refresh token — and, being cold, it needs the caller
+   * to subscribe for it to happen.
    *
-   * Uma falha da revogação é engolida de propósito: o refresh token local já não existe
-   * mais, e a linha no servidor expira sozinha.
+   * A failure of the revocation is swallowed on purpose: the local refresh token no longer
+   * exists, and the row on the server expires by itself.
    */
   logout(): Observable<void> {
     const refreshToken = this.refreshToken;
@@ -105,9 +105,9 @@ export class AuthService {
   }
 
   /**
-   * Limpeza puramente local, sem rede. É o que o `ErrorInterceptor` usa quando a
-   * renovação falha: nesse ponto o refresh token já está morto e chamar `/auth/logout`
-   * com ele só produziria mais um erro.
+   * Purely local cleanup, no network. It is what the `ErrorInterceptor` uses when the
+   * refresh fails: at that point the refresh token is already dead and calling
+   * `/auth/logout` with it would only produce one more error.
    */
   clearSession(): void {
     this.clearStorage();
@@ -118,14 +118,15 @@ export class AuthService {
     return this.http.post<void>(`${environment.apiUrl}/auth/password-reset/request`, request);
   }
 
-  /** Não abre sessão: o backend responde 204 e a tela manda o usuário ao login. */
+  /** Opens no session: the backend answers 204 and the screen sends the user to the login. */
   confirmPasswordReset(request: PasswordResetConfirmRequest): Observable<void> {
     return this.http.post<void>(`${environment.apiUrl}/auth/password-reset/confirm`, request);
   }
 
   /**
-   * Grava a sessão devolvida por qualquer fluxo que a crie. Público porque o aceite de
-   * convite também nasce uma sessão e mora no serviço de convites, fora daqui.
+   * Stores the session returned by any flow that creates one. Public because invitation
+   * acceptance also gives birth to a session and lives in the invitations service, outside
+   * here.
    */
   storeSession(response: AuthResponse): void {
     this.writeStorage(ACCESS_TOKEN_STORAGE_KEY, response.accessToken);
@@ -134,15 +135,16 @@ export class AuthService {
   }
 
   /**
-   * Um access token vencido não é mais o fim da sessão: com refresh token guardado ela
-   * ainda é recuperável, e reprovar aqui mandaria ao login quem só precisava de uma
-   * renovação — que o `ErrorInterceptor` faria no primeiro 401.
+   * An expired access token is no longer the end of the session: with a refresh token
+   * stored it is still recoverable, and failing here would send to the login someone who
+   * only needed a refresh — which the `ErrorInterceptor` would do on the first 401.
    *
-   * Isto termina. Quem tem apenas um refresh token já morto é aceito uma vez, a primeira
-   * chamada volta 401, a renovação falha e o `ErrorInterceptor` chama `clearSession()`,
-   * que apaga também o refresh token. Da segunda vez em diante não há mais nada no
-   * armazenamento, `isAuthenticated()` responde `false` e o `/login` fica de pé. O laço
-   * fecha justamente porque a limpeza leva as três chaves, e não só o access token.
+   * This terminates. Whoever has only an already dead refresh token is accepted once, the
+   * first call comes back 401, the refresh fails and the `ErrorInterceptor` calls
+   * `clearSession()`, which wipes the refresh token too. From the second time on there is
+   * nothing left in storage, `isAuthenticated()` answers `false` and `/login` holds. The
+   * loop closes precisely because the cleanup takes all three keys, and not just the
+   * access token.
    */
   isAuthenticated(): boolean {
     const token = this.accessToken;
@@ -166,8 +168,8 @@ export class AuthService {
   }
 
   /**
-   * Restaura a sessão do armazenamento local. Um access token vencido é mantido quando
-   * há refresh token — a mesma regra de `isAuthenticated()`, pelo mesmo motivo.
+   * Restores the session from local storage. An expired access token is kept when there is
+   * a refresh token — the same rule as `isAuthenticated()`, for the same reason.
    */
   private restoreSession(): void {
     const token = this.readStorage(ACCESS_TOKEN_STORAGE_KEY);
@@ -185,7 +187,7 @@ export class AuthService {
     }
   }
 
-  /** Um token malformado é tratado como ausência de sessão. */
+  /** A malformed token is treated as the absence of a session. */
   private isTokenExpired(token: string): boolean {
     const payload = this.decodeToken(token);
     if (!payload || typeof payload.exp !== 'number') {
@@ -219,7 +221,7 @@ export class AuthService {
     try {
       localStorage.setItem(key, value);
     } catch {
-      // Armazenamento indisponível (modo privado): a sessão vive apenas em memória.
+      // Storage unavailable (private mode): the session lives in memory only.
     }
   }
 
@@ -229,7 +231,7 @@ export class AuthService {
       localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
       localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
     } catch {
-      // Nada a limpar quando o armazenamento não está disponível.
+      // Nothing to clear when storage is not available.
     }
   }
 }

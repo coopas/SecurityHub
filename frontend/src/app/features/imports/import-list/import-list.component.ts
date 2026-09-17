@@ -24,15 +24,14 @@ export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 
 /**
- * Histórico das importações de varredura.
+ * History of the scan imports.
  *
- * Como nas demais listagens paginadas pelo servidor, os query params da URL são a única
- * fonte de verdade da página, do tamanho e da ordenação; a assinatura da rota é que
- * dispara a busca, então recarregar, voltar ou compartilhar o link restaura exatamente a
- * mesma consulta.
+ * As in the other server-paginated listings, the URL query params are the only source of
+ * truth for the page, the size and the sort; it is the route subscription that fires the
+ * fetch, so reloading, going back or sharing the link restores exactly the same query.
  *
- * Não há filtros: `GET /scan-imports` aceita apenas paginação e ordenação, e um filtro
- * inventado viajaria na URL para ser ignorado pelo servidor.
+ * There are no filters: `GET /scan-imports` accepts only pagination and sorting, and an
+ * invented filter would travel in the URL only to be ignored by the server.
  */
 @Component({
   selector: 'app-import-list',
@@ -79,7 +78,7 @@ export class ImportListComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Mesma licença de criar vulnerabilidade: confirmar uma importação cria várias.
+    // Same licence as creating a vulnerability: confirming an import creates several.
     this.canImport = this.authService.hasRole('ADMIN', 'ANALYST');
 
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
@@ -128,14 +127,15 @@ export class ImportListComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Só uma importação aguardando revisão leva a algum lugar: a prévia é a tela de
-   * revisar e confirmar, e uma já confirmada ou descartada não tem mais o que revisar.
+   * Only an import awaiting review leads anywhere: the preview is the screen for
+   * reviewing and confirming, and one already confirmed or discarded has nothing left to
+   * review.
    */
   isPending(scanImport: ScanImportSummary): boolean {
     return scanImport.status === 'PENDING';
   }
 
-  /** As células da tabela têm contexto `any`; os rótulos passam por aqui pelo tipo. */
+  /** The table cells have an `any` context; the labels go through here for the typing. */
   formatLabel(format: ScanFormat): string {
     return this.formatLabels[format];
   }
@@ -148,14 +148,14 @@ export class ImportListComponent implements OnInit, OnDestroy {
     return this.statusIcons[status];
   }
 
-  /** Cor é sempre reforço: o ícone e o texto já identificam a situação. */
+  /** Color is always reinforcement: the icon and the text already identify the status. */
   statusClass(status: ScanImportStatus): string {
     return `imports-status--${status.toLowerCase()}`;
   }
 
   /**
-   * Os cinco contadores em uma célula só: separados em colunas, a tabela ficaria larga
-   * demais para ser lida, e eles só fazem sentido comparados entre si.
+   * The five counters in a single cell: split into columns, the table would be too wide
+   * to be read, and they only make sense compared against each other.
    */
   countersLabel(scanImport: ScanImportSummary): string {
     return (
@@ -169,7 +169,7 @@ export class ImportListComponent implements OnInit, OnDestroy {
     return scanImport.id;
   }
 
-  /** `null` remove o parâmetro da URL; os demais são mesclados aos existentes. */
+  /** `null` removes the param from the URL; the rest are merged into the existing ones. */
   private patchQueryParams(queryParams: Params): void {
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -189,7 +189,7 @@ export class ImportListComponent implements OnInit, OnDestroy {
     };
   }
 
-  /** Mantém apenas `propriedade,direção` que o backend reconhece; o resto vira o padrão. */
+  /** Keeps only the `property,direction` the backend recognizes; the rest becomes the default. */
   private parseSort(raw: string | null): string {
     const [property, direction] = (raw ?? '').split(',');
     const sortable = (SCAN_IMPORT_SORTABLE_PROPERTIES as readonly string[]).includes(property);

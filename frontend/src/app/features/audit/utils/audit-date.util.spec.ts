@@ -8,8 +8,8 @@ import {
 
 describe('audit-date.util', () => {
   it('converte a data escolhida usando o fuso do usuário, não UTC', () => {
-    // 21h em UTC-3 já é o dia seguinte em UTC; o rótulo tem de continuar sendo o dia
-    // que a pessoa marcou no calendário.
+    // 21h in UTC-3 is already the next day in UTC; the label has to keep being the day
+    // the person marked on the calendar.
     const lateEvening = new Date(2026, 8, 17, 21, 30, 0, 0);
 
     expect(toCivilDate(lateEvening)).toBe('2026-09-17');
@@ -63,7 +63,7 @@ describe('audit-date.util', () => {
     expect(from.getTime()).toBeLessThan(to.getTime());
     expect(toCivilDate(from)).toBe('2026-09-17');
     expect(toCivilDate(to)).toBe('2026-09-17');
-    // Um milissegundo depois já é o dia seguinte: o `to` é mesmo o último instante.
+    // One millisecond later is already the next day: `to` really is the last instant.
     expect(toCivilDate(new Date(to.getTime() + 1))).toBe('2026-09-18');
   });
 

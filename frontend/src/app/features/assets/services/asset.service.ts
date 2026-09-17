@@ -12,7 +12,7 @@ export class AssetService {
 
   constructor(private readonly http: HttpClient) {}
 
-  /** Lista paginada; os filtros opcionais só viajam quando preenchidos. */
+  /** Paginated list; the optional filters only travel when they are filled in. */
   list(query: AssetQuery): Observable<PageResponse<Asset>> {
     let params = new HttpParams()
       .set('page', String(query.page))

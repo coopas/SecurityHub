@@ -5,16 +5,16 @@ import { roleGuard } from '../../core/guards/role.guard';
 import { AuditListComponent } from './audit-list/audit-list.component';
 
 /**
- * A trilha inteira é restrita a ADMIN, e não apenas alguma ação dentro dela:
- * `AuditQueryService.search` é anotado com `@PreAuthorize("hasRole('ADMIN')")`, então
- * qualquer outro papel receberia 403 já na primeira consulta. O guarda evita abrir uma
- * tela que só poderia falhar; a autorização de verdade continua no servidor.
+ * The whole trail is restricted to ADMIN, and not just some action inside it:
+ * `AuditQueryService.search` is annotated with `@PreAuthorize("hasRole('ADMIN')")`, so
+ * any other role would get a 403 on the very first query. The guard avoids opening a
+ * screen that could only fail; the real authorization stays on the server.
  *
- * Não há rota de detalhe, edição ou exclusão: o recurso é append-only e não expõe
- * endpoint por linha para nenhum verbo.
+ * There is no detail, edit or delete route: the resource is append-only and exposes no
+ * per-row endpoint for any verb.
  *
- * A lista é exportada, como `APP_ROUTES` já fazia, para que a restrição de papel seja
- * verificável por teste e não apenas visível no código.
+ * The list is exported, as `APP_ROUTES` already did, so that the role restriction is
+ * verifiable by test and not merely visible in the code.
  */
 export const AUDIT_ROUTES: Routes = [
   {

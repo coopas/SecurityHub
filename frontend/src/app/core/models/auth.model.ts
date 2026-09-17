@@ -13,21 +13,21 @@ export interface RegisterRequest {
 }
 
 /**
- * Espelha `AuthResponse` do backend. `refreshToken` é obrigatório: toda resposta que
- * abre sessão (login, cadastro, renovação e aceite de convite) traz o par completo, e
- * deixá-lo opcional faria o modo estrito aceitar em silêncio uma sessão que nasceria
- * sem como se renovar.
+ * Mirrors the backend's `AuthResponse`. `refreshToken` is required: every response that
+ * opens a session (login, sign-up, refresh and invitation acceptance) carries the full
+ * pair, and leaving it optional would make strict mode silently accept a session born
+ * with no way to refresh itself.
  */
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   tokenType: string;
-  /** Validade do token em segundos. */
+  /** Token lifetime in seconds. */
   expiresIn: number;
   user: User;
 }
 
-/** Corpo de `POST /auth/refresh` e de `POST /auth/logout`: o mesmo DTO nos dois. */
+/** Body of `POST /auth/refresh` and of `POST /auth/logout`: the same DTO in both. */
 export interface RefreshTokenRequest {
   refreshToken: string;
 }
@@ -41,6 +41,6 @@ export interface PasswordResetConfirmRequest {
   password: string;
 }
 
-/** Tamanho da senha aceito pelo backend em cadastro, redefinição e aceite de convite. */
+/** Password length accepted by the backend on sign-up, reset and invitation acceptance. */
 export const PASSWORD_MIN_LENGTH = 10;
 export const PASSWORD_MAX_LENGTH = 100;

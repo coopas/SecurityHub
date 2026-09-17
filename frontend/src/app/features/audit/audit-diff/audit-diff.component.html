@@ -1,11 +1,11 @@
 <div class="audit-diff" [ngSwitch]="kind" data-testid="audit-diff">
-  <!-- LOGIN, LOGIN_FAILED, REGISTER: nulo dos dois lados é o registro correto. -->
+  <!-- LOGIN, LOGIN_FAILED, REGISTER: null on both sides is the correct record. -->
   <p class="audit-diff__note" *ngSwitchCase="'empty'" data-testid="audit-diff-empty">
     <mat-icon aria-hidden="true">info_outline</mat-icon>
     <span>{{ emptyExplanation }}</span>
   </p>
 
-  <!-- JSON truncado (o servidor corta em 8000 caracteres) ou malformado. -->
+  <!-- Truncated JSON (the server cuts at 8000 characters) or malformed. -->
   <ng-container *ngSwitchCase="'raw'">
     <p class="audit-diff__note audit-diff__note--warn" data-testid="audit-diff-raw-note">
       <mat-icon aria-hidden="true">report_problem</mat-icon>
@@ -26,7 +26,7 @@
     </div>
   </ng-container>
 
-  <!-- CREATE: não existe valor anterior, então não há painel "antes" para desenhar. -->
+  <!-- CREATE: there is no previous value, so there is no "before" panel to draw. -->
   <ng-container *ngSwitchCase="'created'">
     <p class="audit-diff__note">
       <mat-icon aria-hidden="true">add_circle_outline</mat-icon>
@@ -40,7 +40,7 @@
     </dl>
   </ng-container>
 
-  <!-- DELETE: não existe valor novo. -->
+  <!-- DELETE: there is no new value. -->
   <ng-container *ngSwitchCase="'deleted'">
     <p class="audit-diff__note">
       <mat-icon aria-hidden="true">delete_outline</mat-icon>
@@ -54,7 +54,7 @@
     </dl>
   </ng-container>
 
-  <!-- UPDATE, STATUS_CHANGE, ASSIGN: só o que mudou, lado a lado. -->
+  <!-- UPDATE, STATUS_CHANGE, ASSIGN: only what changed, side by side. -->
   <ng-container *ngSwitchCase="'updated'">
     <p class="audit-diff__note" *ngIf="changed.length === 0" data-testid="audit-diff-no-change">
       <mat-icon aria-hidden="true">info_outline</mat-icon>
@@ -78,8 +78,8 @@
       </li>
     </ul>
 
-    <!-- Os campos que não mudaram ficam fora do caminho: um despejo dos 11 campos do
-         registro por causa de uma alteração é o que torna uma trilha ilegível. -->
+    <!-- The fields that did not change stay out of the way: a dump of the record's 11
+         fields because of one change is what makes a trail illegible. -->
     <ng-container *ngIf="unchanged.length > 0">
       <button
         mat-button

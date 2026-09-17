@@ -18,9 +18,9 @@
     <ul class="dashboard-cards" data-testid="summary-cards">
       <li *ngFor="let card of cards; trackBy: trackByKey">
         <!--
-          Ordem de leitura do card: rótulo pequeno em cima, número grande no meio, explicação
-          discreta embaixo. Como o rótulo ocupa sempre uma linha, todos os números da fila
-          nascem na mesma altura e a comparação entre eles é imediata.
+          Reading order of the card: small label on top, big number in the middle, discreet
+          explanation at the bottom. Since the label always takes exactly one line, every
+          number in the row starts at the same height and comparing them is immediate.
         -->
         <a
           class="dashboard-card"

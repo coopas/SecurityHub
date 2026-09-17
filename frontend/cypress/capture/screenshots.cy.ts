@@ -1,27 +1,29 @@
 /**
- * Captura as imagens que o README publica.
+ * Captures the images the README publishes.
  *
- * Não é um teste: não afirma nada e não roda na CI — fica fora de `cypress/e2e`, que é o
- * `specPattern` da suíte. Existe para que as imagens do README sejam reproduzíveis por um
- * comando em vez de dependerem de alguém lembrar quais telas fotografar, em que largura e
- * em que tema. Rode com `scripts/capture-screenshots.sh`, com a pilha do compose no ar.
+ * It is not a test: it asserts nothing and does not run in CI — it sits outside `cypress/e2e`,
+ * which is the suite's `specPattern`. It exists so that the README images are reproducible by
+ * one command instead of depending on someone remembering which screens to photograph, at what
+ * width and in what theme. Run it with `scripts/capture-screenshots.sh`, with the compose stack
+ * up.
  *
- * As telas são fotografadas com o tenant `demo`, cujo seed é datado de forma relativa: os
- * números mudam de um dia para o outro. Isso é irrelevante aqui, porque nada é afirmado —
- * mas é a razão de este arquivo não poder virar teste sem quebrar a regra 1 de `support/e2e.ts`.
+ * The screens are photographed with the `demo` tenant, whose seed is dated relatively: the
+ * numbers change from one day to the next. That is irrelevant here, because nothing is asserted
+ * — but it is the reason this file cannot become a test without breaking rule 1 of
+ * `support/e2e.ts`.
  */
 
 const ADMIN = 'admin@demo.test';
 
-/** Espera a tela assentar antes de fotografar: sem isto sai um esqueleto de carregamento. */
+/** Waits for the screen to settle before photographing: without this you get a loading skeleton. */
 function settle(testId: string): void {
   cy.byTestId(testId, { timeout: 30000 }).should('be.visible');
-  // As fontes chegam do Google Fonts; fotografar antes delas registra a pilha de reserva.
+  // The fonts come from Google Fonts; photographing before them records the fallback stack.
   cy.document().its('fonts.status').should('equal', 'loaded');
   cy.wait(400);
 }
 
-/** O mesmo, para telas que não expõem um testid de contêiner: o título serve de âncora. */
+/** The same, for screens that expose no container testid: the heading serves as the anchor. */
 function telaPronta(titulo: string): void {
   cy.contains('h1', titulo, { timeout: 30000 }).should('be.visible');
   cy.get('.sh-state', { timeout: 30000 }).should('not.exist');
@@ -30,23 +32,23 @@ function telaPronta(titulo: string): void {
 }
 
 /**
- * Fixa o tema e recarrega.
+ * Pins the theme and reloads.
  *
- * Chamado também para o claro, e não só para o escuro: sem escolha salva o `index.html`
- * segue o `prefers-color-scheme`, e o navegador headless desta captura responde "escuro" —
- * as imagens do tema claro sairiam escuras. Aqui a preferência do sistema é justamente o
- * que não se quer, porque o README precisa das duas versões independentemente da máquina.
+ * Called for the light theme too, and not only for the dark one: with no saved choice
+ * `index.html` follows `prefers-color-scheme`, and the headless browser of this capture answers
+ * "dark" — the light theme images would come out dark. Here the system preference is precisely
+ * what is not wanted, because the README needs both versions regardless of the machine.
  */
 function useTheme(theme: 'light' | 'dark'): void {
   cy.window().then((win) => win.localStorage.setItem('securityhub.theme', theme));
   cy.reload();
 }
 
-// A janela do Electron headless é fixa em 1280x720 e a `viewportWidth` do `cypress.config.ts`
-// (1400) venceria a passada por `--config`. A aplicação renderizaria a 1400 enquanto a foto
-// recorta 1280: sai cortada à direita, com os sete cartões do dashboard espremidos num
-// espaço que, na tela de verdade, comporta cinco. Fixar aqui é o que garante que a imagem
-// mostre o mesmo que um navegador de 1280px mostra.
+// The headless Electron window is fixed at 1280x720 and the `viewportWidth` from
+// `cypress.config.ts` (1400) would win over the one passed with `--config`. The application
+// would render at 1400 while the photo crops at 1280: it comes out cut off on the right, with
+// the dashboard's seven cards squeezed into a space that, on the real screen, fits five. Pinning
+// it here is what guarantees the image shows the same as a 1280px browser shows.
 const LARGURA = 1280;
 const ALTURA = 720;
 
@@ -78,7 +80,8 @@ describe('capturas do README', () => {
     cy.screenshot('dashboard-dark', { capture: 'viewport', overwrite: true });
 
     useTheme('light');
-    // 834px é o iPad retrato: a largura em que a navegação vira gaveta e a grade se rearranja.
+    // 834px is the iPad in portrait: the width where the navigation turns into a drawer and the
+    // grid rearranges itself.
     cy.viewport(834, 1112);
     settle('summary-cards');
     cy.screenshot('dashboard-tablet', { capture: 'viewport', overwrite: true });

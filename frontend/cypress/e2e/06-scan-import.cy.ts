@@ -1,56 +1,55 @@
 import { AuthSession, demoPassword } from '../support/commands';
 
 /**
- * Importação de um relatório de varredura, pela tela, como um analista faz: enviar o
- * arquivo, revisar o que o servidor encontrou, dar um ativo ao achado que ficou sem um e
- * confirmar — e então ver a linha aparecer no histórico como confirmada.
+ * Import of a scan report, through the screen, the way an analyst does it: send the file,
+ * review what the server found, give an asset to the finding that ended up without one and
+ * confirm — and then watch the row show up in the history as confirmed.
  *
- * <b>Um único `it` para o fluxo</b>, pela mesma razão de `02`: cada passo depende do id
- * que o passo anterior produziu, e `it`s separados começariam com `localStorage` limpo.
- * Com `retries: 2`, repetir só o passo que falhou reexecutaria o `POST` sobre um estado já
- * montado — e um segundo envio do mesmo arquivo não é inócuo aqui: as impressões digitais
- * já estariam no backlog e todo achado voltaria como "já registrado". O `it` inteiro
- * repete com um token novo e continua reprodutível.
+ * <b>A single `it` for the flow</b>, for the same reason as `02`: each step depends on the id
+ * the previous step produced, and separate `it`s would start with a clean `localStorage`.
+ * With `retries: 2`, repeating only the step that failed would re-run the `POST` over an
+ * already assembled state — and a second send of the same file is not harmless here: the
+ * fingerprints would already be in the backlog and every finding would come back as
+ * "já registrado". The whole `it` repeats with a fresh token and stays reproducible.
  *
- * <b>O token de execução.</b> A deduplicação da V9 é um índice único parcial em
- * `(company_id, fingerprint)`, e a impressão digital é `sha256(scanner:ruleId:target:cve)`.
- * Um arquivo fixo importado duas vezes na mesma empresa é, por contrato, zero achado novo.
- * Então o `id` de cada script do relatório recebe `Cypress-${Date.now()}` antes do envio: é
- * o mesmo padrão da regra 3 de `support/e2e.ts` — o teste cria o dado sobre o qual afirma —
- * aplicado ao único campo que a impressão digital enxerga.
+ * <b>The run token.</b> V9's deduplication is a partial unique index on
+ * `(company_id, fingerprint)`, and the fingerprint is `sha256(scanner:ruleId:target:cve)`.
+ * A fixed file imported twice into the same company is, by contract, zero new findings.
+ * So the `id` of every script in the report gets `Cypress-${Date.now()}` before the send: it is
+ * the same pattern as rule 3 of `support/e2e.ts` — the test creates the data it asserts on —
+ * applied to the only field the fingerprint sees.
  *
- * <b>Contra o seed `demo`, sem inventar nada.</b> Os dois primeiros alvos do relatório são
- * `api.pagamentos.demo.test` e `10.20.0.11` — os identificadores dos ativos "API de
- * Pagamentos" e "Gateway de Borda" do projeto "Plataforma de Pagamentos" —, por isso eles
- * encontram o ativo sozinhos. O terceiro é `host-desconhecido.demo.test`, que o seed não tem:
- * é o achado sem ativo que o teste vincula à mão. O casamento é por projeto, então o envio
- * precisa ser para esse projeto e não para outro.
+ * <b>Against the `demo` seed, inventing nothing.</b> The report's first two targets are
+ * `api.pagamentos.demo.test` and `10.20.0.11` — the identifiers of the assets "API de
+ * Pagamentos" and "Gateway de Borda" from the project "Plataforma de Pagamentos" —, which is why
+ * they find their asset on their own. The third is `host-desconhecido.demo.test`, which the seed
+ * does not have: it is the finding with no asset that the test links by hand. The matching is
+ * per project, so the send has to be to that project and not to another.
  *
- * <b>O que fica para trás.</b> O `after()` tenta apagar as vulnerabilidades criadas, e hoje
- * não consegue: `scan_findings.vulnerability_id` referencia a linha, e
- * `VulnerabilityService.delete` só trata comentários e anexos, então a exclusão responde 409.
- * A limpeza é feita com `failOnStatusCode: false` de propósito — ela volta a funcionar sozinha
- * no dia em que a exclusão tratar a referência, e até lá não transforma um defeito conhecido do
- * produto em vermelho desta suíte. A linha de `scan_imports` fica de todo jeito: a API não tem
- * exclusão — `DELETE /scan-imports/{id}` é o descarte, e só vale para uma importação pendente —
- * e uma importação confirmada é um fato histórico.
+ * <b>What is left behind.</b> The `after()` tries to delete the vulnerabilities it created, and
+ * today it cannot: `scan_findings.vulnerability_id` references the row, and
+ * `VulnerabilityService.delete` only handles comments and attachments, so the deletion answers
+ * 409. The cleanup is done with `failOnStatusCode: false` on purpose — it starts working again
+ * on its own the day the deletion handles the reference, and until then it does not turn a known
+ * product defect into red in this suite. The `scan_imports` row stays either way: the API has no
+ * deletion — `DELETE /scan-imports/{id}` is the discard, and it only applies to a pending import
+ * — and a confirmed import is a historical fact.
  *
- * O resíduo não torna a suíte instável: o token de execução deixa cada rodada com achados
- * próprios, e nenhuma afirmação daqui — nem, até onde este repositório vai, de qualquer outro
- * arquivo — depende de uma contagem absoluta do tenant `demo`.
+ * The residue does not make the suite unstable: the run token leaves each round with findings of
+ * its own, and no assertion here — nor, as far as this repository goes, in any other file —
+ * depends on an absolute count of the `demo` tenant.
  */
 describe('Importação de um relatório de varredura', () => {
-  // Sem espaço, ao contrário do `Cypress ${Date.now()}` dos outros arquivos: este token
-  // entra no nome do arquivo e no `id` de um script de nmap, e os dois são lidos de volta
-  // como texto corrido.
+  // No space, unlike the `Cypress ${Date.now()}` of the other files: this token goes into the
+  // file name and into the `id` of an nmap script, and both are read back as running text.
   const run = `Cypress-${Date.now()}`;
-  /** Único por execução, e é por ele que a linha do histórico é encontrada. */
+  /** Unique per run, and it is what the history row is found by. */
   const filename = `nmap-${run}.xml`;
   const project = 'Plataforma de Pagamentos';
-  /** Os dois ativos que os alvos do relatório resolvem sozinhos. */
+  /** The two assets the report's targets resolve on their own. */
   const matchedAsset = 'API de Pagamentos';
   const secondMatchedAsset = 'Gateway de Borda';
-  /** O ativo escolhido à mão para o achado que ficou sem um. */
+  /** The asset picked by hand for the finding that ended up without one. */
   const mappedAsset = 'Banco de Transações';
 
   interface Finding {
@@ -79,13 +78,13 @@ describe('Importação de um relatório de varredura', () => {
   }
 
   after(() => {
-    // ADMIN, e não o analista que importou: excluir vulnerabilidade é privilégio de
-    // administrador. A busca é pelo token da execução, que está no título de todo achado
-    // importado (no nmap o título é o id do script), e apaga tudo o que encontrar — uma
-    // repetição pode ter deixado mais de uma linha.
+    // ADMIN, and not the analyst who imported: deleting a vulnerability is an administrator's
+    // privilege. The search is by the run token, which is in the title of every imported finding
+    // (in nmap the title is the script id), and it deletes everything it finds — a retry may
+    // have left more than one row.
     //
-    // Best-effort: veja o cabeçalho deste arquivo. Enquanto a exclusão não tratar
-    // `scan_findings.vulnerability_id`, cada DELETE aqui responde 409 e a linha fica.
+    // Best-effort: see this file's header. As long as the deletion does not handle
+    // `scan_findings.vulnerability_id`, every DELETE here answers 409 and the row stays.
     cy.request({
       method: 'POST',
       url: '/api/v1/auth/login',
@@ -115,17 +114,17 @@ describe('Importação de um relatório de varredura', () => {
       const report = template.split('__RUN__').join(run);
 
       cy.loginAs('analyst@demo.test', '/imports/novo').then((analyst) => {
-        // --- enviar ---------------------------------------------------------
+        // --- send -----------------------------------------------------------
         cy.byTestId('import-project').click();
         cy.contains('mat-option', project).click();
 
         cy.byTestId('import-format').click();
         cy.contains('mat-option', 'Nmap (XML)').click();
 
-        // O `input[type=file]` é `hidden` — quem o aciona é o botão do Material — então o
-        // `force` aqui é o mesmo de `02` com o anexo. O conteúdo vai montado em memória, e
-        // não pelo caminho do arquivo, justamente porque ele não é o do repositório: é o
-        // do repositório com o token da execução dentro.
+        // The `input[type=file]` is `hidden` — what triggers it is the Material button — so
+        // the `force` here is the same as in `02` with the attachment. The content goes
+        // assembled in memory, and not by the file path, precisely because it is not the
+        // repository's file: it is the repository's file with the run token inside.
         cy.byTestId('import-file-input').selectFile(
           {
             contents: Cypress.Buffer.from(report),
@@ -138,21 +137,21 @@ describe('Importação de um relatório de varredura', () => {
 
         cy.byTestId('import-submit').click();
 
-        // O formulário navega para a prévia do que acabou de enviar: a URL é a prova de
-        // que o servidor devolveu um id, e é de onde sai o id do resto do fluxo.
+        // The form navigates to the preview of what it has just sent: the URL is the proof
+        // that the server returned an id, and it is where the rest of the flow's id comes from.
         cy.location('pathname')
           .should('match', /^\/imports\/\d+$/)
           .then((pathname) => {
             const importId = Number(pathname.split('/').pop());
             expect(importId).to.be.greaterThan(0);
 
-            // --- a prévia -----------------------------------------------------
+            // --- the preview --------------------------------------------------
             cy.byTestId('import-status').should('contain.text', 'Aguardando revisão');
             cy.byTestId('import-actions').should('exist');
 
-            // Três portas abertas no relatório e nenhuma delas vira achado: o importador de
-            // nmap lê apenas resultado de script NSE. Se isso mudar, esta contagem é a
-            // primeira coisa a quebrar.
+            // Three open ports in the report and none of them becomes a finding: the nmap
+            // importer only reads NSE script results. If that changes, this count is the first
+            // thing to break.
             counter('Achados').should('have.text', '3');
             counter('Com ativo').should('have.text', '2');
             counter('Sem ativo').should('have.text', '1');
@@ -162,7 +161,7 @@ describe('Importação de um relatório de varredura', () => {
               url: `/scan-imports/${importId}`,
               token: analyst.accessToken,
             }).then((staged) => {
-              // Nada foi criado pelo envio: a importação é uma proposta até a confirmação.
+              // Nothing was created by the send: the import is a proposal until confirmation.
               expect(staged.body.status, 'a importação nasce pendente').to.eq('PENDING');
               expect(staged.body.originalFilename).to.eq(filename);
               expect(staged.body.projectName).to.eq(project);
@@ -172,24 +171,25 @@ describe('Importação de um relatório de varredura', () => {
               const alsoMatched = findingBy(staged.body, 'smb-vuln-ms17-010');
               const unmatched = findingBy(staged.body, 'ssl-poodle');
 
-              // O casamento é por identificador dentro do projeto escolhido, e é o
-              // servidor que o faz: ninguém escolheu este ativo.
+              // The matching is by identifier within the chosen project, and it is the server
+              // that does it: nobody picked this asset.
               expect(matched.status).to.eq('MATCHED');
               expect(matched.target).to.eq('api.pagamentos.demo.test');
               expect(matched.assetName).to.eq(matchedAsset);
 
-              // O segundo casa por endereço, porque é assim que o ativo está cadastrado: o
-              // alvo de um achado de nmap é o hostname quando existe, e o endereço quando não.
+              // The second matches by address, because that is how the asset is registered: the
+              // target of an nmap finding is the hostname when there is one, and the address
+              // when there is not.
               expect(alsoMatched.status).to.eq('MATCHED');
               expect(alsoMatched.target).to.eq('10.20.0.11');
               expect(alsoMatched.assetName).to.eq(secondMatchedAsset);
 
-              // O importador nunca cria um ativo: um alvo que não existe no inventário
-              // fica esperando uma pessoa dizer o que ele é.
+              // The importer never creates an asset: a target that does not exist in the
+              // inventory waits for a person to say what it is.
               expect(unmatched.status).to.eq('UNMATCHED');
-              // Ausente, e não `null`: `default-property-inclusion: non_null` tira a chave
-              // do payload, então a afirmação tolera as duas formas de "não tem ativo" em
-              // vez de depender de qual delas chegou.
+              // Absent, and not `null`: `default-property-inclusion: non_null` drops the key
+              // from the payload, so the assertion tolerates both forms of "has no asset"
+              // instead of depending on which one arrived.
               expect(unmatched.assetId == null, 'o achado sem correspondência não tem ativo').to.be
                 .true;
 
@@ -202,7 +202,7 @@ describe('Importação de um relatório de varredura', () => {
                 'Sem ativo',
               );
 
-              // --- mapear o achado sem ativo ----------------------------------
+              // --- map the finding with no asset ------------------------------
               cy.byTestId(`import-finding-asset-${unmatched.id}`).click();
               cy.contains('mat-option', mappedAsset).click();
 
@@ -221,11 +221,11 @@ describe('Importação de um relatório de varredura', () => {
                 expect(findingBy(mapped.body, 'ssl-poodle').assetName).to.eq(mappedAsset);
               });
 
-              // --- confirmar ---------------------------------------------------
+              // --- confirm -----------------------------------------------------
               cy.byTestId('import-confirm').click();
-              // O diálogo compartilhado não declara `data-testid` e não é deste teste
-              // mudá-lo; o escopo do container do Material é o que evita acertar o botão
-              // "Confirmar importação" da própria página.
+              // The shared dialog does not declare a `data-testid` and it is not this test's
+              // job to change that; scoping to the Material container is what avoids hitting
+              // the page's own "Confirmar importação" button.
               cy.get('mat-dialog-container').contains('button', 'Confirmar').click();
 
               cy.byTestId('import-status').should('contain.text', 'Confirmada');
@@ -242,9 +242,9 @@ describe('Importação de um relatório de varredura', () => {
                 expect(confirmed.body.importedCount).to.eq(3);
                 expect(confirmed.body.skippedCount).to.eq(0);
 
-                // A rastreabilidade por achado: cada linha diz em qual vulnerabilidade
-                // virou. A trilha de auditoria carrega uma linha só para a importação
-                // inteira, e é aqui que o detalhe mora.
+                // Per-finding traceability: each row says which vulnerability it turned into.
+                // The audit trail carries a single row for the whole import, and it is here
+                // that the detail lives.
                 confirmed.body.findings.forEach((finding) => {
                   expect(finding.status, `achado ${finding.ruleId}`).to.eq('IMPORTED');
                   expect(finding.vulnerabilityId, `achado ${finding.ruleId}`).to.be.a('number');
@@ -256,15 +256,15 @@ describe('Importação de um relatório de varredura', () => {
                   token: analyst.accessToken,
                 }).then((vulnerability) => {
                   expect(vulnerability.body.title).to.eq(created.title);
-                  // O CVE saiu do texto do script, e a severidade do nmap é derivada: um
-                  // resultado que cita um CVE é alto.
+                  // The CVE came out of the script's text, and nmap's severity is derived: a
+                  // result that cites a CVE is high.
                   expect(vulnerability.body.cve).to.eq('CVE-2014-0160');
                   expect(vulnerability.body.severity).to.eq('HIGH');
                   expect(vulnerability.body.assetId).to.eq(created.assetId);
                 });
               });
 
-              // --- o histórico --------------------------------------------------
+              // --- the history --------------------------------------------------
               cy.visit('/imports');
               cy.contains('tr', filename)
                 .should('contain.text', project)
@@ -278,13 +278,13 @@ describe('Importação de um relatório de varredura', () => {
 
   it('um VIEWER acompanha a revisão, mas não envia relatório', () => {
     cy.loginAs('viewer@demo.test', '/imports').then((viewer) => {
-      // A tela: nenhuma afordância de envio.
+      // The screen: no send affordance.
       cy.byTestId('import-new').should('not.exist');
       cy.visit('/imports/novo');
       cy.location('pathname').should('eq', '/403');
 
-      // E a camada que importa (regra 5 de `support/e2e.ts`): a API, chamada direto com o
-      // token do próprio VIEWER. Ler continua liberado — é o papel dele.
+      // And the layer that matters (rule 5 of `support/e2e.ts`): the API, called directly with
+      // the VIEWER's own token. Reading is still allowed — that is their role.
       cy.apiRequest({ url: '/scan-imports?size=1', token: viewer.accessToken })
         .its('status')
         .should('eq', 200);
@@ -296,10 +296,10 @@ describe('Importação de um relatório de varredura', () => {
         expect(projects.body.content, 'o seed demo precisa ter ao menos um projeto').to.have.length
           .greaterThan(0);
 
-        // Multipart montado à mão, como em `03`, e com as três partes preenchidas de
-        // propósito: `projectId` e `format` são resolvidos pelo binder do Spring **antes**
-        // de o `@PreAuthorize` do serviço rodar, então um corpo incompleto devolveria 400 e
-        // o teste concluiria, erradamente, que a regra de papel funcionou.
+        // Multipart assembled by hand, as in `03`, and with the three parts filled in on
+        // purpose: `projectId` and `format` are resolved by Spring's binder **before** the
+        // service's `@PreAuthorize` runs, so an incomplete body would return 400 and the test
+        // would conclude, wrongly, that the role rule worked.
         const boundary = '----securityhubCypressScanBoundary';
         const body = [
           `--${boundary}`,
@@ -333,7 +333,7 @@ describe('Importação de um relatório de varredura', () => {
     });
   });
 
-  /** O `<dd>` do contador cujo `<dt>` tem este rótulo. */
+  /** The `<dd>` of the counter whose `<dt>` has this label. */
   function counter(label: string): Cypress.Chainable<JQuery<HTMLElement>> {
     return cy
       .byTestId('import-counters')

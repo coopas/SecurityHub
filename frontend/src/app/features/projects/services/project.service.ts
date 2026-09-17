@@ -12,7 +12,7 @@ export class ProjectService {
 
   constructor(private readonly http: HttpClient) {}
 
-  /** Lista paginada; `search` e `status` só viajam quando preenchidos. */
+  /** Paginated list; `search` and `status` only travel when they are filled in. */
   list(query: ProjectQuery): Observable<PageResponse<Project>> {
     let params = new HttpParams()
       .set('page', String(query.page))

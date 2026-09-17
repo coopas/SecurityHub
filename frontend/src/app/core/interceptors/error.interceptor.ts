@@ -13,18 +13,18 @@ const SESSION_EXPIRED_MESSAGE = 'Sua sessão expirou. Entre novamente para conti
 const GENERIC_ERROR_MESSAGE = 'Não foi possível concluir a operação. Tente novamente.';
 
 /**
- * Tratamento central de erros HTTP e único lugar que renova a sessão.
+ * Central HTTP error handling and the only place that refreshes the session.
  *
- * Um 401 em rota autenticada dispara uma renovação e repete a requisição original; só
- * quando a renovação falha é que a sessão cai. Sempre relança o erro para que a tela
- * possa reagir (por exemplo, exibindo `fieldErrors` nos campos do formulário).
+ * A 401 on an authenticated route fires a refresh and repeats the original request; only
+ * when the refresh fails does the session go down. It always rethrows the error so that the
+ * screen can react (for example, showing `fieldErrors` on the form fields).
  */
 @Injectable()
 export class ErrorInterceptor implements HttpInterceptor {
   /**
-   * Renovação em voo, compartilhada por todos os 401 da mesma rajada. `refCount: false`
-   * é deliberado: com `true`, a primeira requisição a desistir cancelaria o POST de
-   * renovação e as demais ficariam esperando uma resposta que ninguém mais pediu.
+   * In-flight refresh, shared by every 401 of the same burst. `refCount: false` is
+   * deliberate: with `true`, the first request to give up would cancel the refresh POST and
+   * the rest would sit waiting for a response nobody had asked for any more.
    */
   private refresh$: Observable<AuthResponse> | null = null;
 
@@ -48,11 +48,11 @@ export class ErrorInterceptor implements HttpInterceptor {
   }
 
   /**
-   * Renova uma vez e repete a requisição.
+   * Refreshes once and repeats the request.
    *
-   * A repetição acontece aqui dentro, depois que o `catchError` externo já disparou:
-   * um erro da segunda tentativa cai no tratamento interno e não volta a entrar em
-   * `intercept`, de modo que não existe laço de 401 renovando para sempre.
+   * The retry happens in here, after the outer `catchError` has already fired: an error
+   * from the second attempt lands in the inner handling and does not enter `intercept`
+   * again, so there is no loop of 401s refreshing forever.
    */
   private refreshAndRetry(
     request: HttpRequest<unknown>,
@@ -61,13 +61,13 @@ export class ErrorInterceptor implements HttpInterceptor {
   ): Observable<HttpEvent<unknown>> {
     return this.sharedRefresh().pipe(
       catchError(() => {
-        // A renovação era a última chance da sessão; o refresh token também já morreu.
+        // The refresh was the session's last chance; the refresh token is dead too.
         this.expireSession();
         return throwError(() => original);
       }),
       switchMap((response) =>
-        // O `AuthInterceptor` roda antes deste e não verá a requisição repetida: sem
-        // este clone ela levaria de volta o access token vencido.
+        // The `AuthInterceptor` runs before this one and will not see the repeated
+        // request: without this clone it would carry back the expired access token.
         next
           .handle(request.clone({ setHeaders: { Authorization: `Bearer ${response.accessToken}` } }))
           .pipe(
@@ -83,8 +83,8 @@ export class ErrorInterceptor implements HttpInterceptor {
   }
 
   /**
-   * Uma renovação por rajada. O `finalize` zera a referência quando ela termina, de modo
-   * que o próximo 401 comece uma renovação nova em vez de reviver o resultado antigo.
+   * One refresh per burst. The `finalize` clears the reference when it ends, so that the
+   * next 401 starts a fresh refresh instead of reviving the old result.
    */
   private sharedRefresh(): Observable<AuthResponse> {
     if (!this.refresh$) {
@@ -97,9 +97,9 @@ export class ErrorInterceptor implements HttpInterceptor {
   }
 
   /**
-   * Só vale a pena renovar quando há o que renovar e a requisição é da própria API —
-   * anexar um bearer token a uma origem estranha seria vazá-lo. Sem refresh token
-   * guardado, o 401 segue o caminho de sempre: encerrar a sessão.
+   * Refreshing is only worth it when there is something to refresh and the request is to
+   * our own API — attaching a bearer token to a foreign origin would be leaking it. With no
+   * refresh token stored, the 401 follows the usual path: end the session.
    */
   private shouldRefresh(error: HttpErrorResponse, request: HttpRequest<unknown>): boolean {
     return (
@@ -119,12 +119,12 @@ export class ErrorInterceptor implements HttpInterceptor {
     }
 
     if (error.status === 401) {
-      // O 401 da própria renovação é decidido por `refreshAndRetry`, que já encerra a
-      // sessão e avisa uma vez. Avisar aqui também mostraria dois snackbars do mesmo evento.
+      // The 401 of the refresh itself is decided by `refreshAndRetry`, which already ends
+      // the session and warns once. Warning here too would show two snackbars for one event.
       if (this.isRefreshEndpoint(request.url)) {
         return;
       }
-      // Falha de credencial na própria tela de autenticação não derruba sessão alguma.
+      // A credential failure on the authentication screen itself brings down no session.
       if (this.isAuthEndpoint(request.url)) {
         this.notifications.error(apiError?.message ?? GENERIC_ERROR_MESSAGE);
         return;
@@ -138,15 +138,15 @@ export class ErrorInterceptor implements HttpInterceptor {
       return;
     }
 
-    // Erros de validação são exibidos inline pelos formulários.
+    // Validation errors are displayed inline by the forms.
     if (apiError?.code === 'VALIDATION_ERROR') {
       return;
     }
 
-    // Numa requisição `responseType: 'blob'` o corpo de erro também chega como Blob, que
-    // `asApiError` não consegue ler — o snackbar aqui seria sempre a mensagem genérica, ao
-    // lado da mensagem real que o chamador extrai do blob e mostra inline. Mesmo princípio
-    // do ramo acima: quem sabe apresentar o erro é quem fez a chamada.
+    // On a `responseType: 'blob'` request the error body also arrives as a Blob, which
+    // `asApiError` cannot read — the snackbar here would always be the generic message, next
+    // to the real message the caller extracts from the blob and shows inline. Same principle
+    // as the branch above: whoever made the call is who knows how to present the error.
     if (request.responseType === 'blob') {
       return;
     }
@@ -154,7 +154,7 @@ export class ErrorInterceptor implements HttpInterceptor {
     this.notifications.error(apiError?.message ?? GENERIC_ERROR_MESSAGE);
   }
 
-  /** Limpeza local apenas: o refresh token já está morto, chamar `/auth/logout` seria em vão. */
+  /** Local cleanup only: the refresh token is dead, calling `/auth/logout` would be in vain. */
   private expireSession(): void {
     const returnUrl = this.router.url;
     this.authService.clearSession();
@@ -173,8 +173,8 @@ export class ErrorInterceptor implements HttpInterceptor {
   }
 
   /**
-   * Rotas onde um 401 é resposta de negócio, não sessão vencida: nenhuma delas depende
-   * de sessão e nenhuma pode ser repetida depois de uma renovação.
+   * Routes where a 401 is a business answer, not an expired session: none of them depends
+   * on a session and none can be repeated after a refresh.
    */
   private isAuthEndpoint(url: string): boolean {
     return (
@@ -191,7 +191,7 @@ export class ErrorInterceptor implements HttpInterceptor {
     return url.startsWith(`${environment.apiUrl}/auth/refresh`);
   }
 
-  // Resolvidos sob demanda para evitar dependência cíclica com o HttpClient.
+  // Resolved lazily to avoid a cyclic dependency with the HttpClient.
   private get authService(): AuthService {
     return this.injector.get(AuthService);
   }

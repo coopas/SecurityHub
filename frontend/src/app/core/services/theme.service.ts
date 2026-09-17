@@ -7,16 +7,16 @@ export const THEME_STORAGE_KEY = 'securityhub.theme';
 export type Theme = 'light' | 'dark';
 
 /**
- * Tema da interface, com a escolha guardada por navegador.
+ * The interface theme, with the choice stored per browser.
  *
- * <p>O tema inicial já foi aplicado por um script no `index.html`, antes do Angular subir,
- * para não piscar branco a cada visita de quem usa o escuro. Este serviço lê o que aquele
- * script deixou no documento em vez de decidir de novo — duas fontes de verdade para a
- * mesma pergunta acabariam divergindo.
+ * <p>The initial theme has already been applied by a script in `index.html`, before Angular
+ * boots, so as not to flash white on every visit for whoever uses dark. This service reads
+ * what that script left on the document instead of deciding all over again — two sources of
+ * truth for the same question would end up diverging.
  *
- * <p>É preferência de exibição, não dado de negócio: fica no `localStorage`, não viaja para
- * a API e não acompanha o usuário entre máquinas. Quem nunca escolheu segue a preferência
- * do sistema operacional, e passa a ser respeitada a escolha explícita assim que houver uma.
+ * <p>It is a display preference, not business data: it lives in `localStorage`, does not
+ * travel to the API and does not follow the user between machines. Whoever never chose
+ * follows the operating system preference, and the explicit choice is honoured once there is one.
  */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
@@ -39,10 +39,10 @@ export class ThemeService {
   }
 
   /**
-   * O atributo vai para o documento **antes** do `next`. Quem assina `theme$` costuma
-   * reagir lendo token com `getComputedStyle` — é o caso dos gráficos, que se repintam —
-   * e emitir primeiro entregaria a esse assinante os valores do tema que está saindo,
-   * deixando a tela um tema atrasada.
+   * The attribute goes onto the document **before** the `next`. Whoever subscribes to
+   * `theme$` tends to react by reading tokens with `getComputedStyle` — the charts do, and
+   * they repaint — and emitting first would hand that subscriber the values of the theme on
+   * its way out, leaving the screen one theme behind.
    */
   set(theme: Theme): void {
     this.apply(theme);
@@ -60,8 +60,8 @@ export class ThemeService {
   }
 
   /**
-   * A ordem importa: o que o script de abertura já pintou vence, depois o que foi salvo e,
-   * por último, a preferência do sistema.
+   * The order matters: what the opening script already painted wins, then what was saved
+   * and, last of all, the system preference.
    */
   private detectInitialTheme(): Theme {
     if (this.document.documentElement.getAttribute('data-theme') === 'dark') {
@@ -78,9 +78,9 @@ export class ThemeService {
   }
 
   /**
-   * O acesso ao storage é protegido nos dois sentidos: em janela privativa ele lança em vez
-   * de devolver vazio, e derrubar a aplicação inteira por causa de uma preferência de cor
-   * seria trocar um incômodo por uma falha.
+   * Storage access is guarded in both directions: in a private window it throws instead of
+   * returning empty, and bringing the whole application down over a color preference would
+   * be trading a nuisance for a failure.
    */
   private read(): Theme | null {
     try {
@@ -95,7 +95,7 @@ export class ThemeService {
     try {
       this.document.defaultView?.localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch {
-      /* Sem storage a escolha vale só para esta aba, o que ainda é melhor que falhar. */
+      /* With no storage the choice holds only for this tab, which still beats failing. */
     }
   }
 }

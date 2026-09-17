@@ -12,11 +12,11 @@ import {
 } from '../models/invitation.model';
 
 /**
- * Um serviço para o recurso inteiro, embora ele atenda duas plateias: `create`, `list` e
- * `revoke` exigem ADMIN e são consumidos pela administração de usuários; `preview` e
- * `accept` são públicos e vêm da tela de aceite, em `features/auth`. Separá-los em dois
- * serviços duplicaria a URL base e esconderia que são o mesmo recurso — a fronteira que
- * importa é a do backend, e lá ela está explícita.
+ * One service for the whole resource, even though it serves two audiences: `create`, `list`
+ * and `revoke` require ADMIN and are consumed by the user administration; `preview` and
+ * `accept` are public and come from the accept screen, in `features/auth`. Splitting them
+ * into two services would duplicate the base URL and hide that they are the same resource —
+ * the boundary that matters is the backend's, and there it is explicit.
  */
 @Injectable({ providedIn: 'root' })
 export class InvitationService {
@@ -24,7 +24,7 @@ export class InvitationService {
 
   constructor(private readonly http: HttpClient) {}
 
-  /** Lista todos os convites da empresa, em qualquer situação. */
+  /** Lists every invitation of the company, in any status. */
   list(): Observable<Invitation[]> {
     return this.http.get<Invitation[]>(this.baseUrl);
   }
@@ -37,13 +37,13 @@ export class InvitationService {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 
-  /** Público: quem tem o token do e-mail já provou que o convite é dele. */
+  /** Public: whoever holds the token from the e-mail has proved the invitation is theirs. */
   preview(token: string): Observable<InvitationPreview> {
     const params = new HttpParams().set('token', token);
     return this.http.get<InvitationPreview>(`${this.baseUrl}/accept`, { params });
   }
 
-  /** Cria a conta e devolve a sessão pronta; quem chama é que a guarda. */
+  /** Creates the account and returns a ready session; the caller is the one that stores it. */
   accept(request: InvitationAcceptRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/accept`, request);
   }

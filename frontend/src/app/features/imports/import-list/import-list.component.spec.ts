@@ -159,7 +159,7 @@ describe('ImportListComponent', () => {
       jasmine.objectContaining({ queryParams: { page: 3, size: 50 } }),
     );
 
-    // Voltar ao padrão limpa o parâmetro em vez de repeti-lo na URL.
+    // Going back to the default clears the param instead of repeating it in the URL.
     component.onPage({ pageIndex: 0, pageSize: 20, length: 200, previousPageIndex: 3 });
     expect(router.navigate).toHaveBeenCalledWith(
       [],

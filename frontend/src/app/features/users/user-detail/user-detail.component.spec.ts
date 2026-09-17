@@ -74,7 +74,7 @@ describe('UserDetailComponent', () => {
 
     const request = httpMock.expectOne(`${environment.apiUrl}/users/2`);
     expect(request.request.method).toBe('PATCH');
-    // O e-mail não viaja: ele é login e canal de recuperação ao mesmo tempo.
+    // The e-mail does not travel: it is the login and the recovery channel at the same time.
     expect(request.request.body).toEqual({ name: 'Bruno Lima' });
     request.flush(makeCompanyUser(2, 'ANALYST', { name: 'Bruno Lima' }));
 

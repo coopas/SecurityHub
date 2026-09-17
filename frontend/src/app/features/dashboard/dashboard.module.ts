@@ -10,9 +10,9 @@ import { SummaryCardsComponent } from './summary-cards/summary-cards.component';
 import { TrendChartComponent } from './trend-chart/trend-chart.component';
 
 /**
- * `NgChartsModule` — e com ele o `chart.js` — é importado apenas aqui. Como o dashboard é
- * a única rota que usa gráficos e entra por `loadChildren`, a biblioteca fica no pedaço
- * lazy e não pesa no bundle inicial.
+ * `NgChartsModule` — and with it `chart.js` — is imported only here. Since the dashboard is
+ * the only route that uses charts and comes in through `loadChildren`, the library stays in
+ * the lazy chunk and does not weigh on the initial bundle.
  */
 @NgModule({
   declarations: [

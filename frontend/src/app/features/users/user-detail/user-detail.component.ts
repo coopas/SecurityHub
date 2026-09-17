@@ -10,10 +10,10 @@ import { ViewState } from '../../../shared/components/state-message/state-messag
 import { UserService } from '../services/user.service';
 
 /**
- * Detalhe do usuário. Só o nome é editável aqui, e é o contrato inteiro de
- * `PATCH /users/{id}`: o e-mail não é editável por ser login e canal de recuperação de
- * senha ao mesmo tempo, e papel e situação têm endpoint próprio, com as guardas de
- * último administrador e de auto-desativação — ambos ficam na listagem.
+ * User detail. Only the name is editable here, and that is the whole contract of
+ * `PATCH /users/{id}`: the e-mail is not editable because it is the login and the password
+ * recovery channel at the same time, and role and status have their own endpoint, with the
+ * last-administrator and self-deactivation guards — both live in the listing.
  */
 @Component({
   selector: 'app-user-detail',

@@ -1,10 +1,10 @@
-/* Ativos: listagem, formulário e detalhe.
-   Criticidade é uma escala de severidade, então usa os mesmos tokens das
-   vulnerabilidades. Um segundo vocabulário de cor para a mesma ideia é o que faz duas
-   telas do mesmo painel parecerem dois produtos. */
+/* Assets: listing, form and detail.
+   Criticality is a severity scale, so it uses the same tokens as the vulnerabilities. A
+   second color vocabulary for the same idea is what makes two screens of the same panel
+   look like two products. */
 
-/* Erro de ação (uma exclusão recusada, por exemplo). A faixa lateral e o ícone carregam
-   o aviso; o texto fica na cor normal, bem mais legível que vermelho sobre vermelho. */
+/* Action error (a refused deletion, for instance). The side bar and the icon carry the
+   warning; the text stays in the normal color, far more legible than red on red. */
 .assets-alert {
   display: flex;
   align-items: flex-start;
@@ -24,8 +24,8 @@
   }
 }
 
-/* O card já é a moldura da região de resultados: a tabela rola dentro dele sem repetir
-   borda e raio, e a paginação fecha o bloco com uma divisória só. */
+/* The card is already the frame of the results region: the table scrolls inside it without
+   repeating border and radius, and the paginator closes the block with a single divider. */
 .assets-results {
   padding: 0;
   overflow: hidden;
@@ -41,8 +41,8 @@
   border-top: 1px solid var(--sh-border);
 }
 
-/* Os campos do painel de filtros reservam espaço para o rótulo flutuante; o botão
-   acompanha essa altura em vez de encostar no topo da linha. */
+/* The fields in the filter panel reserve room for the floating label; the button follows
+   that height instead of sticking to the top of the row. */
 .assets-filters__clear {
   align-self: center;
   justify-self: start;
@@ -71,7 +71,7 @@
   text-align: right;
 }
 
-/* Ícone + rótulo: o tipo do ativo nunca depende só da forma do ícone. */
+/* Icon + label: the asset type never depends on the shape of the icon alone. */
 .assets-tag {
   display: inline-flex;
   align-items: center;
@@ -87,23 +87,23 @@
   }
 }
 
-/* Todos os selos das cinco telas seguem a mesma receita: preenchimento opaco, contorno
-   na cor do próprio significado e ícone ao lado do rótulo. O preenchimento é opaco de
-   propósito — uma tinta translúcida soma com o realce da linha sob o cursor e derruba o
-   contraste do texto medido no tema claro justamente nos tons médio e baixo. */
+/* All the badges across the five screens follow the same recipe: opaque fill, outline in
+   the color of their own meaning and an icon beside the label. The fill is opaque on
+   purpose — a translucent fill adds up with the highlight of the hovered row and drops the
+   measured text contrast in the light theme precisely at the medium and low tones. */
 .assets-environment,
 .assets-criticality {
   background: var(--sh-surface-sunken);
   border-color: currentColor;
 }
 
-/* Ambiente é um recorte, não uma escala: fica neutro para que só a criticidade tenha cor
-   na linha — quatro tons por linha viram um mosaico e ninguém lê nenhum. */
+/* Environment is a slice, not a scale: it stays neutral so that only criticality carries
+   color in the row — four tones per row turn into a mosaic and nobody reads any of them. */
 .assets-environment {
   color: var(--sh-text-muted);
 }
 
-/* Cor é sempre reforço: o ícone e o rótulo já identificam a criticidade. */
+/* Color is always reinforcement: the icon and the label already identify the criticality. */
 .assets-criticality--low {
   color: var(--sh-low);
 }
@@ -125,8 +125,8 @@
   margin-top: var(--sh-space-4);
 }
 
-/* Beco sem saída do formulário: sem projeto não existe ativo, então a tela explica e
-   oferece a saída em vez de apresentar um seletor vazio. */
+/* Dead end of the form: with no project there is no asset, so the screen explains that and
+   offers the way out instead of presenting an empty selector. */
 .assets-empty-projects {
   display: flex;
   gap: var(--sh-space-4);

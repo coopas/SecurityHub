@@ -38,13 +38,14 @@ describe('AttachmentService', () => {
     const request = httpMock.expectOne({ url: attachmentsUrl, method: 'POST' });
     const body = request.request.body as FormData;
     expect(body instanceof FormData).toBeTrue();
-    // `append` com nome cria um File novo com o mesmo conteúdo, então a comparação é
-    // pelo que viaja: a parte se chama `file` e leva o nome e o tamanho do original.
+    // `append` with a name creates a new File with the same contents, so the comparison
+    // is over what travels: the part is called `file` and carries the original's name and
+    // size.
     const part = body.get('file') as File;
     expect(part.name).toBe('evidencia.png');
     expect(part.size).toBe(file.size);
-    // Quem escreve o cabeçalho multipart é o navegador, porque só ele conhece o
-    // boundary; defini-lo aqui produziria um Content-Type sem boundary algum.
+    // The one who writes the multipart header is the browser, because only it knows the
+    // boundary; setting it here would produce a Content-Type with no boundary at all.
     expect(request.request.headers.has('Content-Type')).toBeFalse();
     expect(request.request.reportProgress).toBeTrue();
 
@@ -82,7 +83,7 @@ describe('AttachmentService', () => {
       headers: { 'Content-Disposition': "attachment; filename*=UTF-8''evidencia.png" },
     });
 
-    // A resposta inteira chega à tela: é o único jeito de ler o Content-Disposition.
+    // The whole response reaches the screen: it is the only way to read the Content-Disposition.
     expect(received instanceof HttpResponse).toBeTrue();
     expect(received?.headers.get('Content-Disposition')).toContain('evidencia.png');
     expect(received?.body instanceof Blob).toBeTrue();

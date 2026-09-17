@@ -73,7 +73,7 @@ describe('AuditListComponent', () => {
 
   const element = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const text = (): string => element().textContent ?? '';
-  /** Só as linhas de dados: a linha de detalhe existe sempre, colapsada. */
+  /** Only the data rows: the detail row always exists, collapsed. */
   const rows = (): NodeListOf<Element> =>
     element().querySelectorAll('tr[mat-row]:not(.audit-table__detail-row)');
   const find = (testId: string): HTMLElement | null =>
@@ -139,9 +139,9 @@ describe('AuditListComponent', () => {
   it('não oferece nenhuma ação de escrita: a trilha é somente leitura', () => {
     fixture.detectChanges();
 
-    // O único controle das linhas é o que revela a comparação; não há link de edição
-    // nem botão de exclusão. (O ícone `edit` aparece no chip da ação ALTERAÇÃO, que é
-    // rótulo do que aconteceu, não uma affordance.)
+    // The only control on the rows is the one that reveals the comparison; there is no
+    // edit link nor delete button. (The `edit` icon appears in the chip of the ALTERAÇÃO
+    // action, which is a label for what happened, not an affordance.)
     const controls = element().querySelectorAll('table tbody a, table tbody button');
     expect(controls.length).toBe(1);
     expect(controls[0].getAttribute('data-testid')).toBe('audit-expand');
@@ -233,7 +233,7 @@ describe('AuditListComponent', () => {
   it('a data escolhida vira o dia civil do usuário, não o dia em UTC', () => {
     fixture.detectChanges();
 
-    // 21h em UTC-3 já seria 18/09 em UTC; o filtro tem de guardar o dia marcado.
+    // 21h in UTC-3 would already be 18/09 in UTC; the filter has to keep the marked day.
     component.onFromChange(new Date(2026, 8, 17, 21, 30));
 
     navigatedWith({ from: '2026-09-17', page: null });
@@ -272,7 +272,7 @@ describe('AuditListComponent', () => {
     component.onSort({ active: 'entityType', direction: 'asc' });
     navigatedWith({ sort: 'entityType,asc', page: null });
 
-    // Fora da whitelist de `AuditQueryService`: volta ao padrão em vez de viajar na URL.
+    // Outside `AuditQueryService`'s whitelist: back to the default instead of going in the URL.
     component.onSort({ active: 'ipAddress', direction: 'asc' });
     navigatedWith({ sort: null, page: null });
 
@@ -361,7 +361,7 @@ describe('AuditListComponent', () => {
 
     expect(find('audit-expand')?.getAttribute('aria-expanded')).toBe('true');
     expect(element().querySelector('#audit-detail-1')).not.toBeNull();
-    // Só a severidade mudou: as outras dez chaves ficam fora do destaque.
+    // Only the severity changed: the other ten keys stay out of the highlight.
     const changed = find('audit-diff-changed');
     expect(changed?.querySelectorAll('li').length).toBe(1);
     expect(changed?.textContent).toContain('Severidade');

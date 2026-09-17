@@ -14,7 +14,7 @@ export interface FieldError {
   message: string;
 }
 
-/** Envelope padronizado de erro do backend. */
+/** Standardized error envelope from the backend. */
 export interface ApiError {
   timestamp: string;
   status: number;

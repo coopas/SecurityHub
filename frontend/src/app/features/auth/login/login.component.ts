@@ -32,7 +32,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-    // Apenas caminhos internos são aceitos como destino pós-login.
+    // Only internal paths are accepted as the post-login destination.
     if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
       this.returnUrl = returnUrl;
     }

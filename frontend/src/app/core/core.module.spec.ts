@@ -23,8 +23,8 @@ describe('CoreModule', () => {
   });
 
   /**
-   * Os interceptors dependem de serviços que usam o próprio HttpClient; este teste
-   * garante que a resolução preguiçosa evita a dependência cíclica em tempo de execução.
+   * The interceptors depend on services that use HttpClient themselves; this test makes
+   * sure the lazy resolution avoids the cyclic dependency at runtime.
    */
   it('registra os interceptors sem dependência cíclica', () => {
     const token = makeJwt(3600);

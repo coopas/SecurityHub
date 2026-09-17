@@ -7,16 +7,16 @@ import { ImportPreviewComponent } from './import-preview/import-preview.componen
 import { ImportUploadComponent } from './import-upload/import-upload.component';
 
 /**
- * `novo` precede `:id` para não ser lido como identificador, como em ativos e
- * vulnerabilidades.
+ * `novo` comes before `:id` so it is not read as an identifier, as in assets and
+ * vulnerabilities.
  *
- * Só o envio é restrito no roteador, a ADMIN e ANALYST — a mesma licença de criar
- * vulnerabilidade, que é no que uma importação confirmada se transforma. O histórico e a
- * prévia ficam abertos: são leitura, e as ações de dentro da prévia têm a sua própria
- * regra, escondidas dos papéis que só poderiam receber 403. O backend valida de novo em
- * cada chamada.
+ * Only the upload is restricted in the router, to ADMIN and ANALYST — the same licence to
+ * create a vulnerability, which is what a confirmed import turns into. The history and the
+ * preview stay open: they are read-only, and the actions inside the preview have their own
+ * rule, hidden from the roles that could only get a 403. The backend validates again on
+ * every call.
  *
- * A lista é exportada para que a restrição de papel seja verificável por teste.
+ * The list is exported so that the role restriction is verifiable by test.
  */
 export const IMPORTS_ROUTES: Routes = [
   { path: '', component: ImportListComponent, title: 'Importações · SecurityHub' },

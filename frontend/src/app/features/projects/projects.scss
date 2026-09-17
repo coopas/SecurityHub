@@ -1,6 +1,6 @@
-/* Projetos: listagem, formulário e detalhe. Mesma anatomia dos ativos — painel de
-   filtros, card de resultados e selo com ícone — porque são a mesma tela com outro
-   conteúdo, e o que muda de uma para a outra o usuário lê como troca de produto. */
+/* Projects: listing, form and detail. Same anatomy as the assets — filter panel, results
+   card and badge with icon — because they are the same screen with different content, and
+   whatever changes from one to the other the user reads as a change of product. */
 
 .projects-alert {
   display: flex;
@@ -21,8 +21,8 @@
   }
 }
 
-/* O card é a moldura da região de resultados; a tabela rola dentro dele sem repetir
-   borda e raio, e a paginação fecha o bloco com uma divisória só. */
+/* The card is the frame of the results region; the table scrolls inside it without
+   repeating border and radius, and the paginator closes the block with a single divider. */
 .projects-results {
   padding: 0;
   overflow: hidden;
@@ -59,8 +59,8 @@
   text-align: right;
 }
 
-/* Contagem de ativos: número tabular para as colunas alinharem, com o rótulo no
-   cabeçalho — repetir "ativos" em cada linha só engorda a tabela. */
+/* Asset count: tabular numbers so the columns line up, with the label in the header —
+   repeating "ativos" on every row only fattens the table. */
 .projects-count {
   display: inline-flex;
   align-items: center;
@@ -77,17 +77,17 @@
   }
 }
 
-/* Todos os selos das cinco telas seguem a mesma receita: preenchimento opaco, contorno
-   na cor do próprio significado e ícone ao lado do rótulo. O preenchimento é opaco de
-   propósito — uma tinta translúcida soma com o realce da linha sob o cursor e derruba o
-   contraste do texto medido no tema claro justamente nos tons médio e baixo. */
+/* All the badges across the five screens follow the same recipe: opaque fill, outline in
+   the color of their own meaning and an icon beside the label. The fill is opaque on
+   purpose — a translucent fill adds up with the highlight of the hovered row and drops the
+   measured text contrast in the light theme precisely at the medium and low tones. */
 .projects-status {
   background: var(--sh-surface-sunken);
   border-color: currentColor;
 }
 
-/* Projeto arquivado não é erro nem alerta: é um estado de arquivo. Daí o tom neutro com
-   o ícone de caixa, enquanto o ativo fica no verde de situação saudável. */
+/* An archived project is neither an error nor a warning: it is an archive state. Hence the
+   neutral tone with the box icon, while the active one stays in the healthy-status green. */
 .projects-status--active {
   color: var(--sh-resolved);
 }

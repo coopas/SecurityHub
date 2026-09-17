@@ -25,7 +25,7 @@ import { IMPORTS_ROUTES } from './imports-routing.module';
 import { ImportService } from './services/import.service';
 import { makeScanImport, makeScanImportPage } from './testing/import-test-utils';
 
-/** Substitui as telas vizinhas (/403 e /login) sem arrastar os módulos delas. */
+/** Stands in for the neighboring screens (/403 and /login) without dragging their modules in. */
 @Component({ selector: 'app-route-stub', template: '' })
 class RouteStubComponent {}
 

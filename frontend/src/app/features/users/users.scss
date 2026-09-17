@@ -1,6 +1,6 @@
-/* Usuários: administração de pessoas, papéis e acesso.
-   Mesma anatomia das outras listagens (painel de filtros, card de resultados, selo com
-   ícone) — esta é a tela de administração, não um produto à parte. */
+/* Users: administration of people, roles and access.
+   Same anatomy as the other listings (filter panel, results card, badge with icon) — this
+   is the administration screen, not a separate product. */
 
 .users-alert {
   display: flex;
@@ -21,13 +21,13 @@
   }
 }
 
-/* O card desenha a moldura; a tabela rola dentro dele sem repetir borda e raio. */
+/* The card draws the frame; the table scrolls inside it without repeating border and radius. */
 .users-results {
   padding: 0;
   overflow: hidden;
 }
 
-/* Título e explicação do bloco recebem o respiro que o card perdeu ao ficar sem padding. */
+/* The block title and explanation get the breathing room the card lost by having no padding. */
 .users-results__head {
   padding: var(--sh-space-5) var(--sh-space-5) var(--sh-space-4);
 }
@@ -52,11 +52,11 @@
   }
 }
 
-/* Todos os selos das cinco telas seguem a mesma receita: preenchimento opaco, contorno
-   na cor do próprio significado e ícone ao lado do rótulo. O preenchimento é opaco de
-   propósito — uma tinta translúcida soma com o realce da linha sob o cursor e derruba o
-   contraste do texto medido no tema claro justamente nos tons médio e baixo. */
-/* Marca a própria linha, cujos controles de papel e situação ficam desabilitados. */
+/* All the badges across the five screens follow the same recipe: opaque fill, outline in
+   the color of their own meaning and an icon beside the label. The fill is opaque on
+   purpose — a translucent fill adds up with the highlight of the hovered row and drops the
+   measured text contrast in the light theme precisely at the medium and low tones. */
+/* Marks your own row, whose role and status controls are disabled. */
 .users-self {
   background: var(--sh-surface-sunken);
   border-color: currentColor;
@@ -66,8 +66,8 @@
   letter-spacing: 0.04em;
 }
 
-/* O seletor de papel é o controle da célula: precisa de largura para o rótulo inteiro e
-   de altura de alvo tocável. */
+/* The role selector is the cell's control: it needs width for the whole label and the
+   height of a tappable target. */
 .users-table__role {
   min-width: 168px;
 }
@@ -77,8 +77,8 @@
   text-align: right;
 }
 
-/* Inativo é informação, não ruído: fica na cor cheia de texto, com ícone próprio. Um
-   cinza apagado aqui é justamente o que reprova em contraste e some no tema escuro. */
+/* Inactive is information, not noise: it stays in the full text color, with an icon of its
+   own. A washed-out grey here is exactly what fails contrast and vanishes in the dark theme. */
 .users-status {
   display: inline-flex;
   align-items: center;

@@ -25,14 +25,14 @@ describe('ReportService', () => {
     const request = httpMock.expectOne((candidate) => candidate.url === executiveUrl);
     expect(request.request.method).toBe('GET');
     expect(request.request.responseType).toBe('blob');
-    // O endpoint não aceita intervalo de datas: os números são os do momento da geração.
+    // The endpoint does not accept a date range: the numbers are those of the generation moment.
     expect(request.request.params.keys()).toEqual([]);
 
     request.flush(new Blob(['%PDF-1.4'], { type: 'application/pdf' }), {
       headers: { 'Content-Disposition': "attachment; filename*=UTF-8''relatorio-executivo.pdf" },
     });
 
-    // A resposta inteira chega à tela: é o único jeito de ler o Content-Disposition.
+    // The whole response reaches the screen: it is the only way to read the Content-Disposition.
     expect(received instanceof HttpResponse).toBeTrue();
     expect(received?.headers.get('Content-Disposition')).toContain('relatorio-executivo.pdf');
     expect(received?.body instanceof Blob).toBeTrue();

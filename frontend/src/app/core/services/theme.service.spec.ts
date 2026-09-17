@@ -11,8 +11,9 @@ describe('ThemeService', () => {
   };
 
   beforeEach(() => {
-    // O documento vem do global, e não de `TestBed.inject(DOCUMENT)`: injetar aqui
-    // instancia o módulo de teste antes do `configureTestingModule` de cada caso.
+    // The document comes from the global, and not from `TestBed.inject(DOCUMENT)`:
+    // injecting here instantiates the testing module before each case's
+    // `configureTestingModule`.
     TestBed.resetTestingModule();
     root = document.documentElement;
     root.removeAttribute('data-theme');
@@ -46,8 +47,8 @@ describe('ThemeService', () => {
   });
 
   /**
-   * O script do `index.html` pinta o tema antes do Angular subir. Se o serviço decidisse
-   * de novo por conta própria, a tela mudaria de cor no meio da inicialização.
+   * The `index.html` script paints the theme before Angular boots. If the service decided
+   * all over again on its own, the screen would change color mid-bootstrap.
    */
   it('respeita o tema que o script de abertura já aplicou', () => {
     root.setAttribute('data-theme', 'dark');
@@ -82,7 +83,7 @@ describe('ThemeService', () => {
     expect(seen).toEqual(['light', 'dark']);
   });
 
-  /** Janela privativa lança ao tocar no storage; a preferência não vale uma tela branca. */
+  /** A private window throws on touching storage; the preference is not worth a white screen. */
   it('continua funcionando quando o storage está bloqueado', () => {
     spyOn(window, 'matchMedia').and.returnValue({ matches: false } as MediaQueryList);
     spyOn(localStorage, 'getItem').and.throwError('bloqueado');

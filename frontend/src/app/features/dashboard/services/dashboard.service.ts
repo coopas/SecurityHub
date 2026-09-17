@@ -11,13 +11,13 @@ import {
 } from '../models/dashboard.model';
 
 /**
- * Os quatro endpoints de leitura do dashboard, um por região da tela. Cada chamada é
- * independente de propósito: uma falha na tendência não pode apagar os cards, então nada
- * aqui combina as respostas em um único `forkJoin`.
+ * The dashboard's four read endpoints, one per region of the screen. Each call is
+ * independent on purpose: a failure in the trend cannot wipe out the cards, so nothing here
+ * combines the responses into a single `forkJoin`.
  *
- * Não existe um quinto método para "itens recentes": aquele painel é
- * `GET /vulnerabilities?page=0&size=5&sort=createdAt,desc` e usa o `VulnerabilityService`
- * que já existe.
+ * There is no fifth method for "itens recentes": that panel is
+ * `GET /vulnerabilities?page=0&size=5&sort=createdAt,desc` and uses the
+ * `VulnerabilityService` that already exists.
  */
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
@@ -29,20 +29,20 @@ export class DashboardService {
     return this.http.get<DashboardSummary>(`${this.baseUrl}/summary`);
   }
 
-  /** Array puro com as quatro severidades, inclusive as zeradas, na ordem do enum. */
+  /** Plain array with the four severities, the zeroed ones included, in enum order. */
   severityDistribution(): Observable<SeverityDistributionEntry[]> {
     return this.http.get<SeverityDistributionEntry[]>(`${this.baseUrl}/severity-distribution`);
   }
 
-  /** Array puro com os quatro status, inclusive os zerados, na ordem do enum. */
+  /** Plain array with the four statuses, the zeroed ones included, in enum order. */
   statusDistribution(): Observable<StatusDistributionEntry[]> {
     return this.http.get<StatusDistributionEntry[]>(`${this.baseUrl}/status-distribution`);
   }
 
   /**
-   * `days` viaja como pedido: o backend limita a [1, 90] sem erro e devolve o valor
-   * efetivo, que é o que a tela rotula. Repetir a validação aqui só criaria duas regras
-   * para o mesmo limite.
+   * `days` travels exactly as asked: the backend clamps it to [1, 90] without an error and
+   * returns the effective value, which is what the screen labels. Repeating the validation
+   * here would only create two rules for the same limit.
    */
   trend(days: number): Observable<Trend> {
     const params = new HttpParams().set('days', String(days));

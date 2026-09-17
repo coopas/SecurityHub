@@ -13,10 +13,10 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
   <!--
-    Pinta o tema antes do primeiro quadro. Se isto esperasse o Angular subir, quem usa o
-    modo escuro veria um lampejo branco em toda visita — e é justamente a tela clara que
-    machuca no escuro, não o contrário. Lê a escolha salva e, na primeira visita, obedece
-    à preferência do sistema.
+    Paints the theme before the first frame. If this waited for Angular to boot, whoever uses
+    dark mode would see a white flash on every visit — and it is precisely the light screen
+    that hurts in the dark, not the other way round. Reads the saved choice and, on the first
+    visit, obeys the system preference.
   -->
   <script>
     (function () {
@@ -29,7 +29,7 @@
           document.documentElement.setAttribute('data-theme', 'dark');
         }
       } catch (e) {
-        /* Modo privativo bloqueia o storage: o tema claro é um padrão perfeitamente bom. */
+        /* Private mode blocks storage: the light theme is a perfectly good default. */
       }
     })();
   </script>

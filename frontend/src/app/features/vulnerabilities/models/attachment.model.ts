@@ -1,32 +1,35 @@
 import { UserSummary } from './vulnerability.model';
 
 /**
- * Anexo de uma vulnerabilidade, campo a campo como o `AttachmentResponse` do backend.
- * O backend omite campos nulos (`default-property-inclusion: non_null`), daí o opcional
- * em `uploadedBy`; `sizeBytes` e `canDelete` são primitivos no Java e vêm sempre.
+ * Attachment of a vulnerability, field by field like the backend's `AttachmentResponse`.
+ * The backend omits null fields (`default-property-inclusion: non_null`), hence the
+ * optional on `uploadedBy`; `sizeBytes` and `canDelete` are primitives in Java and always
+ * come through.
  */
 export interface Attachment {
   id: number;
   vulnerabilityId: number;
-  /** Nome saneado do envio; o nome em disco nunca é exposto. */
+  /** Sanitised name from the upload; the name on disk is never exposed. */
   filename: string;
-  /** Determinado pelo servidor a partir dos bytes, nunca pelo cabeçalho enviado. */
+  /** Determined by the server from the bytes, never from the header that was sent. */
   contentType: string;
   sizeBytes: number;
   checksumSha256: string;
   uploadedBy?: UserSummary;
   /**
-   * Calculado no servidor (quem enviou ou um ADMIN), como o `editable` do comentário. A
-   * tela usa este campo em vez de refazer a regra, para que as duas nunca divirjam.
+   * Computed on the server (whoever uploaded it, or an ADMIN), like the comment's
+   * `editable`. The screen uses this field instead of redoing the rule, so that the two
+   * never diverge.
    */
   canDelete: boolean;
   createdAt: string;
 }
 
 /**
- * Espelha a allowlist do `AttachmentContentTypeDetector`. Serve ao atributo `accept` do
- * seletor de arquivos e à checagem imediata antes do envio — mas quem decide o tipo é o
- * servidor, olhando os bytes: este arranjo economiza um upload inútil, não protege nada.
+ * Mirrors the `AttachmentContentTypeDetector` allowlist. It serves the `accept` attribute
+ * of the file picker and the immediate check before uploading — but the one who decides
+ * the type is the server, looking at the bytes: this arrangement saves a pointless upload,
+ * it protects nothing.
  */
 export const ALLOWED_ATTACHMENT_TYPES: readonly string[] = [
   'application/pdf',
@@ -38,5 +41,5 @@ export const ALLOWED_ATTACHMENT_TYPES: readonly string[] = [
 /** `securityhub.attachments.max-size-bytes`: 10 MiB. */
 export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 
-/** `AttachmentService.MAX_ATTACHMENTS`: o servidor responde 409 a partir daqui. */
+/** `AttachmentService.MAX_ATTACHMENTS`: from here on the server answers 409. */
 export const MAX_ATTACHMENTS = 20;

@@ -6,10 +6,10 @@ import { AuthService } from '../../../core/services/auth.service';
 import { applyFieldErrors, toApiError } from '../../../core/utils/api-error.util';
 
 /**
- * Texto único da confirmação. É constante de propósito: se a tela dissesse "enviamos"
- * para um endereço cadastrado e "não encontramos" para outro, qualquer visitante
- * descobriria quem tem conta na plataforma apenas variando o campo. O backend responde
- * 202 nos dois casos; a tela não pode ser mais específica do que ele.
+ * Single confirmation text. It is constant on purpose: if the screen said "enviamos" for a
+ * registered address and "não encontramos" for another, any visitor could work out who has
+ * an account on the platform just by varying the field. The backend answers 202 in both
+ * cases; the screen cannot be more specific than it is.
  */
 export const PASSWORD_RESET_NEUTRAL_MESSAGE =
   'Se existir uma conta com esse e-mail, enviamos um link de redefinição.';
@@ -48,10 +48,10 @@ export class ForgotPasswordComponent {
       .requestPasswordReset({ email: String(this.form.value.email ?? '').trim() })
       .pipe(finalize(() => (this.submitting = false)))
       .subscribe({
-        // Só o 202 chega aqui, e ele é o mesmo para e-mail conhecido e desconhecido.
+        // Only the 202 gets here, and it is the same for a known and for an unknown e-mail.
         next: () => (this.submitted = true),
-        // Uma falha de infraestrutura (5xx) é outra coisa: esconder que nada foi enviado
-        // deixaria o usuário esperando um e-mail que não virá.
+        // An infrastructure failure (5xx) is another matter: hiding that nothing was sent
+        // would leave the user waiting for an e-mail that will never come.
         error: (error: unknown) => this.handleError(error),
       });
   }

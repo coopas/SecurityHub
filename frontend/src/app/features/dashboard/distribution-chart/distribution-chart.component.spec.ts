@@ -71,7 +71,7 @@ describe('DistributionChartComponent', () => {
     expect(component.chartData.labels).toEqual(['Baixa', 'Média', 'Alta', 'Crítica']);
     expect(component.chartData.datasets[0].data).toEqual([3, 5, 2, 0]);
     expect(component.total).toBe(10);
-    // As cores saem dos tokens de styles.scss, os mesmos dos chips das listagens.
+    // The colors come out of the styles.scss tokens, the same ones as the chips in the lists.
     expect(component.chartData.datasets[0].backgroundColor).toEqual([
       themeColor('--sh-low'),
       themeColor('--sh-medium'),
@@ -97,14 +97,14 @@ describe('DistributionChartComponent', () => {
       themeColor('--sh-resolved'),
       themeColor('--sh-accepted-risk'),
     ]);
-    // Zero não some da legenda nem perde a cor.
+    // Zero neither disappears from the legend nor loses its color.
     expect(component.categories[3]).toEqual(
       jasmine.objectContaining({ label: 'Risco aceito', count: 0 }),
     );
     expect(component.categories[3].color).toBe(themeColor('--sh-accepted-risk'));
   });
 
-  /** Barras e legenda saem dos mesmos tokens, e os dois precisam seguir a troca de tema. */
+  /** Bars and legend come out of the same tokens, and both must follow the theme switch. */
   it('repinta as barras e a legenda com os tokens do novo tema', fakeAsync(() => {
     setup('severity');
     fixture.detectChanges();
@@ -112,8 +112,8 @@ describe('DistributionChartComponent', () => {
     const before = component.categories[3].color;
 
     theme.set('dark');
-    // O ThemeService emite antes de aplicar `data-theme` no documento: o repintor adia a
-    // leitura por uma microtarefa para não pegar os tokens do tema anterior.
+    // The ThemeService emits before applying `data-theme` on the document: the repainter
+    // defers the read by a microtask so it does not pick up the previous theme's tokens.
     tick();
     fixture.detectChanges();
 
@@ -125,7 +125,7 @@ describe('DistributionChartComponent', () => {
       themeColor('--sh-high'),
       themeColor('--sh-critical'),
     ]);
-    // Repintar é só trocar cor: os números não são pedidos de novo.
+    // Repainting is only swapping colors: the numbers are not requested again.
     expect(dashboardService.severityDistribution).toHaveBeenCalledTimes(1);
 
     theme.set('light');
@@ -161,7 +161,7 @@ describe('DistributionChartComponent', () => {
     ]);
     expect(table?.querySelector('tfoot td')?.textContent?.trim()).toBe('10');
 
-    // A tabela é exatamente o que está no gráfico, e não um resumo aproximado.
+    // The table is exactly what is in the chart, and not an approximate summary.
     expect(tableValues().map((row) => Number(row[1]))).toEqual(
       component.chartData.datasets[0].data as number[],
     );
@@ -184,7 +184,7 @@ describe('DistributionChartComponent', () => {
 
     const legend = element().querySelector('.dashboard-legend');
     expect(legend?.getAttribute('aria-hidden')).toBe('true');
-    // Cada item nomeia a categoria em texto: a cor nunca é o único indicador.
+    // Each item names the category in text: color is never the only indicator.
     expect(legend?.querySelectorAll('.dashboard-legend__item').length).toBe(4);
     expect(legend?.textContent).toContain('Crítica');
   });

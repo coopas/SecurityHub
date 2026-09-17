@@ -4,7 +4,7 @@ import { NgModule, Optional, SkipSelf } from '@angular/core';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { ErrorInterceptor } from './interceptors/error.interceptor';
 
-/** Serviços singleton da aplicação. Deve ser importado apenas pelo `AppModule`. */
+/** Application-wide singleton services. Must be imported only by `AppModule`. */
 @NgModule({
   providers: [
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },

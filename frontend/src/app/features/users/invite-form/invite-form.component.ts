@@ -10,9 +10,9 @@ import { ASSIGNABLE_ROLES } from '../models/user-admin.model';
 import { InvitationService } from '../services/invitation.service';
 
 /**
- * Convite de usuário. A empresa não aparece no formulário porque ela nunca viaja no
- * corpo: o backend usa a do administrador autenticado, e um campo aqui só criaria a
- * ilusão de que dá para convidar alguém para outro lugar.
+ * User invitation. The company does not appear in the form because it never travels in the
+ * body: the backend uses the one from the authenticated administrator, and a field here
+ * would only create the illusion that you can invite someone to somewhere else.
  */
 @Component({
   selector: 'app-invite-form',

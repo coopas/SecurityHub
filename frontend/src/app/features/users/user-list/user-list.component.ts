@@ -25,15 +25,16 @@ import { UserService } from '../services/user.service';
 export const USERS_PAGE_SIZE = 10;
 
 /**
- * Administração de usuários da empresa.
+ * Administration of the company's users.
  *
- * Desvio deliberado do `AssetListComponent`: aqui a paginação, a ordenação e a busca são
- * de cliente (`MatTableDataSource` + `MatPaginator` + `MatSort` + `filterPredicate`), e
- * não dirigidas pela URL. `GET /users` não é paginado — devolve um array puro com todos
- * os usuários da empresa, que é uma lista pequena e que o backend já ordena por nome. Com
- * tudo em memória, espelhar filtros na URL significaria navegar para refazer um trabalho
- * que o navegador faria sozinho, e ainda assim recarregar a página buscaria tudo de novo.
- * O dia em que o endpoint virar paginado, este componente passa a seguir o de ativos.
+ * A deliberate departure from `AssetListComponent`: here the pagination, the sorting and the
+ * search are client-side (`MatTableDataSource` + `MatPaginator` + `MatSort` +
+ * `filterPredicate`), not URL-driven. `GET /users` is not paginated — it returns a plain
+ * array with every user of the company, which is a small list and which the backend already
+ * sorts by name. With everything in memory, mirroring filters in the URL would mean
+ * navigating to redo work the browser would do on its own, and reloading the page would
+ * fetch everything again anyway. The day the endpoint becomes paginated, this component
+ * falls in line with the assets one.
  */
 @Component({
   selector: 'app-user-list',
@@ -60,9 +61,9 @@ export class UserListComponent implements OnInit, OnDestroy {
   private currentUserId: number | null = null;
 
   /**
-   * Por setter, e não por `AfterViewInit`: a tabela vive dentro de um `*ngIf` de estado,
-   * então o paginador só existe depois que a carga termina — o `AfterViewInit` chegaria
-   * cedo demais e encontraria `undefined`.
+   * Via setter, and not via `AfterViewInit`: the table lives inside a state `*ngIf`, so the
+   * paginator only exists once the load has finished — `AfterViewInit` would arrive too
+   * early and find `undefined`.
    */
   @ViewChild(MatPaginator)
   set paginator(paginator: MatPaginator | undefined) {
@@ -103,7 +104,7 @@ export class UserListComponent implements OnInit, OnDestroy {
         case 'role':
           return this.roleLabels[user.role];
         case 'lastLoginAt':
-          // Nunca logou vai para o fim da ordem crescente, e não para o começo.
+          // Never logged in goes to the end of the ascending order, not to the start.
           return user.lastLoginAt ?? '';
         case 'email':
           return user.email;
@@ -159,7 +160,7 @@ export class UserListComponent implements OnInit, OnDestroy {
       });
   }
 
-  /** A própria linha nunca é editável: as guardas do backend a recusariam de qualquer jeito. */
+  /** Your own row is never editable: the backend guards would refuse it anyway. */
   isSelf(user: User): boolean {
     return this.currentUserId !== null && user.id === this.currentUserId;
   }
@@ -204,9 +205,9 @@ export class UserListComponent implements OnInit, OnDestroy {
           this.notifications.success(updated.active ? 'Usuário reativado.' : 'Usuário desativado.');
         },
         error: (error: unknown) => {
-          // 409 do último administrador ativo ou da auto-desativação. O controle é
-          // otimista: sem desfazer o clique, a tela passaria a mostrar um estado que o
-          // servidor recusou, e um F5 o desmentiria.
+          // 409 from the last active administrator or from self-deactivation. The control
+          // is optimistic: without undoing the click, the screen would go on showing a state
+          // the server refused, and an F5 would contradict it.
           this.revertToggle(event, previous);
           this.actionError =
             toApiError(error)?.message ?? 'Não foi possível alterar a situação do usuário.';
@@ -286,7 +287,7 @@ export class UserListComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$));
   }
 
-  /** Desfaz o clique no próprio widget: a fonte da verdade continua sendo o servidor. */
+  /** Undoes the click on the widget itself: the source of truth is still the server. */
   private revertToggle(event: MatSlideToggleChange, previous: boolean): void {
     event.source.checked = previous;
   }

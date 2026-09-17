@@ -6,14 +6,14 @@ import { environment } from '../../../../environments/environment';
 import { PageResponse } from '../../../core/models';
 import { Comment, CommentRequest } from '../models/comment.model';
 
-/** Comentários vivem sob a vulnerabilidade; a API não expõe exclusão. */
+/** Comments live under the vulnerability; the API exposes no deletion. */
 @Injectable({ providedIn: 'root' })
 export class CommentService {
   private readonly baseUrl = `${environment.apiUrl}/vulnerabilities`;
 
   constructor(private readonly http: HttpClient) {}
 
-  /** O backend já devolve do mais antigo para o mais novo, que é como se lê uma discussão. */
+  /** The backend already returns oldest to newest, which is how a discussion is read. */
   list(vulnerabilityId: number, page: number, size: number): Observable<PageResponse<Comment>> {
     const params = new HttpParams().set('page', String(page)).set('size', String(size));
     return this.http.get<PageResponse<Comment>>(this.commentsUrl(vulnerabilityId), { params });

@@ -55,7 +55,7 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
     return this.errorMessage === 'Ativo não encontrado.';
   }
 
-  /** Cor é sempre reforço: o ícone e o texto já identificam a criticidade. */
+  /** Color is always reinforcement: the icon and the text already identify the criticality. */
   get criticalityClass(): string {
     return this.asset ? `assets-criticality--${this.asset.criticality.toLowerCase()}` : '';
   }
@@ -138,8 +138,8 @@ export class AssetDetailComponent implements OnInit, OnDestroy {
       },
       error: (error: unknown) => {
         this.deleting = false;
-        // 409 aparece quando o ativo já tem vulnerabilidades: a mensagem do servidor
-        // explica o motivo melhor que qualquer texto fixo aqui.
+        // A 409 shows up when the asset already has vulnerabilities: the server's message
+        // explains the reason better than any fixed text here.
         const apiError = toApiError(error);
         this.actionError = apiError?.message ?? 'Não foi possível excluir o ativo.';
       },

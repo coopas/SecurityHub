@@ -29,16 +29,16 @@ export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 
 /**
- * Trilha de auditoria da empresa. Somente leitura por definição: o recurso é
- * append-only no backend e esta tela não oferece nenhuma ação de edição ou exclusão.
+ * The company's audit trail. Read-only by definition: the resource is append-only in the
+ * backend and this screen offers no edit or delete action at all.
  *
- * Como nas demais listagens, os query params da URL são a única fonte de verdade dos
- * filtros, da paginação e da ordenação; a assinatura da rota é que dispara a busca,
- * então recarregar, voltar ou compartilhar o link restaura exatamente a mesma consulta.
+ * As in the other listings, the URL query params are the only source of truth for the
+ * filters, the pagination and the sorting; it is the route subscription that fires the
+ * fetch, so reloading, going back or sharing the link restores exactly the same query.
  *
- * Não há campo de busca livre: `AuditController` aceita apenas entityType, actorId,
- * action, from e to. Um `search` inventado viajaria na URL e seria ignorado pelo
- * servidor, o que é pior do que não existir.
+ * There is no free-text search field: `AuditController` accepts only entityType, actorId,
+ * action, from and to. An invented `search` would travel in the URL and be ignored by the
+ * server, which is worse than not existing.
  */
 @Component({
   selector: 'app-audit-list',
@@ -51,7 +51,7 @@ export class AuditListComponent implements OnInit, OnDestroy {
   readonly entityTypes = AUDIT_ENTITY_TYPES;
   readonly pageSizeOptions = [10, 20, 50, MAX_PAGE_SIZE];
   readonly displayedColumns = ['createdAt', 'actor', 'action', 'entity', 'ipAddress', 'expand'];
-  /** Linha de detalhe: referência estável para não recriar o array a cada verificação. */
+  /** Detail row: a stable reference so the array is not recreated on every check. */
   readonly detailColumns = ['detail'];
 
   readonly entityTypeControl = new FormControl<string>('', { nonNullable: true });
@@ -97,7 +97,7 @@ export class AuditListComponent implements OnInit, OnDestroy {
       : 'Nenhum registro de auditoria ainda.';
   }
 
-  /** Intervalo invertido devolveria sempre vazio; avisamos em vez de deixar o usuário adivinhar. */
+  /** An inverted range would always return empty; we warn instead of leaving the user guessing. */
   get invalidRange(): boolean {
     return !!this.query.from && !!this.query.to && this.query.from > this.query.to;
   }
@@ -198,7 +198,7 @@ export class AuditListComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** As células da tabela têm contexto `any`; os rótulos passam por aqui para manter o tipo. */
+  /** The table cells have an `any` context; the labels go through here to keep the typing. */
   actionLabel(action: AuditAction): string {
     return AUDIT_ACTION_LABELS[action] ?? action;
   }
@@ -207,7 +207,7 @@ export class AuditListComponent implements OnInit, OnDestroy {
     return AUDIT_ACTION_ICONS[action] ?? 'history';
   }
 
-  /** Cor é sempre reforço: o ícone e o texto já identificam a ação. */
+  /** Color is always reinforcement: the icon and the text already identify the action. */
   actionClass(action: AuditAction): string {
     return `audit-action--${action.toLowerCase().replace(/_/g, '-')}`;
   }
@@ -216,7 +216,7 @@ export class AuditListComponent implements OnInit, OnDestroy {
     return auditEntityTypeLabel(entityType);
   }
 
-  /** Um evento de sistema (login recusado de e-mail inexistente) não tem ator. */
+  /** A system event (login refused for a nonexistent e-mail) has no actor. */
   actorLabel(log: AuditLog): string {
     return log.actorEmail ?? 'Sistema';
   }
@@ -232,7 +232,7 @@ export class AuditListComponent implements OnInit, OnDestroy {
     )}${log.entityId ? ` ${log.entityId}` : ''}`;
   }
 
-  /** `null` remove o parâmetro da URL; os demais são mesclados aos existentes. */
+  /** `null` removes the param from the URL; the rest are merged into the existing ones. */
   private patchQueryParams(queryParams: Params): void {
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -249,8 +249,8 @@ export class AuditListComponent implements OnInit, OnDestroy {
         next: (actors) => {
           this.actors = actors;
         },
-        // Uma falha aqui deixa o filtro sem opções, mas não impede a consulta; o
-        // ErrorInterceptor já avisa o usuário.
+        // A failure here leaves the filter with no options, but does not prevent the
+        // query; the ErrorInterceptor already warns the user.
         error: () => {
           this.actors = [];
         },
@@ -269,8 +269,8 @@ export class AuditListComponent implements OnInit, OnDestroy {
         Math.max(1, this.toInteger(params.get('size'), DEFAULT_PAGE_SIZE)),
       ),
       sort: this.parseSort(params.get('sort')),
-      // Tipo desconhecido é descartado: o backend compara por igualdade exata e um
-      // valor livre na URL só produziria uma página vazia inexplicável.
+      // An unknown type is discarded: the backend compares by exact equality and a free
+      // value in the URL would only produce an inexplicable empty page.
       entityType: entityType && AUDIT_ENTITY_TYPES.includes(entityType) ? entityType : undefined,
       actorId: actorId > 0 ? actorId : undefined,
       action: action && AUDIT_ACTIONS.includes(action) ? action : undefined,
@@ -279,7 +279,7 @@ export class AuditListComponent implements OnInit, OnDestroy {
     };
   }
 
-  /** Mantém apenas `propriedade,direção` aceitos pelo backend; o resto vira o padrão. */
+  /** Keeps only the `property,direction` the backend accepts; the rest becomes the default. */
   private parseSort(raw: string | null): string {
     const [property, direction] = (raw ?? '').split(',');
     const sortable = (AUDIT_SORTABLE_PROPERTIES as readonly string[]).includes(property);

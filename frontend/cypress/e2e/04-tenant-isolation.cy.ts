@@ -1,17 +1,17 @@
 import { AuthSession } from '../support/commands';
 
 /**
- * Isolamento entre empresas, com um detalhe que é o assunto inteiro deste arquivo: a resposta
- * tem de ser **404, nunca 403**.
+ * Isolation between companies, with one detail that is the entire subject of this file: the
+ * answer has to be **404, never 403**.
  *
- * Um 403 é uma confirmação. Diz "este id existe, e não é seu" — e quem está sondando aprende
- * exatamente o que queria: a faixa de ids em uso, quantos achados o concorrente tem, quando ele
- * cadastrou o próximo. O 404 não diz nada: para a empresa que pergunta, o recurso simplesmente
- * não existe, que é a verdade do ponto de vista dela.
+ * A 403 is a confirmation. It says "this id exists, and it is not yours" — and whoever is
+ * probing learns exactly what they wanted: the range of ids in use, how many findings the
+ * competitor has, when they registered the next one. The 404 says nothing: for the company
+ * asking, the resource simply does not exist, which is the truth from its point of view.
  *
- * O seed do perfil `demo` cria dois tenants justamente para isto: `demo`, com o conjunto
- * completo, e `northwind`, com um administrador. O administrador da northwind é o papel mais
- * poderoso que existe no produto — e ainda assim não enxerga um único byte da demo.
+ * The `demo` profile seed creates two tenants precisely for this: `demo`, with the full set, and
+ * `northwind`, with one administrator. The northwind administrator is the most powerful role
+ * there is in the product — and still does not see a single byte of demo's.
  */
 describe('Isolamento entre empresas', () => {
   let northwind: AuthSession;
@@ -19,7 +19,7 @@ describe('Isolamento entre empresas', () => {
   let demoAttachmentId: number | null = null;
 
   before(() => {
-    // Um alvo real da empresa demo, encontrado com a sessão da própria demo.
+    // A real target from the demo company, found with demo's own session.
     cy.loginAs('admin@demo.test').then((demoAdmin) => {
       cy.apiRequest<{ content: Array<{ id: number }> }>({
         url: '/vulnerabilities?size=1',
@@ -61,9 +61,9 @@ describe('Isolamento entre empresas', () => {
         what: 'listagem de anexos',
       },
       {
-        // O id do anexo pode não existir; é indiferente, e esse é o ponto. O pai é provado
-        // primeiro, então um anexo alcançado pela vulnerabilidade errada — ou por outra
-        // empresa — é o mesmo 404 de um que nunca existiu.
+        // The attachment id may not exist; it makes no difference, and that is the point. The
+        // parent is proved first, so an attachment reached through the wrong vulnerability — or
+        // by another company — is the same 404 as one that never existed.
         method: 'GET',
         url: `/vulnerabilities/${demoVulnerabilityId}/attachments/${demoAttachmentId ?? 1}/download`,
         what: 'download de anexo',
@@ -78,8 +78,8 @@ describe('Isolamento entre empresas', () => {
         failOnStatusCode: false,
       }).then((response) => {
         expect(response.status, `${what} (${method} ${url})`).to.eq(404);
-        // Explícito porque é o defeito que este arquivo existe para pegar: um 403 aqui
-        // confirmaria a existência do id para quem não deveria saber nem isso.
+        // Explicit because it is the defect this file exists to catch: a 403 here would
+        // confirm the id's existence to someone who should not even know that much.
         expect(response.status, `${what} não pode responder 403`).to.not.eq(403);
       });
     });

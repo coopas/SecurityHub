@@ -1,11 +1,11 @@
 .state-message {
-  // A largura limitada é o que faz a frase ser lida como um recado curto e centrado,
-  // e não como um parágrafo perdido no meio de uma tela larga.
+  // The capped width is what makes the sentence read as a short, centered note,
+  // and not as a paragraph lost in the middle of a wide screen.
   margin: 0 auto;
   max-width: 44ch;
 }
 
-// O medalhão dá peso ao estado: sem ele o ícone solto parece um erro de renderização.
+// The medallion gives the state weight: without it the loose icon looks like a rendering glitch.
 .state-message__figure {
   display: inline-flex;
   align-items: center;
@@ -33,7 +33,7 @@
   text-wrap: balance;
 }
 
-// Erro e vazio não são a mesma coisa: um pede ação, o outro só informa.
+// Error and empty are not the same thing: one asks for action, the other only informs.
 .state-message--error {
   .state-message__figure {
     background: var(--sh-danger-soft);
