@@ -1,0 +1,15 @@
+# Production profile. SECURITYHUB_JWT_SECRET and the database credentials must be
+# supplied by the environment; the application refuses to start otherwise.
+springdoc:
+  api-docs:
+    enabled: ${SECURITYHUB_OPENAPI_ENABLED:false}
+  swagger-ui:
+    enabled: ${SECURITYHUB_OPENAPI_ENABLED:false}
+
+securityhub:
+  demo:
+    seed-enabled: false
+
+logging:
+  level:
+    com.securityhub: INFO

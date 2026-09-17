@@ -1,0 +1,8 @@
+# Demo profile used by docker-compose. Seeds a reproducible data set on startup.
+securityhub:
+  demo:
+    seed-enabled: true
+
+logging:
+  level:
+    com.securityhub: INFO

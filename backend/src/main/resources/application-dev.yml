@@ -1,0 +1,18 @@
+# Local development profile. The secret below is a throwaway value for localhost only
+# and is never used by the demo, test or prod profiles.
+securityhub:
+  jwt:
+    secret: dev-only-insecure-secret-not-for-any-real-deployment-0123456789
+  cors:
+    allowed-origins: http://localhost:4200
+
+spring:
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+
+logging:
+  level:
+    com.securityhub: DEBUG
+    org.hibernate.SQL: DEBUG
