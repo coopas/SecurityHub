@@ -14,6 +14,7 @@ jobs:
   backend:
     name: Backend (Java 11)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +42,7 @@ jobs:
   frontend:
     name: Frontend (Node 18)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -51,8 +53,18 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      # O setup-node guarda ~/.npm, mas o postinstall do puppeteer baixa ~500 MB de
+      # binários do Chrome para ~/.cache/puppeteer, que fica de fora. Sem este cache o
+      # download se repete a cada execução e um estol dele trava o `npm ci`.
+      - name: Cache Chrome do puppeteer
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: puppeteer-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+
       - name: Install
         working-directory: frontend
+        timeout-minutes: 10
         run: npm ci
 
       - name: Lint
@@ -70,6 +82,7 @@ jobs:
   compose:
     name: Docker Compose smoke test
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [backend, frontend]
     steps:
       - uses: actions/checkout@v4
@@ -88,6 +101,46 @@ jobs:
       - name: Smoke test
         run: ./scripts/smoke-test.sh
 
+      # A suíte Cypress entra aqui, entre o smoke test e o descarte: a pilha já está de pé com
+      # o seed do perfil `demo`, e os passos de dump e teardown abaixo continuam cobrindo
+      # também as falhas dela. Rodar contra o compose — e não contra `ng serve` — é o que faz
+      # o teste exercitar o bundle de produção atrás do nginx real.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # O binário do Cypress fica fora de node_modules e não é coberto pelo cache do npm.
+      - name: Cache the Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+
+      - name: End-to-end (Cypress)
+        working-directory: frontend
+        env:
+          CYPRESS_BASE_URL: http://localhost:8081
+          # A mesma senha que o .env.example copiado no início do job entrega ao seed.
+          CYPRESS_DEMO_PASSWORD: Demo@SecurityHub2026
+        run: npm run e2e:ci
+
+      - name: Upload Cypress artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts
+          path: |
+            frontend/cypress/screenshots
+            frontend/cypress/videos
+          if-no-files-found: ignore
+
       - name: Dump logs on failure
         if: failure()
         run: docker compose logs --no-color --tail 200
@@ -99,6 +152,7 @@ jobs:
   dependency-scan:
     name: Dependency scan
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
