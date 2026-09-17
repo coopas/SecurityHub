@@ -1,0 +1,201 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>Usuários</h1>
+      <p class="users-subtitle">
+        Pessoas com acesso à sua empresa. Papel e situação valem para toda a plataforma.
+      </p>
+    </div>
+
+    <a mat-raised-button color="primary" routerLink="/users/convidar" data-testid="user-invite">
+      <mat-icon aria-hidden="true">person_add</mat-icon>
+      <span>Convidar usuário</span>
+    </a>
+  </header>
+
+  <p class="users-alert" role="alert" *ngIf="actionError" data-testid="user-action-error">
+    {{ actionError }}
+  </p>
+
+  <div class="sh-card">
+    <form class="sh-filters" (ngSubmit)="$event.preventDefault()" novalidate>
+      <mat-form-field appearance="outline">
+        <mat-label>Buscar por nome, e-mail ou papel</mat-label>
+        <input
+          matInput
+          type="search"
+          [formControl]="searchControl"
+          autocomplete="off"
+          data-testid="user-search"
+        />
+        <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+      </mat-form-field>
+    </form>
+
+    <app-state-message
+      *ngIf="state"
+      [state]="state"
+      [message]="state === 'empty' ? 'Nenhum usuário cadastrado ainda.' : undefined"
+      [showRetry]="true"
+      (retry)="load()"
+    ></app-state-message>
+
+    <ng-container *ngIf="!state">
+      <div class="sh-table-wrapper">
+        <table
+          mat-table
+          class="sh-table"
+          matSort
+          matSortActive="name"
+          matSortDirection="asc"
+          matSortDisableClear
+          aria-label="Usuários da empresa"
+          [dataSource]="dataSource"
+          [trackBy]="trackById"
+        >
+          <caption class="sh-visually-hidden">
+            Usuários da empresa, com papel, situação e último acesso.
+          </caption>
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Nome</th>
+            <td mat-cell *matCellDef="let user">
+              <a class="users-table__link" [routerLink]="['/users', user.id]">{{ user.name }}</a>
+              <span class="users-table__self" *ngIf="isSelf(user)">Você</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">E-mail</th>
+            <td mat-cell *matCellDef="let user">{{ user.email }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="role">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Papel</th>
+            <td mat-cell *matCellDef="let user">
+              <mat-form-field appearance="outline" class="users-table__role" subscriptSizing="dynamic">
+                <mat-label class="sh-visually-hidden">Papel de {{ user.name }}</mat-label>
+                <mat-select
+                  [value]="user.role"
+                  [disabled]="isSelf(user)"
+                  [matTooltip]="selfHint(user)"
+                  [matTooltipDisabled]="!isSelf(user)"
+                  (selectionChange)="onRoleChange(user, $event)"
+                  [attr.data-testid]="'user-role-' + user.id"
+                >
+                  <mat-option *ngFor="let role of roles" [value]="role">
+                    {{ roleLabel(role) }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="active">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Situação</th>
+            <td mat-cell *matCellDef="let user">
+              <mat-slide-toggle
+                [checked]="user.active"
+                [disabled]="isSelf(user)"
+                [matTooltip]="selfHint(user)"
+                [matTooltipDisabled]="!isSelf(user)"
+                (change)="onActiveChange(user, $event)"
+                [attr.data-testid]="'user-active-' + user.id"
+              >
+                {{ user.active ? 'Ativo' : 'Inativo' }}
+              </mat-slide-toggle>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="lastLoginAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Último acesso</th>
+            <td mat-cell *matCellDef="let user">
+              {{ user.lastLoginAt ? (user.lastLoginAt | date: 'dd/MM/yyyy HH:mm') : 'Nunca entrou' }}
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [pageSize]="10"
+        [pageSizeOptions]="pageSizeOptions"
+        showFirstLastButtons
+        aria-label="Paginação dos usuários"
+      ></mat-paginator>
+    </ng-container>
+  </div>
+
+  <div class="sh-card users-invitations">
+    <h2 class="users-invitations__title">Convites pendentes</h2>
+    <p class="users-subtitle">
+      Convites ainda não aceitos. Revogar invalida o link já enviado por e-mail.
+    </p>
+
+    <app-state-message
+      *ngIf="invitationsState"
+      [state]="invitationsState"
+      [message]="invitationsState === 'empty' ? 'Nenhum convite pendente.' : undefined"
+      [showRetry]="true"
+      (retry)="loadInvitations()"
+    ></app-state-message>
+
+    <div class="sh-table-wrapper" *ngIf="!invitationsState">
+      <table
+        mat-table
+        class="sh-table"
+        aria-label="Convites pendentes"
+        [dataSource]="pendingInvitations"
+        [trackBy]="trackInvitationById"
+      >
+        <caption class="sh-visually-hidden">
+          Convites pendentes, com papel oferecido e data de expiração.
+        </caption>
+
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef scope="col">Nome</th>
+          <td mat-cell *matCellDef="let invitation">{{ invitation.name }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef scope="col">E-mail</th>
+          <td mat-cell *matCellDef="let invitation">{{ invitation.email }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="role">
+          <th mat-header-cell *matHeaderCellDef scope="col">Papel</th>
+          <td mat-cell *matCellDef="let invitation">{{ roleLabel(invitation.role) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="expiresAt">
+          <th mat-header-cell *matHeaderCellDef scope="col">Expira em</th>
+          <td mat-cell *matCellDef="let invitation">
+            {{ invitation.expiresAt | date: 'dd/MM/yyyy HH:mm' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef scope="col" class="users-table__actions">Ações</th>
+          <td mat-cell *matCellDef="let invitation" class="users-table__actions">
+            <button
+              mat-icon-button
+              type="button"
+              color="warn"
+              [attr.aria-label]="'Revogar convite de ' + invitation.email"
+              [matTooltip]="'Revogar convite'"
+              (click)="revokeInvitation(invitation)"
+              [attr.data-testid]="'invitation-revoke-' + invitation.id"
+            >
+              <mat-icon aria-hidden="true">delete_outline</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="invitationColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: invitationColumns"></tr>
+      </table>
+    </div>
+  </div>
+</section>

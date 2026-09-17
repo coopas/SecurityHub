@@ -1,0 +1,74 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>Convidar usuário</h1>
+      <p class="users-subtitle">
+        A pessoa recebe um link por e-mail e escolhe a própria senha ao aceitar.
+      </p>
+    </div>
+  </header>
+
+  <div class="sh-card">
+    <p class="users-alert" role="alert" *ngIf="generalError">{{ generalError }}</p>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="sh-form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Nome</mat-label>
+          <input matInput formControlName="name" autocomplete="name" data-testid="invite-name" />
+          <mat-error *ngIf="form.controls['name'].hasError('required')">Informe o nome.</mat-error>
+          <mat-error
+            *ngIf="form.controls['name'].hasError('minlength') || form.controls['name'].hasError('maxlength')"
+          >
+            O nome deve ter entre 2 e 120 caracteres.
+          </mat-error>
+          <mat-error *ngIf="form.controls['name'].hasError('server')">
+            {{ form.controls['name'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>E-mail</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            data-testid="invite-email"
+          />
+          <mat-error *ngIf="form.controls['email'].hasError('required')">Informe o e-mail.</mat-error>
+          <mat-error *ngIf="form.controls['email'].hasError('email')">Informe um e-mail válido.</mat-error>
+          <mat-error *ngIf="form.controls['email'].hasError('server')">
+            {{ form.controls['email'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Papel</mat-label>
+          <mat-select formControlName="role" data-testid="invite-role">
+            <mat-option *ngFor="let role of roles" [value]="role">{{ roleLabel(role) }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.controls['role'].hasError('server')">
+            {{ form.controls['role'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="sh-form-actions">
+        <button mat-stroked-button type="button" (click)="cancel()" data-testid="invite-cancel">
+          Cancelar
+        </button>
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="submitting"
+          data-testid="invite-submit"
+        >
+          <mat-spinner *ngIf="submitting" diameter="20" aria-hidden="true"></mat-spinner>
+          <span>{{ submitting ? 'Enviando...' : 'Enviar convite' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

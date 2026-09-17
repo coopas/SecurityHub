@@ -5,6 +5,8 @@
 export type AuditAction =
   | 'LOGIN'
   | 'LOGIN_FAILED'
+  | 'LOGOUT'
+  | 'TOKEN_REUSE_DETECTED'
   | 'REGISTER'
   | 'CREATE'
   | 'UPDATE'
@@ -21,6 +23,8 @@ export type AuditAction =
 export const AUDIT_ACTIONS: readonly AuditAction[] = [
   'LOGIN',
   'LOGIN_FAILED',
+  'LOGOUT',
+  'TOKEN_REUSE_DETECTED',
   'REGISTER',
   'CREATE',
   'UPDATE',
@@ -38,6 +42,8 @@ export const AUDIT_ACTIONS: readonly AuditAction[] = [
 export const AUDIT_ACTION_LABELS: Readonly<Record<AuditAction, string>> = {
   LOGIN: 'Login',
   LOGIN_FAILED: 'Login recusado',
+  LOGOUT: 'Logout',
+  TOKEN_REUSE_DETECTED: 'Reuso de token detectado',
   REGISTER: 'Cadastro',
   CREATE: 'Criação',
   UPDATE: 'Alteração',
@@ -59,6 +65,8 @@ export const AUDIT_ACTION_LABELS: Readonly<Record<AuditAction, string>> = {
 export const AUDIT_ACTION_ICONS: Readonly<Record<AuditAction, string>> = {
   LOGIN: 'login',
   LOGIN_FAILED: 'gpp_bad',
+  LOGOUT: 'logout',
+  TOKEN_REUSE_DETECTED: 'gpp_maybe',
   REGISTER: 'person_add',
   CREATE: 'add_circle_outline',
   UPDATE: 'edit',
@@ -85,6 +93,7 @@ export const AUDIT_ENTITY_TYPES: readonly string[] = [
   'Vulnerability',
   'Comment',
   'User',
+  'Invitation',
   'Company',
 ];
 
@@ -94,6 +103,7 @@ export const AUDIT_ENTITY_TYPE_LABELS: Readonly<Record<string, string>> = {
   Vulnerability: 'Vulnerabilidade',
   Comment: 'Comentário',
   User: 'Usuário',
+  Invitation: 'Convite',
   Company: 'Empresa',
 };
 

@@ -44,8 +44,13 @@ export const APP_ROUTES: Routes = [
         path: 'audit',
         loadChildren: () => import('./features/audit/audit.module').then((m) => m.AuditModule),
       },
-      // Rota da próxima entrega, filha deste mesmo shell:
-      // 'users' somente para ADMIN, usando roleGuard com data.roles.
+      {
+        // Como em 'audit', o roleGuard com data.roles fica no roteador da própria
+        // funcionalidade — aqui em todas as rotas dela, porque a administração de
+        // usuários é inteira restrita a ADMIN.
+        path: 'users',
+        loadChildren: () => import('./features/users/users.module').then((m) => m.UsersModule),
+      },
     ],
   },
 

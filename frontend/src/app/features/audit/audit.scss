@@ -41,8 +41,11 @@
   color: var(--sh-low);
 }
 
+/* Grupo de perigo: exclusão, login recusado e reuso de refresh token — este último é o
+   sinal de família revogada por reapresentação, e nunca deve passar por evento de rotina. */
 .audit-action--delete,
-.audit-action--login-failed {
+.audit-action--login-failed,
+.audit-action--token-reuse-detected {
   color: var(--sh-high);
 }
 
@@ -54,6 +57,7 @@
 }
 
 .audit-action--login,
+.audit-action--logout,
 .audit-action--comment,
 .audit-action--password-reset,
 .audit-action--user-invited,

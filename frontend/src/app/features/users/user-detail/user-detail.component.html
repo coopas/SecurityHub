@@ -1,0 +1,83 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>{{ user ? user.name : 'Usuário' }}</h1>
+      <p class="users-subtitle">
+        Papel e situação são alterados na listagem, onde as guardas do backend são explicadas.
+      </p>
+    </div>
+
+    <a mat-stroked-button routerLink="/users" data-testid="user-back">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      <span>Voltar</span>
+    </a>
+  </header>
+
+  <div class="sh-card">
+    <app-state-message
+      *ngIf="state"
+      [state]="state"
+      [showRetry]="true"
+      (retry)="load()"
+    ></app-state-message>
+
+    <ng-container *ngIf="!state && user as current">
+      <dl class="users-detail">
+        <div class="users-detail__item">
+          <dt>E-mail</dt>
+          <dd>{{ current.email }}</dd>
+        </div>
+        <div class="users-detail__item">
+          <dt>Papel</dt>
+          <dd>{{ roleLabel(current.role) }}</dd>
+        </div>
+        <div class="users-detail__item">
+          <dt>Situação</dt>
+          <dd>{{ current.active ? 'Ativo' : 'Inativo' }}</dd>
+        </div>
+        <div class="users-detail__item">
+          <dt>Último acesso</dt>
+          <dd>{{ current.lastLoginAt ? (current.lastLoginAt | date: 'dd/MM/yyyy HH:mm') : 'Nunca entrou' }}</dd>
+        </div>
+        <div class="users-detail__item">
+          <dt>Criado em</dt>
+          <dd>{{ current.createdAt | date: 'dd/MM/yyyy' }}</dd>
+        </div>
+      </dl>
+
+      <mat-divider></mat-divider>
+
+      <p class="users-alert" role="alert" *ngIf="generalError">{{ generalError }}</p>
+
+      <form class="users-detail__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Nome</mat-label>
+          <input matInput formControlName="name" autocomplete="name" data-testid="user-name" />
+          <mat-hint>O e-mail não é editável: ele é o login e o canal de recuperação de senha.</mat-hint>
+          <mat-error *ngIf="form.controls['name'].hasError('required')">Informe o nome.</mat-error>
+          <mat-error
+            *ngIf="form.controls['name'].hasError('minlength') || form.controls['name'].hasError('maxlength')"
+          >
+            O nome deve ter entre 2 e 120 caracteres.
+          </mat-error>
+          <mat-error *ngIf="form.controls['name'].hasError('server')">
+            {{ form.controls['name'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+
+        <div class="sh-form-actions">
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            [disabled]="submitting"
+            data-testid="user-save"
+          >
+            <mat-spinner *ngIf="submitting" diameter="20" aria-hidden="true"></mat-spinner>
+            <span>{{ submitting ? 'Salvando...' : 'Salvar' }}</span>
+          </button>
+        </div>
+      </form>
+    </ng-container>
+  </div>
+</section>
