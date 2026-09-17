@@ -74,11 +74,9 @@ com autorização por papel, trilha de auditoria e dashboard.
 
 ### Limitações conhecidas
 
-- Sem refresh token, recuperação de senha ou gestão de usuários pela interface — previstos
-  para a V2.
+- Sem refresh token, recuperação de senha ou gestão de usuários pela interface. O login
+  usa um access token de vida curta e os usuários são criados no cadastro da empresa.
 - `GET /users` e as distribuições do dashboard devolvem array puro em vez do envelope
   paginado, por serem agregados de tamanho fixo. A decisão está registrada no código.
-- O GIF do fluxo principal não foi produzido por ausência de ferramenta no ambiente; os
-  screenshots em `docs/screenshots/` são reais.
 
 [1.0.0]: https://github.com/coopas/SecurityHub/releases/tag/v1.0.0
