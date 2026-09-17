@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.securityhub.company.CompanyRepository;
 import com.securityhub.support.AbstractIntegrationTest;
 import com.securityhub.support.TestDataFactory;
 import com.securityhub.user.Role;
@@ -22,6 +23,9 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private CompanyRepository companyRepository;
+
     @Test
     void registerCreatesCompanyWithAdminAndReturnsToken() throws Exception {
         mockMvc.perform(post("/api/v1/auth/register")
@@ -37,7 +41,10 @@ class AuthIntegrationTest extends AbstractIntegrationTest {
 
         User created = userRepository.findByEmail("admin@acme.test").orElseThrow(AssertionError::new);
         assertThat(created.getPasswordHash()).startsWith("$2");
-        assertThat(created.getCompany().getSlug()).isEqualTo("acme-seguranca");
+        // getId() reads the proxy identifier; loading the row keeps the assertion outside
+        // the persistence context, where open-in-view is disabled.
+        assertThat(companyRepository.findById(created.getCompany().getId())
+                .orElseThrow(AssertionError::new).getSlug()).isEqualTo("acme-seguranca");
     }
 
     @Test

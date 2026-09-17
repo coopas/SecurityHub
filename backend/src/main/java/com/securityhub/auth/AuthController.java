@@ -4,7 +4,6 @@ import com.securityhub.auth.dto.AuthResponse;
 import com.securityhub.auth.dto.LoginRequest;
 import com.securityhub.auth.dto.RegisterRequest;
 import com.securityhub.security.AuthenticatedUser;
-import com.securityhub.user.UserMapper;
 import com.securityhub.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
@@ -45,6 +44,6 @@ public class AuthController {
     @GetMapping("/me")
     @Operation(summary = "Dados do usuário autenticado")
     public UserResponse me(@AuthenticationPrincipal AuthenticatedUser current) {
-        return UserMapper.toResponse(authService.requireUser(current.getId()));
+        return authService.currentUser(current.getId());
     }
 }

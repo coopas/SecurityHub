@@ -15,6 +15,7 @@ import com.securityhub.shared.error.UnauthorizedException;
 import com.securityhub.user.Role;
 import com.securityhub.user.User;
 import com.securityhub.user.UserMapper;
+import com.securityhub.user.dto.UserResponse;
 import com.securityhub.user.UserRepository;
 import java.time.Instant;
 import java.util.Optional;
@@ -82,8 +83,8 @@ public class AuthService {
 
         User user = found.get();
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash()) || !user.isActive()) {
-            auditService.record(AuditEntry.ofActor(user.getCompany().getId(), user.getId(), user.getEmail(),
-                    AuditAction.LOGIN_FAILED, "User", user.getId()));
+            auditService.recordIndependently(AuditEntry.ofActor(user.getCompany().getId(), user.getId(),
+                    user.getEmail(), AuditAction.LOGIN_FAILED, "User", user.getId()));
             throw new UnauthorizedException("Credenciais inválidas");
         }
 
@@ -93,9 +94,14 @@ public class AuthService {
         return buildResponse(user);
     }
 
+    /**
+     * Returns the DTO rather than the entity: {@code open-in-view} is disabled, so mapping
+     * after the transaction closes would fail on the lazy company association.
+     */
     @Transactional(readOnly = true)
-    public User requireUser(Long userId) {
+    public UserResponse currentUser(Long userId) {
         return userRepository.findById(userId)
+                .map(UserMapper::toResponse)
                 .orElseThrow(() -> new UnauthorizedException("Sessão inválida"));
     }
 
