@@ -1,112 +1,112 @@
-# Análise de dependências
+# Dependency analysis
 
-A política de segurança do projeto exige dependências sem vulnerabilidades críticas
-conhecidas no momento da entrega, com exceções justificadas registradas. Este documento é
-esse registro.
+The project's security policy requires dependencies with no known critical vulnerabilities at
+delivery time, with justified exceptions recorded. This document is that record.
 
-Data da análise: **2026-09-17**. Revisto ao final da V2.
+Analysis date: **2026-09-17**. Reviewed at the end of V2.
 
-## Comandos
+## Commands
 
 ```bash
-cd frontend && npm audit --omit=dev --audit-level=high   # dependências que vão para o bundle
-cd frontend && npm audit                                  # inclui devDependencies
-cd backend  && ./mvnw verify -Pdependency-check           # OWASP, falha em CVSS >= 9
+cd frontend && npm audit --omit=dev --audit-level=high   # dependencies that reach the bundle
+cd frontend && npm audit                                  # includes devDependencies
+cd backend  && ./mvnw verify -Pdependency-check           # OWASP, fails at CVSS >= 9
 ```
 
-`--omit=dev` é a leitura que importa para risco em produção: uma vulnerabilidade em
-`karma-jasmine` não é servida a ninguém. O número cheio de `npm audit` é reportado abaixo por
-transparência, não como medida de risco.
+`--omit=dev` is the reading that matters for production risk: a vulnerability in
+`karma-jasmine` is not served to anyone. The full `npm audit` number is reported below for
+transparency, not as a measure of risk.
 
-## Resultado
+## Result
 
-| Escopo | Critical | High | Moderate | Low |
+| Scope | Critical | High | Moderate | Low |
 | --- | :---: | :---: | :---: | :---: |
-| Frontend, produção (`--omit=dev`) | **0** | 3 | 7 | 0 |
-| Frontend, incluindo dev | 1 | 33 | 25 | 7 |
+| Frontend, production (`--omit=dev`) | **0** | 3 | 7 | 0 |
+| Frontend, including dev | 1 | 33 | 25 | 7 |
 
-**O critério do §9 é atendido: zero vulnerabilidades críticas nas dependências de produção.**
+**The §9 criterion is met: zero critical vulnerabilities in the production dependencies.**
 
-## Exceção registrada: os 10 achados de produção são do próprio Angular
+## Recorded exception: the 10 production findings are Angular's own
 
-Os 10 achados de produção estão em `@angular/core`, `@angular/common` e `@angular/compiler`,
-e os demais pacotes Angular aparecem apenas como dependentes transitivos deles. O `npm audit`
-oferece uma única correção: `npm audit fix --force`, que instala **`@angular/core@22.1.7`**.
+The 10 production findings are in `@angular/core`, `@angular/common` and `@angular/compiler`,
+and the remaining Angular packages appear only as transitive dependents of those. `npm audit`
+offers a single fix: `npm audit fix --force`, which installs **`@angular/core@22.1.7`**.
 
-Isso é recusado, e a justificativa é a própria restrição do projeto, que fixa
-**Angular 16** como parte imutável da stack. Trocar por Angular 22 seria um salto de seis
-majors, exigiria reescrever build, testes e templates, e contradiz a decisão registrada em
-`docs/adr/0001`. Não existe versão corrigida dentro da linha 16.
+That is refused, and the justification is the project's own constraint, which pins
+**Angular 16** as an immutable part of the stack. Swapping to Angular 22 would be a jump of six
+majors, would require rewriting the build, the tests and the templates, and contradicts the
+decision recorded in `docs/adr/0001`. There is no fixed version within the 16 line.
 
-### Aplicabilidade real dos achados a esta aplicação
+### Actual applicability of the findings to this application
 
-Registrar uma exceção sem avaliar o risco seria teatro. Cada família de advisory foi
-verificada contra o código:
+Recording an exception without assessing the risk would be theatre. Each advisory family was
+checked against the code:
 
-| Família de advisory | Vetor exigido | Presente aqui? |
+| Advisory family | Required vector | Present here? |
 | --- | --- | --- |
-| Bypass de sanitização / XSS via SVG, MathML, namespace, two-way binding, host bindings | Renderizar HTML não confiável via `[innerHTML]`, `DomSanitizer` ou `bypassSecurityTrust*` | **Não.** Nenhuma ocorrência de `innerHTML`, `DomSanitizer` ou `bypassSecurityTrust` em `frontend/src`. Todo valor vindo da API é interpolado como texto. |
-| `HttpTransferCache`: envenenamento de cache, colisão de chave de 32 bits, vazamento de requisição credenciada, DOM clobbering na hidratação | SSR com hidratação de cliente | **Não.** A aplicação é puramente client-side: não há `@angular/platform-server` nem `provideClientHydration`. |
-| XSS via i18n (`$localize`, atributos de manipulador de evento) | Uso do i18n do Angular | **Não.** A aplicação não usa i18n do Angular; os textos são literais em português nos templates. |
-| DoS por OOM em `formatDate` e `digitsInfo` | Passar formato controlado pelo usuário a essas APIs | **Não.** Nenhuma das duas é usada. O `formatDate` do dashboard é um método próprio do componente que fatia a string `yyyy-MM-dd`, sem envolver o Angular. |
-| Vazamento de token XSRF por URL relativa a protocolo | Uso do `HttpClientXsrfModule` do Angular | **Não.** A autenticação é JWT stateless e o CSRF está desabilitado no backend por isso. O `AuthInterceptor` só anexa o token quando a URL começa com `environment.apiUrl`, então nunca envia credencial a uma origem de terceiro. |
+| Sanitisation bypass / XSS via SVG, MathML, namespace, two-way binding, host bindings | Rendering untrusted HTML through `[innerHTML]`, `DomSanitizer` or `bypassSecurityTrust*` | **No.** No occurrence of `innerHTML`, `DomSanitizer` or `bypassSecurityTrust` in `frontend/src`. Every value coming from the API is interpolated as text. |
+| `HttpTransferCache`: cache poisoning, 32-bit key collision, credentialed request leak, DOM clobbering during hydration | SSR with client hydration | **No.** The application is purely client-side: there is no `@angular/platform-server` and no `provideClientHydration`. |
+| XSS via i18n (`$localize`, event handler attributes) | Use of Angular's i18n | **No.** The application does not use Angular i18n; the texts are Portuguese literals in the templates. |
+| OOM DoS in `formatDate` and `digitsInfo` | Passing a user-controlled format to those APIs | **No.** Neither is used. The dashboard's `formatDate` is a component method of its own that slices the `yyyy-MM-dd` string, without involving Angular. |
+| XSRF token leak through a protocol-relative URL | Use of Angular's `HttpClientXsrfModule` | **No.** Authentication is stateless JWT and CSRF is disabled in the backend for that reason. The `AuthInterceptor` attaches the token only when the URL starts with `environment.apiUrl`, so it never sends a credential to a third-party origin. |
 
-**Conclusão:** nenhum dos 10 achados tem vetor alcançável nesta aplicação. A exposição é
-teórica e decorre de o pacote estar na árvore, não de o código exercitar o caminho vulnerável.
+**Conclusion:** none of the 10 findings has a reachable vector in this application. The exposure
+is theoretical and follows from the package being in the tree, not from the code exercising the
+vulnerable path.
 
-### O que mudaria a conclusão
+### What would change the conclusion
 
-Esta análise deixa de valer se alguém introduzir `[innerHTML]`, `bypassSecurityTrust*`, SSR
-com hidratação, i18n do Angular ou `HttpClientXsrfModule`. Qualquer um desses torna a
-atualização do Angular um bloqueio de release, não mais uma exceção aceitável.
+This analysis stops being valid if someone introduces `[innerHTML]`, `bypassSecurityTrust*`, SSR
+with hydration, Angular i18n or `HttpClientXsrfModule`. Any of those makes upgrading Angular a
+release blocker rather than an acceptable exception.
 
-### Os números que incluem devDependencies
+### The numbers that include devDependencies
 
-Os 66 achados do `npm audit` completo (1 crítico) vivem na cadeia de build e teste —
-`@angular-devkit/build-angular`, `karma`, `webpack-dev-server`, `puppeteer` e transitivos.
-Nada disso é servido ao navegador nem empacotado: o `frontend/Dockerfile` é multi-stage e a
-imagem final é um `nginx:alpine` com apenas os artefatos estáticos de `dist/`. O risco é de
-máquina de desenvolvedor e de runner de CI, não da aplicação publicada. Corrigi-los exige a
-mesma atualização de major recusada acima.
+The 66 findings of the full `npm audit` (1 critical) live in the build and test chain —
+`@angular-devkit/build-angular`, `karma`, `webpack-dev-server`, `puppeteer` and transitives.
+None of that is served to the browser or bundled: `frontend/Dockerfile` is multi-stage and the
+final image is an `nginx:alpine` with only the static artifacts from `dist/`. The risk is to a
+developer machine and a CI runner, not to the published application. Fixing them requires the
+same major upgrade refused above.
 
-## Dependências acrescentadas na V2
+## Dependencies added in V2
 
-| Dependência | Escopo | Licença | Por quê |
+| Dependency | Scope | Licence | Why |
 | --- | --- | --- | --- |
-| `spring-boot-starter-mail` | runtime | Apache-2.0 | Entrega dos links de recuperação de senha e de convite (`docs/adr/0007`). |
-| `com.github.librepdf:openpdf` | runtime | LGPL-2.1 / MPL-2.0 | Relatório executivo em PDF (`docs/adr/0008`). |
-| `org.apache.pdfbox:pdfbox` | **test** | Apache-2.0 | Só para `PDFTextStripper`: um PDF que imprime `Injeç?o` é um defeito que nenhuma asserção em bytes pega. |
-| `cypress` | **devDependency** | MIT | Testes E2E dos fluxos críticos. Não vai para o bundle. |
+| `spring-boot-starter-mail` | runtime | Apache-2.0 | Delivery of password recovery and invitation links (`docs/adr/0007`). |
+| `com.github.librepdf:openpdf` | runtime | LGPL-2.1 / MPL-2.0 | Executive PDF report (`docs/adr/0008`). |
+| `org.apache.pdfbox:pdfbox` | **test** | Apache-2.0 | Only for `PDFTextStripper`: a PDF that prints `Injeç?o` is a defect no byte-level assertion catches. |
+| `cypress` | **devDependency** | MIT | E2E tests of the critical flows. Does not go into the bundle. |
 
-### Obrigações de licença
+### Licence obligations
 
-O OpenPDF é LGPL/MPL dual. As obrigações da LGPL incidem sobre a distribuição de obra
-combinada e são atendidas por depender do artefato publicado sem modificação; esta é uma
-aplicação de servidor, que não é distribuída.
+OpenPDF is dual LGPL/MPL. The LGPL obligations attach to the distribution of a combined work and
+are met by depending on the published artifact without modification; this is a server
+application, which is not distributed.
 
-### Fonte embarcada
+### Embedded font
 
-`backend/src/main/resources/fonts/DejaVuSans.ttf` é redistribuído sob a licença Bitstream
-Vera / Arev, cujo texto está ao lado do arquivo em `LICENSE-DejaVu.txt`. A redistribuição é
-permitida; **incluir o texto da licença é a parte que costuma ser esquecida**.
+`backend/src/main/resources/fonts/DejaVuSans.ttf` is redistributed under the Bitstream Vera /
+Arev licence, whose text sits beside the file in `LICENSE-DejaVu.txt`. Redistribution is
+permitted; **including the licence text is the part that is usually forgotten**.
 
-### MailHog não é dependência da aplicação
+### MailHog is not an application dependency
 
-O container de caixa de entrada existe só no `docker-compose.yml` de desenvolvimento. Não há
-artefato dele no build, e a aplicação fala SMTP comum com qualquer relay.
+The inbox container exists only in the development `docker-compose.yml`. There is no artifact of
+it in the build, and the application speaks plain SMTP to any relay.
 
 ## Backend
 
-O profile `dependency-check` é opt-in porque baixa a base do NVD, o que torna o build lento
-demais para rodar a cada commit. Ele falha em `failBuildOnCVSS >= 9`.
+The `dependency-check` profile is opt-in because it downloads the NVD database, which makes the
+build too slow to run on every commit. It fails at `failBuildOnCVSS >= 9`.
 
-O arquivo `backend/dependency-check-suppressions.xml` é referenciado pelo `pom.xml` e agora
-existe — antes estava ausente, então o profile falharia ao ser executado. Ele está vazio de
-supressões por opção: toda supressão futura deve vir com um comentário explicando por que o
-achado não se aplica.
+The file `backend/dependency-check-suppressions.xml` is referenced by `pom.xml` and now exists —
+before it was absent, so the profile would fail when executed. It is empty of suppressions by
+choice: every future suppression must come with a comment explaining why the finding does not
+apply.
 
-A escolha de manter **Spring Boot 2.7.18** também é uma exceção consciente, registrada em
-`docs/adr/0001`: a linha 2.7 está fora de suporte aberto (OSS), então correções de segurança
-podem exigir fixar versões de dependências individualmente acima do que o BOM gerencia — foi
-exatamente o que já se fez com o Flyway (`docs/adr/0002`). Migrar para Spring Boot 3 exigiria
-Java 17 e `jakarta.*`, que as restrições de stack do projeto proíbem.
+Keeping **Spring Boot 2.7.18** is also a conscious exception, recorded in `docs/adr/0001`: the
+2.7 line is out of open-source (OSS) support, so security fixes may require pinning individual
+dependency versions above what the BOM manages — which is exactly what was already done with
+Flyway (`docs/adr/0002`). Migrating to Spring Boot 3 would require Java 17 and `jakarta.*`,
+which the project's stack constraints forbid.

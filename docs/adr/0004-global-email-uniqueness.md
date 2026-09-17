@@ -5,7 +5,7 @@
 
 ## Context
 
-The domain model specifies that the user e-mail is "único por empresa". The API contract specifies
+The domain model specifies that the user e-mail is "unique per company". The API contract specifies
 `POST /auth/login` with no company discriminator in the request — the client sends only
 an e-mail and a password.
 

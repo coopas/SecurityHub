@@ -1,63 +1,63 @@
-# Matriz de permissões
+# Permission matrix
 
-Este documento é a fonte normativa da matriz de permissões e registra **onde cada regra
-é aplicada no código**, que é o que importa em uma revisão de segurança.
+This document is the normative source for the permission matrix and records **where each rule is
+applied in the code**, which is what matters in a security review.
 
-## Princípio
+## Principle
 
-> Esconder um botão no Angular não é um controle.
+> Hiding a button in Angular is not a control.
 
-Toda regra abaixo é aplicada no backend. A interface apenas reflete o que o backend já
-garante; qualquer chamada direta à API com um token de papel insuficiente recebe 403 —
-e isso é testado.
+Every rule below is applied in the backend. The interface only reflects what the backend already
+guarantees; any direct API call with a token whose role is insufficient receives a 403 — and
+that is tested.
 
-## Papéis
+## Roles
 
-| Papel | Intenção |
+| Role | Intent |
 | --- | --- |
-| `ADMIN` | Administra a empresa: usuários, projetos, ativos, exclusões e auditoria. |
-| `ANALYST` | Trabalha o backlog de segurança: cria, edita, atribui e classifica vulnerabilidades. |
-| `DEVELOPER` | Corrige o que lhe foi atribuído: muda o status dos **próprios** itens e comenta. |
-| `VIEWER` | Estritamente somente leitura. |
+| `ADMIN` | Administers the company: users, projects, assets, deletions and auditing. |
+| `ANALYST` | Works the security backlog: creates, edits, assigns and classifies vulnerabilities. |
+| `DEVELOPER` | Fixes what has been assigned to them: changes the status of **their own** items and comments. |
+| `VIEWER` | Strictly read-only. |
 
-## Matriz
+## Matrix
 
-| Ação | ADMIN | ANALYST | DEVELOPER | VIEWER | Onde é aplicada |
+| Action | ADMIN | ANALYST | DEVELOPER | VIEWER | Where it is applied |
 | --- | :---: | :---: | :---: | :---: | --- |
-| Ver dashboard, projetos, ativos, vulnerabilidades | ✓ | ✓ | ✓ | ✓ | `SecurityConfig.anyRequest().authenticated()` |
-| Listar usuários | ✓ | ✓ | — | — | `UserService.search` |
-| Criar/editar/excluir projeto | ✓ | — | — | — | `ProjectService.{create,update,delete}` |
-| Criar/editar/excluir ativo | ✓ | — | — | — | `AssetService.{create,update,delete}` |
-| Criar/editar vulnerabilidade | ✓ | ✓ | — | — | `VulnerabilityService.{create,update}` |
-| Excluir vulnerabilidade | ✓ | — | — | — | `VulnerabilityService.delete` |
-| Atribuir vulnerabilidade | ✓ | ✓ | — | — | `VulnerabilityService.assign` |
-| Alterar **qualquer** status | ✓ | ✓ | — | — | `VulnerabilityService.ensureCanChangeStatus` |
-| Alterar status de item **atribuído a si** | ✓ | ✓ | ✓ | — | `VulnerabilityService.ensureCanChangeStatus` |
-| Comentar | ✓ | ✓ | ✓ | — | `CommentService.create` |
-| Editar comentário (autor ou ADMIN) | ✓ | autor | autor | — | `CommentService.ensureCanEdit` |
-| Consultar auditoria | ✓ | — | — | — | `AuditQueryService.search` |
-| Exportar vulnerabilidades em CSV | ✓ | ✓ | — | — | `VulnerabilityExportService.exportCsv` |
-| Gerar relatório executivo em PDF | ✓ | ✓ | — | — | `ReportService.generateExecutivePdf` |
-| Ver histórico e prévia de importações | ✓ | ✓ | ✓ | ✓ | `SecurityConfig` (autenticado); `ScanImportService.{history,preview}` |
-| Enviar relatório de varredura | ✓ | ✓ | — | — | `ScanImportService.upload` |
-| Vincular um achado a um ativo | ✓ | ✓ | — | — | `ScanImportService.mapFinding` |
-| Confirmar uma importação | ✓ | ✓ | — | — | `ScanImportService.confirm` |
-| Descartar uma importação pendente | ✓ | ✓ | — | — | `ScanImportService.discard` |
-| Anexar arquivo a uma vulnerabilidade | ✓ | ✓ | ✓ | — | `AttachmentService.upload` |
-| Listar e baixar anexos | ✓ | ✓ | ✓ | ✓ | `SecurityConfig` (autenticado) |
-| Excluir anexo (autor ou ADMIN) | ✓ | autor | autor | — | `AttachmentService.ensureCanDelete` |
-| Convidar usuário | ✓ | — | — | — | `InvitationService.invite` |
-| Listar e revogar convites | ✓ | — | — | — | `InvitationService.{list,revoke}` |
-| Alterar nome de usuário | ✓ | — | — | — | `UserService.rename` |
-| Alterar papel de usuário | ✓ | — | — | — | `UserService.changeRole` |
-| Ativar e desativar usuário | ✓ | — | — | — | `UserService.changeActive` |
+| View dashboard, projects, assets, vulnerabilities | ✓ | ✓ | ✓ | ✓ | `SecurityConfig.anyRequest().authenticated()` |
+| List users | ✓ | ✓ | — | — | `UserService.search` |
+| Create/edit/delete a project | ✓ | — | — | — | `ProjectService.{create,update,delete}` |
+| Create/edit/delete an asset | ✓ | — | — | — | `AssetService.{create,update,delete}` |
+| Create/edit a vulnerability | ✓ | ✓ | — | — | `VulnerabilityService.{create,update}` |
+| Delete a vulnerability | ✓ | — | — | — | `VulnerabilityService.delete` |
+| Assign a vulnerability | ✓ | ✓ | — | — | `VulnerabilityService.assign` |
+| Change **any** status | ✓ | ✓ | — | — | `VulnerabilityService.ensureCanChangeStatus` |
+| Change the status of an item **assigned to oneself** | ✓ | ✓ | ✓ | — | `VulnerabilityService.ensureCanChangeStatus` |
+| Comment | ✓ | ✓ | ✓ | — | `CommentService.create` |
+| Edit a comment (author or ADMIN) | ✓ | author | author | — | `CommentService.ensureCanEdit` |
+| Query the audit trail | ✓ | — | — | — | `AuditQueryService.search` |
+| Export vulnerabilities as CSV | ✓ | ✓ | — | — | `VulnerabilityExportService.exportCsv` |
+| Generate the executive PDF report | ✓ | ✓ | — | — | `ReportService.generateExecutivePdf` |
+| View import history and preview | ✓ | ✓ | ✓ | ✓ | `SecurityConfig` (authenticated); `ScanImportService.{history,preview}` |
+| Upload a scan report | ✓ | ✓ | — | — | `ScanImportService.upload` |
+| Link a finding to an asset | ✓ | ✓ | — | — | `ScanImportService.mapFinding` |
+| Confirm an import | ✓ | ✓ | — | — | `ScanImportService.confirm` |
+| Discard a pending import | ✓ | ✓ | — | — | `ScanImportService.discard` |
+| Attach a file to a vulnerability | ✓ | ✓ | ✓ | — | `AttachmentService.upload` |
+| List and download attachments | ✓ | ✓ | ✓ | ✓ | `SecurityConfig` (authenticated) |
+| Delete an attachment (author or ADMIN) | ✓ | author | author | — | `AttachmentService.ensureCanDelete` |
+| Invite a user | ✓ | — | — | — | `InvitationService.invite` |
+| List and revoke invitations | ✓ | — | — | — | `InvitationService.{list,revoke}` |
+| Change a user's name | ✓ | — | — | — | `UserService.rename` |
+| Change a user's role | ✓ | — | — | — | `UserService.changeRole` |
+| Activate and deactivate a user | ✓ | — | — | — | `UserService.changeActive` |
 
-## Como as regras são expressas
+## How the rules are expressed
 
-### Papel: `@PreAuthorize` em métodos de **serviço**
-Nunca em controllers. O controller é uma casca sem regra de negócio, e colocar a anotação no
-serviço garante que qualquer chamador — incluindo um serviço interno futuro — passe pelo mesmo
-controle.
+### Role: `@PreAuthorize` on **service** methods
+Never on controllers. The controller is a shell with no business rule, and putting the
+annotation on the service guarantees that any caller — including a future internal service —
+goes through the same control.
 
 ```java
 @Transactional
@@ -65,10 +65,10 @@ controle.
 public VulnerabilityResponse create(AuthenticatedUser current, VulnerabilityRequest request) { … }
 ```
 
-### Posse: checagem explícita depois de carregar a linha
-A regra do `DEVELOPER` depende do valor de `assignedTo` da linha, que `@PreAuthorize` não
-enxerga. A anotação funciona como porteiro grosso (barra o `VIEWER`) e a posse é verificada
-no corpo:
+### Ownership: an explicit check after loading the row
+The `DEVELOPER` rule depends on the row's `assignedTo` value, which `@PreAuthorize` cannot see.
+The annotation works as a coarse gatekeeper (it blocks the `VIEWER`) and ownership is verified
+in the body:
 
 ```java
 private void ensureCanChangeStatus(AuthenticatedUser current, Vulnerability vulnerability) {
@@ -82,118 +82,121 @@ private void ensureCanChangeStatus(AuthenticatedUser current, Vulnerability vuln
 }
 ```
 
-**A ordem importa**: `require(...)` — que já é escopado por empresa — roda **antes** da
-checagem de posse. Assim, uma vulnerabilidade de outra empresa recebe 404 e nunca 403; um 403
-confirmaria que a linha existe e transformaria a API em um oráculo de enumeração.
+**The order matters**: `require(...)` — which is already scoped by company — runs **before** the
+ownership check. So a vulnerability belonging to another company gets a 404 and never a 403; a
+403 would confirm that the row exists and would turn the API into an enumeration oracle.
 
-`@PostAuthorize` foi descartado: avalia depois de o corpo já ter mutado a entidade, e o
-rollback passaria a depender da ordem relativa entre o interceptor transacional e o de
-method security.
+`@PostAuthorize` was discarded: it evaluates after the body has already mutated the entity, and
+the rollback would then depend on the relative order of the transactional interceptor and the
+method security one.
 
-### A porta dos fundos do `DEVELOPER` está fechada
-Um `DEVELOPER` poderia tentar mudar status via `PUT /vulnerabilities/{id}` em vez do endpoint
-de status. Três travas independentes impedem:
+### The `DEVELOPER` back door is closed
+A `DEVELOPER` could try to change a status through `PUT /vulnerabilities/{id}` instead of the
+status endpoint. Three independent locks prevent it:
 
-1. `VulnerabilityRequest` **não possui campo `status` nem `resolvedAt`** — o mapper não tem o
-   que escrever. Um teste por reflexão falha se alguém adicionar o campo depois.
-2. `PUT` é `hasAnyRole('ADMIN','ANALYST')`, então um `DEVELOPER` nem chega ao corpo.
-3. `status` e `resolvedAt` são mutados em um único método, `changeStatus`.
+1. `VulnerabilityRequest` **has no `status` field and no `resolvedAt` field** — the mapper has
+   nothing to write. A reflection test fails if someone adds the field later.
+2. `PUT` is `hasAnyRole('ADMIN','ANALYST')`, so a `DEVELOPER` never reaches the body.
+3. `status` and `resolvedAt` are mutated in a single method, `changeStatus`.
 
-### Isolamento entre empresas
-`companyId` vem **sempre** do token assinado, nunca do corpo, da query ou de um header, e é
-revalidado contra a linha do usuário a cada requisição por `JwtAuthenticationFilter`. Todo
-finder de repositório carrega o `companyId`, e toda specification começa por `Specs.company(...)`.
+### Isolation between companies
+`companyId` **always** comes from the signed token, never from the body, the query string or a
+header, and it is revalidated against the user's row on every request by
+`JwtAuthenticationFilter`. Every repository finder carries the `companyId`, and every
+specification starts with `Specs.company(...)`.
 
-Acesso a dado de outra empresa retorna **404, nunca 403**, em GET, PUT, PATCH e DELETE, e o
-registro simplesmente não aparece nas listagens.
+Access to another company's data returns **404, never 403**, on GET, PUT, PATCH and DELETE, and
+the record simply does not appear in the listings.
 
-## Regras de identidade que não são de papel
+## Identity rules that are not role rules
 
-Algumas regras da V2 não dependem do papel de quem chama, e sim do estado da linha ou de quem
-é o alvo. Todas vivem no serviço, depois da busca escopada por empresa.
+Some V2 rules do not depend on the caller's role, but on the state of the row or on who the
+target is. They all live in the service, after the company-scoped lookup.
 
-### Um administrador não pode desativar a própria conta
+### An administrator cannot deactivate their own account
 
-Vale **sempre**, mesmo que existam outros administradores ativos. É uma regra plana justamente
-para não haver caminho em que alguém se tranque para fora, e não existe caso de uso legítimo
-para o contrário. Responde 409.
+This holds **always**, even if there are other active administrators. It is a flat rule
+precisely so that there is no path in which someone locks themselves out, and there is no
+legitimate use case for the opposite. It answers 409.
 
-### A empresa precisa de pelo menos um administrador ativo
+### The company needs at least one active administrator
 
-Rebaixar ou desativar o último ADMIN ativo responde 409. A contagem usa
-`UserRepository.countByCompanyIdAndRoleAndActiveTrue`, que existia desde a V1 sem nenhum
-chamador.
+Demoting or deactivating the last active ADMIN answers 409. The count uses
+`UserRepository.countByCompanyIdAndRoleAndActiveTrue`, which had existed since V1 with no
+caller.
 
-**Um convite pendente não conta.** É por isso que convite vive em tabela própria e a linha de
-`users` só nasce na aceitação: se o convite fosse uma linha de usuário, um convite de ADMIN
-nunca aceito satisfaria a contagem e um administrador poderia se rebaixar deixando a empresa
-sem administrador real.
+**A pending invitation does not count.** That is why an invitation lives in its own table and
+the `users` row is only born on acceptance: if the invitation were a user row, an ADMIN
+invitation that was never accepted would satisfy the count and an administrator could demote
+themselves, leaving the company with no real administrator.
 
-### O e-mail não é editável por administrador
+### The e-mail is not editable by an administrator
 
-`UserUpdateRequest` carrega apenas o nome, e um teste por reflexão falha se alguém acrescentar
-o campo depois. O e-mail é o identificador de login **e** o canal de recuperação de senha: um
-administrador que reaponta o endereço de um colega para a própria caixa pede uma redefinição e
-assume a conta, sem que a vítima veja nada.
+`UserUpdateRequest` carries only the name, and a reflection test fails if someone adds the field
+later. The e-mail is the login identifier **and** the password recovery channel: an
+administrator who repoints a colleague's address to their own inbox requests a reset and takes
+over the account, with the victim seeing nothing.
 
-### Troca de papel e desativação revogam os refresh tokens do alvo
+### Changing a role and deactivating revoke the target's refresh tokens
 
-O access token já morre sozinho, porque `JwtAuthenticationFilter` relê o usuário a cada
-requisição e rejeita papel divergente ou conta inativa. Mas o refresh token sobreviveria à
-decisão administrativa e emitiria um access token novo, então ele é revogado explicitamente.
+The access token already dies on its own, because `JwtAuthenticationFilter` re-reads the user on
+every request and rejects a divergent role or an inactive account. But the refresh token would
+survive the administrative decision and would issue a new access token, so it is revoked
+explicitly.
 
-### A importação de scan segue a licença de criar vulnerabilidade
+### Scan import follows the licence to create a vulnerability
 
-Enviar um relatório, vincular um achado a um ativo, confirmar e descartar são todos
-`hasAnyRole('ADMIN','ANALYST')`, declarados nos métodos de `ScanImportService` — o controller
-não tem nenhuma anotação de papel. O critério é simples: uma importação confirmada **é** a
-criação de um lote de vulnerabilidades, e quem pode criar uma por formulário pode criar um
-lote por arquivo. Um `DEVELOPER` e um `VIEWER` recebem 403 nas quatro.
+Uploading a report, linking a finding to an asset, confirming and discarding are all
+`hasAnyRole('ADMIN','ANALYST')`, declared on the `ScanImportService` methods — the controller
+carries no role annotation at all. The criterion is simple: a confirmed import **is** the
+creation of a batch of vulnerabilities, and whoever can create one through a form can create a
+batch from a file. A `DEVELOPER` and a `VIEWER` get a 403 on all four.
 
-Ler é aberto a qualquer membro autenticado da empresa, como as vulnerabilidades que a
-importação vai gerar: `preview` e `history` não têm `@PreAuthorize`, e a tela mostra ao papel
-sem permissão a mesma prévia, sem os botões, com o aviso de que ele pode acompanhar a revisão
-mas não decidir.
+Reading is open to any authenticated member of the company, like the vulnerabilities the import
+is going to generate: `preview` and `history` have no `@PreAuthorize`, and the screen shows a
+role without permission the same preview, without the buttons, with a notice saying they can
+follow the review but not decide.
 
-**`DELETE /scan-imports/{id}` não é ADMIN-only, ao contrário de `DELETE /vulnerabilities/{id}`,
-e a diferença não é um descuido.** Ali se apaga uma linha do backlog, que pode ter histórico,
-responsável e discussão. Aqui se descarta uma *proposta*: uma importação pendente não criou
-nada, e desistir dela é o passo normal de quem enviou o arquivo errado. Só uma importação
-`PENDING` pode ser descartada — uma já confirmada responde 409 —, então este endpoint nunca
-alcança uma vulnerabilidade existente.
+**`DELETE /scan-imports/{id}` is not ADMIN-only, unlike `DELETE /vulnerabilities/{id}`, and the
+difference is not an oversight.** There, a backlog row is deleted, one that may have history, an
+assignee and a discussion. Here a *proposal* is discarded: a pending import created nothing, and
+giving up on it is the normal step for whoever uploaded the wrong file. Only a `PENDING` import
+can be discarded — an already confirmed one answers 409 — so this endpoint never reaches an
+existing vulnerability.
 
-No Angular, `/imports/novo` é a única rota da funcionalidade com `roleGuard`; `/imports` e
-`/imports/:id` ficam abertas. É a aplicação do mesmo princípio do topo deste documento: o
-guard é conveniência, e a recusa de verdade acontece de novo no backend a cada chamada.
+In Angular, `/imports/novo` is the only route of the feature with a `roleGuard`; `/imports` and
+`/imports/:id` are open. This is the same principle as at the top of this document: the guard is
+a convenience, and the real refusal happens again in the backend on every call.
 
-### O DEVELOPER e o anexo
+### The DEVELOPER and attachments
 
-Anexar é liberado para DEVELOPER porque anexar a evidência de uma correção é o mesmo ato que
-comentar, que ele já pode fazer. Excluir é do autor ou de um ADMIN — diferente de comentário,
-um anexo **precisa** ser removível: alguém vai subir o arquivo errado, e ele pode conter dado
-que não deveria ter sido enviado.
+Attaching is allowed for a DEVELOPER because attaching the evidence of a fix is the same act as
+commenting, which they can already do. Deleting belongs to the author or an ADMIN — unlike a
+comment, an attachment **has to** be removable: someone will upload the wrong file, and it may
+contain data that should never have been sent.
 
-## Cobertura de testes
+## Test coverage
 
-Testes negativos existentes: token ausente, malformado, sem prefixo `Bearer`, expirado,
-assinado com outro segredo, com payload adulterado, com `role` ou `companyId` divergentes da
-linha do usuário, usuário desativado no meio da sessão, papel sem permissão (403), leitura e
-escrita cruzadas entre duas empresas (404), `DEVELOPER` em item de terceiro e em item não
-atribuído (403), `DEVELOPER` usando `PUT` (403), e `ANALYST` editando comentário alheio (403).
+Existing negative tests: missing token, malformed token, no `Bearer` prefix, expired token,
+token signed with another secret, token with a tampered payload, token whose `role` or
+`companyId` diverges from the user's row, user deactivated mid-session, role without permission
+(403), cross-company reads and writes between two companies (404), `DEVELOPER` on someone else's
+item and on an unassigned item (403), `DEVELOPER` using `PUT` (403), and `ANALYST` editing
+someone else's comment (403).
 
-Acrescentados na V2: refresh token reusado fora da janela de tolerância (401, com a família
-inteira revogada), token de outra empresa, token de acesso apresentado no endpoint de
-renovação e vice-versa, recuperação de senha respondendo idêntico para e-mail conhecido,
-desconhecido e desativado, convite para endereço já existente em outra empresa (409), convite
-pendente não contando como administrador ativo, autodesativação (409), último administrador
-(409), tentativa de alterar e-mail por reflexão, exportação por papel sem permissão (403 com
-corpo JSON), upload declarando um tipo e enviando outro (415), e travessia de caminho no nome
-do arquivo.
+Added in V2: a refresh token reused outside the grace window (401, with the whole family
+revoked), a token from another company, an access token presented at the refresh endpoint and
+vice versa, password recovery answering identically for a known, an unknown and a deactivated
+e-mail, an invitation to an address that already exists in another company (409), a pending
+invitation not counting as an active administrator, self-deactivation (409), the last
+administrator (409), an attempt to change the e-mail by reflection, export by a role without
+permission (403 with a JSON body), an upload declaring one type and sending another (415), and
+path traversal in the file name.
 
-Acrescentados com a importação de scans: `DEVELOPER` e `VIEWER` enviando relatório, vinculando
-achado, confirmando e descartando (403 nos quatro, com o multipart completo — um corpo
-incompleto daria 400 antes de a regra de papel rodar), importação de outra empresa em todos os
-endpoints (404, inclusive no `DELETE`), projeto de outra empresa no envio (404), ativo de outra
-empresa no vínculo (404), confirmação e descarte de importação já encerrada (409), vínculo em
-achado que já tem ativo (409) e histórico de uma empresa não listando as importações da
-outra.
+Added with scan import: `DEVELOPER` and `VIEWER` uploading a report, linking a finding,
+confirming and discarding (403 on all four, with the complete multipart — an incomplete body
+would give a 400 before the role rule ran), an import from another company on every endpoint
+(404, including on the `DELETE`), a project from another company on upload (404), an asset from
+another company on the link (404), confirming and discarding an already closed import (409),
+linking a finding that already has an asset (409), and one company's history not listing the
+other's imports.

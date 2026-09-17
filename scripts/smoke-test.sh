@@ -4,9 +4,9 @@
 #
 #   ./scripts/smoke-test.sh [api-base-url] [frontend-url] [management-url]
 #
-# Defaults match docker-compose.yml. A porta de gestão é separada da porta da aplicação — o
-# actuator não é mais servido em $API — e vem como terceiro argumento para que o script também
-# rode contra uma pilha que não seja a do compose.
+# Defaults match docker-compose.yml. The management port is separate from the application port
+# — the actuator is no longer served on $API — and comes as the third argument so that the
+# script also runs against a stack that is not the compose one.
 
 set -euo pipefail
 
@@ -21,7 +21,7 @@ fail() { printf '  \033[31mFAIL\033[0m %s\n' "$1"; exit 1; }
 step() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 
 require() {
-  command -v "$1" >/dev/null 2>&1 || { echo "Comando obrigatório ausente: $1"; exit 1; }
+  command -v "$1" >/dev/null 2>&1 || { echo "Missing required command: $1"; exit 1; }
 }
 require curl
 require jq
@@ -46,18 +46,18 @@ call() {
   code="$(printf '%s' "$raw" | tail -n1)"
   payload="$(printf '%s' "$raw" | sed '$d')"
   if [ "${code:0:1}" != "2" ]; then
-    echo "  requisição $method $url devolveu $code" >&2
-    echo "  corpo: $payload" >&2
+    echo "  request $method $url returned $code" >&2
+    echo "  body: $payload" >&2
     return 1
   fi
   printf '%s' "$payload"
 }
 
-# scan_upload PROJECT_ID FORMAT ARQUIVO TOKEN -> corpo da resposta, falha em não-2xx
+# scan_upload PROJECT_ID FORMAT FILE TOKEN -> response body, fails on non-2xx
 #
-# Multipart, e não JSON: o relatório é um arquivo. `projectId` e `format` viajam como campos
-# do mesmo formulário porque é assim que o cliente os manda — o controller os recebe como
-# parâmetros de requisição, que é o que o contêiner faz com um campo não-arquivo.
+# Multipart, not JSON: the report is a file. `projectId` and `format` travel as fields of the
+# same form because that is how the client sends them — the controller receives them as request
+# parameters, which is what the container does with a non-file field.
 scan_upload() {
   local project="$1" format="$2" file="$3" token="$4"
   local raw code payload
@@ -67,14 +67,14 @@ scan_upload() {
   code="$(printf '%s' "$raw" | tail -n1)"
   payload="$(printf '%s' "$raw" | sed '$d')"
   if [ "${code:0:1}" != "2" ]; then
-    echo "  envio de $file ($format) devolveu $code" >&2
-    echo "  corpo: $payload" >&2
+    echo "  upload of $file ($format) returned $code" >&2
+    echo "  body: $payload" >&2
     return 1
   fi
   printf '%s' "$payload"
 }
 
-# scan_upload_status ... -> só o código, para os casos em que a recusa é o esperado
+# scan_upload_status ... -> the status code only, for the cases where refusal is expected
 scan_upload_status() {
   local project="$1" format="$2" file="$3" token="$4"
   curl -s -o /dev/null -w '%{http_code}' -X POST "$API/api/v1/scan-imports" \
@@ -82,71 +82,71 @@ scan_upload_status() {
     -F "projectId=$project" -F "format=$format" -F "file=@$file"
 }
 
-step "1. Saúde dos serviços"
+step "1. Service health"
 health="$(curl -s "$MGMT/actuator/health" | jq -r '.status' 2>/dev/null || echo DOWN)"
-[ "$health" = "UP" ] || fail "backend não está UP (recebido: $health, via $MGMT)"
-pass "backend respondendo, saúde em $MGMT"
+[ "$health" = "UP" ] || fail "backend is not UP (received: $health, via $MGMT)"
+pass "backend responding, health at $MGMT"
 
-# A saúde tem de continuar pública: o contexto filho da porta de gestão herda a cadeia de
-# segurança da aplicação, e sem o matcher de /actuator/health o healthcheck do contêiner
-# responderia 401 e a pilha nunca subiria.
+# Health has to stay public: the child context of the management port inherits the
+# application's security chain, and without the /actuator/health matcher the container
+# healthcheck would answer 401 and the stack would never come up.
 code="$(status_of GET "$MGMT/actuator/health")"
-[ "$code" = "200" ] || fail "saúde na porta de gestão devolveu $code sem token (esperado 200)"
-pass "a sonda de saúde não depende de autenticação"
+[ "$code" = "200" ] || fail "health on the management port returned $code with no token (expected 200)"
+pass "the health probe does not depend on authentication"
 
 web_status="$(curl -s -o /dev/null -w '%{http_code}' "$WEB/")"
-[ "$web_status" = "200" ] || fail "frontend devolveu $web_status em $WEB"
-pass "frontend servindo em $WEB"
+[ "$web_status" = "200" ] || fail "frontend returned $web_status at $WEB"
+pass "frontend serving at $WEB"
 
-step "2. Endpoint protegido sem token"
+step "2. Protected endpoint with no token"
 code="$(status_of GET "$API/api/v1/projects")"
-[ "$code" = "401" ] || fail "esperado 401 sem token, recebido $code"
-pass "GET /projects sem token devolve 401"
+[ "$code" = "401" ] || fail "expected 401 with no token, received $code"
+pass "GET /projects with no token returns 401"
 
 code="$(status_of GET "$API/api/v1/projects" "token-invalido-qualquer")"
-[ "$code" = "401" ] || fail "esperado 401 com token inválido, recebido $code"
-pass "token inválido devolve 401"
+[ "$code" = "401" ] || fail "expected 401 with an invalid token, received $code"
+pass "an invalid token returns 401"
 
-step "3. Cadastro da empresa A e autenticação"
+step "3. Company A registration and authentication"
 reg_a="$(call POST "$API/api/v1/auth/register" "" "{
   \"companyName\": \"Smoke A $SUFFIX\",
   \"name\": \"Admin A\",
   \"email\": \"admin-a-$SUFFIX@smoke.test\",
   \"password\": \"$PASSWORD\"
-}")" || fail "cadastro da empresa A falhou"
-pass "empresa A criada"
+}")" || fail "company A registration failed"
+pass "company A created"
 
 login_a="$(call POST "$API/api/v1/auth/login" "" "{
   \"email\": \"admin-a-$SUFFIX@smoke.test\",
   \"password\": \"$PASSWORD\"
-}")" || fail "login da empresa A falhou"
+}")" || fail "company A login failed"
 TOKEN_A="$(printf '%s' "$login_a" | jq -r '.accessToken')"
 USER_A="$(printf '%s' "$login_a" | jq -r '.user.id')"
-[ -n "$TOKEN_A" ] && [ "$TOKEN_A" != "null" ] || fail "login não devolveu accessToken"
-[ "$(printf '%s' "$login_a" | jq -r '.user.role')" = "ADMIN" ] || fail "primeiro usuário não é ADMIN"
-pass "login devolveu access token e papel ADMIN"
+[ -n "$TOKEN_A" ] && [ "$TOKEN_A" != "null" ] || fail "login did not return an accessToken"
+[ "$(printf '%s' "$login_a" | jq -r '.user.role')" = "ADMIN" ] || fail "the first user is not ADMIN"
+pass "login returned an access token and the ADMIN role"
 
-me="$(call GET "$API/api/v1/auth/me" "$TOKEN_A")" || fail "/auth/me falhou"
-[ "$(printf '%s' "$me" | jq -r '.id')" = "$USER_A" ] || fail "/auth/me devolveu outro usuário"
-pass "/auth/me coerente com o token"
+me="$(call GET "$API/api/v1/auth/me" "$TOKEN_A")" || fail "/auth/me failed"
+[ "$(printf '%s' "$me" | jq -r '.id')" = "$USER_A" ] || fail "/auth/me returned a different user"
+pass "/auth/me consistent with the token"
 
-# O vazamento que a mudança fechou. /actuator/metrics não estava em PUBLIC_ENDPOINTS, caía em
-# anyRequest().authenticated() e portanto era legível por qualquer usuário autenticado da
-# aplicação — inclusive um VIEWER. Agora não existe handler nenhum nesta porta: com token
-# válido a resposta é 404, e é por isso que a verificação usa um token.
+# The leak the change closed. /actuator/metrics was not in PUBLIC_ENDPOINTS, fell into
+# anyRequest().authenticated() and was therefore readable by any authenticated user of the
+# application — including a VIEWER. Now there is no handler at all on this port: with a valid
+# token the answer is 404, and that is why the check uses a token.
 for path in /actuator/metrics /actuator/prometheus /actuator/health /actuator/info; do
   code="$(status_of GET "$API$path" "$TOKEN_A")"
-  [ "$code" = "404" ] || fail "$path responde $code na porta da aplicação para um autenticado (esperado 404)"
+  [ "$code" = "404" ] || fail "$path answers $code on the application port for an authenticated user (expected 404)"
 done
-pass "nenhum endpoint do actuator é servido na porta da aplicação, nem para quem tem token"
+pass "no actuator endpoint is served on the application port, not even with a token"
 
-step "4. Fluxo de domínio na empresa A"
+step "4. Domain flow in company A"
 project="$(call POST "$API/api/v1/projects" "$TOKEN_A" "{
   \"name\": \"Projeto Smoke $SUFFIX\",
   \"description\": \"Criado pelo smoke test\"
-}")" || fail "criação de projeto falhou"
+}")" || fail "project creation failed"
 PROJECT_ID="$(printf '%s' "$project" | jq -r '.id')"
-pass "projeto $PROJECT_ID criado"
+pass "project $PROJECT_ID created"
 
 asset="$(call POST "$API/api/v1/assets" "$TOKEN_A" "{
   \"projectId\": $PROJECT_ID,
@@ -155,9 +155,9 @@ asset="$(call POST "$API/api/v1/assets" "$TOKEN_A" "{
   \"identifier\": \"api-$SUFFIX.smoke.test\",
   \"environment\": \"PRODUCTION\",
   \"criticality\": \"HIGH\"
-}")" || fail "criação de ativo falhou"
+}")" || fail "asset creation failed"
 ASSET_ID="$(printf '%s' "$asset" | jq -r '.id')"
-pass "ativo $ASSET_ID criado"
+pass "asset $ASSET_ID created"
 
 vuln="$(call POST "$API/api/v1/vulnerabilities" "$TOKEN_A" "{
   \"assetId\": $ASSET_ID,
@@ -167,213 +167,215 @@ vuln="$(call POST "$API/api/v1/vulnerabilities" "$TOKEN_A" "{
   \"cvssScore\": 9.1,
   \"cve\": \"CVE-2024-12345\",
   \"discoveredAt\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
-}")" || fail "criação de vulnerabilidade falhou"
+}")" || fail "vulnerability creation failed"
 VULN_ID="$(printf '%s' "$vuln" | jq -r '.id')"
-[ "$(printf '%s' "$vuln" | jq -r '.status')" = "OPEN" ] || fail "vulnerabilidade não nasceu OPEN"
-pass "vulnerabilidade $VULN_ID criada com status OPEN"
+[ "$(printf '%s' "$vuln" | jq -r '.status')" = "OPEN" ] || fail "the vulnerability was not born OPEN"
+pass "vulnerability $VULN_ID created with status OPEN"
 
 assigned="$(call PATCH "$API/api/v1/vulnerabilities/$VULN_ID/assignee" "$TOKEN_A" \
-  "{\"userId\": $USER_A}")" || fail "atribuição falhou"
-[ "$(printf '%s' "$assigned" | jq -r '.assignedTo.id')" = "$USER_A" ] || fail "responsável não foi gravado"
-pass "vulnerabilidade atribuída"
+  "{\"userId\": $USER_A}")" || fail "assignment failed"
+[ "$(printf '%s' "$assigned" | jq -r '.assignedTo.id')" = "$USER_A" ] || fail "the assignee was not stored"
+pass "vulnerability assigned"
 
 progress="$(call PATCH "$API/api/v1/vulnerabilities/$VULN_ID/status" "$TOKEN_A" \
-  "{\"status\": \"IN_PROGRESS\"}")" || fail "mudança para IN_PROGRESS falhou"
-[ "$(printf '%s' "$progress" | jq -r '.status')" = "IN_PROGRESS" ] || fail "status não mudou"
-pass "status alterado para IN_PROGRESS"
+  "{\"status\": \"IN_PROGRESS\"}")" || fail "change to IN_PROGRESS failed"
+[ "$(printf '%s' "$progress" | jq -r '.status')" = "IN_PROGRESS" ] || fail "the status did not change"
+pass "status changed to IN_PROGRESS"
 
 comment="$(call POST "$API/api/v1/vulnerabilities/$VULN_ID/comments" "$TOKEN_A" \
-  "{\"content\": \"Correção iniciada pelo smoke test\"}")" || fail "comentário falhou"
-[ "$(printf '%s' "$comment" | jq -r '.content')" != "null" ] || fail "comentário vazio"
-pass "comentário registrado"
+  "{\"content\": \"Correção iniciada pelo smoke test\"}")" || fail "comment failed"
+[ "$(printf '%s' "$comment" | jq -r '.content')" != "null" ] || fail "empty comment"
+pass "comment recorded"
 
 resolved="$(call PATCH "$API/api/v1/vulnerabilities/$VULN_ID/status" "$TOKEN_A" \
-  "{\"status\": \"RESOLVED\"}")" || fail "mudança para RESOLVED falhou"
-[ "$(printf '%s' "$resolved" | jq -r '.status')" = "RESOLVED" ] || fail "status final incorreto"
-[ "$(printf '%s' "$resolved" | jq -r '.resolvedAt')" != "null" ] || fail "resolvedAt não foi preenchido"
-pass "status RESOLVED preencheu resolvedAt"
+  "{\"status\": \"RESOLVED\"}")" || fail "change to RESOLVED failed"
+[ "$(printf '%s' "$resolved" | jq -r '.status')" = "RESOLVED" ] || fail "incorrect final status"
+[ "$(printf '%s' "$resolved" | jq -r '.resolvedAt')" != "null" ] || fail "resolvedAt was not filled in"
+pass "status RESOLVED filled in resolvedAt"
 
-step "5. Auditoria"
-audit="$(call GET "$API/api/v1/audit-logs?size=50" "$TOKEN_A")" || fail "consulta de auditoria falhou"
+step "5. Audit trail"
+audit="$(call GET "$API/api/v1/audit-logs?size=50" "$TOKEN_A")" || fail "audit query failed"
 audit_count="$(printf '%s' "$audit" | jq '.content | length')"
-[ "$audit_count" -gt 0 ] || fail "trilha de auditoria vazia"
+[ "$audit_count" -gt 0 ] || fail "empty audit trail"
 printf '%s' "$audit" | jq -e '.content[] | select(.action == "STATUS_CHANGE")' >/dev/null \
-  || fail "mudança de status não foi auditada"
+  || fail "the status change was not audited"
 printf '%s' "$audit" | grep -qiE '"(password|passwordHash|senha|token|secret)"[[:space:]]*:[[:space:]]*"[^*]' \
-  && fail "auditoria contém um campo sensível não mascarado"
-pass "auditoria registrou $audit_count eventos, sem campos sensíveis"
+  && fail "the audit trail contains an unmasked sensitive field"
+pass "the audit trail recorded $audit_count events, with no sensitive fields"
 
 step "6. Dashboard"
-summary="$(call GET "$API/api/v1/dashboard/summary" "$TOKEN_A")" || fail "dashboard/summary falhou"
-[ "$(printf '%s' "$summary" | jq -r '.totalVulnerabilities')" -ge 1 ] || fail "summary não contou a vulnerabilidade"
-[ "$(printf '%s' "$summary" | jq -r '.totalProjects')" -ge 1 ] || fail "summary não contou o projeto"
-[ "$(printf '%s' "$summary" | jq -r '.totalAssets')" -ge 1 ] || fail "summary não contou o ativo"
-pass "dashboard reflete os dados criados"
+summary="$(call GET "$API/api/v1/dashboard/summary" "$TOKEN_A")" || fail "dashboard/summary failed"
+[ "$(printf '%s' "$summary" | jq -r '.totalVulnerabilities')" -ge 1 ] || fail "summary did not count the vulnerability"
+[ "$(printf '%s' "$summary" | jq -r '.totalProjects')" -ge 1 ] || fail "summary did not count the project"
+[ "$(printf '%s' "$summary" | jq -r '.totalAssets')" -ge 1 ] || fail "summary did not count the asset"
+pass "the dashboard reflects the data created"
 
-call GET "$API/api/v1/dashboard/severity-distribution" "$TOKEN_A" >/dev/null || fail "severity-distribution falhou"
-call GET "$API/api/v1/dashboard/status-distribution" "$TOKEN_A" >/dev/null || fail "status-distribution falhou"
-call GET "$API/api/v1/dashboard/trend?days=30" "$TOKEN_A" >/dev/null || fail "trend falhou"
-pass "demais endpoints do dashboard respondem"
+call GET "$API/api/v1/dashboard/severity-distribution" "$TOKEN_A" >/dev/null || fail "severity-distribution failed"
+call GET "$API/api/v1/dashboard/status-distribution" "$TOKEN_A" >/dev/null || fail "status-distribution failed"
+call GET "$API/api/v1/dashboard/trend?days=30" "$TOKEN_A" >/dev/null || fail "trend failed"
+pass "the remaining dashboard endpoints respond"
 
-step "7. Isolamento entre empresas"
+step "7. Isolation between companies"
 call POST "$API/api/v1/auth/register" "" "{
   \"companyName\": \"Smoke B $SUFFIX\",
   \"name\": \"Admin B\",
   \"email\": \"admin-b-$SUFFIX@smoke.test\",
   \"password\": \"$PASSWORD\"
-}" >/dev/null || fail "cadastro da empresa B falhou"
+}" >/dev/null || fail "company B registration failed"
 
 login_b="$(call POST "$API/api/v1/auth/login" "" "{
   \"email\": \"admin-b-$SUFFIX@smoke.test\",
   \"password\": \"$PASSWORD\"
-}")" || fail "login da empresa B falhou"
+}")" || fail "company B login failed"
 TOKEN_B="$(printf '%s' "$login_b" | jq -r '.accessToken')"
-pass "empresa B criada e autenticada"
+pass "company B created and authenticated"
 
 for pair in "projects:$PROJECT_ID" "assets:$ASSET_ID" "vulnerabilities:$VULN_ID"; do
   resource="${pair%%:*}"; id="${pair##*:}"
   code="$(status_of GET "$API/api/v1/$resource/$id" "$TOKEN_B")"
-  [ "$code" = "404" ] || fail "empresa B leu /$resource/$id da empresa A (HTTP $code, esperado 404)"
+  [ "$code" = "404" ] || fail "company B read company A's /$resource/$id (HTTP $code, expected 404)"
   code="$(status_of DELETE "$API/api/v1/$resource/$id" "$TOKEN_B")"
-  [ "$code" = "404" ] || fail "empresa B apagou /$resource/$id da empresa A (HTTP $code, esperado 404)"
+  [ "$code" = "404" ] || fail "company B deleted company A's /$resource/$id (HTTP $code, expected 404)"
 done
-pass "empresa B recebe 404 em todos os recursos da empresa A"
+pass "company B receives 404 on every resource of company A"
 
-list_b="$(call GET "$API/api/v1/projects?size=100" "$TOKEN_B")" || fail "listagem da empresa B falhou"
+list_b="$(call GET "$API/api/v1/projects?size=100" "$TOKEN_B")" || fail "company B listing failed"
 printf '%s' "$list_b" | jq -e ".content[] | select(.id == $PROJECT_ID)" >/dev/null \
-  && fail "listagem da empresa B expôs o projeto da empresa A"
-pass "listagens da empresa B não contêm dados da empresa A"
+  && fail "company B's listing exposed company A's project"
+pass "company B's listings contain no data from company A"
 
-audit_b="$(call GET "$API/api/v1/audit-logs?size=100" "$TOKEN_B")" || fail "auditoria da empresa B falhou"
+audit_b="$(call GET "$API/api/v1/audit-logs?size=100" "$TOKEN_B")" || fail "company B audit query failed"
 printf '%s' "$audit_b" | jq -e ".content[] | select(.actorId == $USER_A)" >/dev/null \
-  && fail "auditoria da empresa B expôs eventos da empresa A"
-pass "auditoria isolada entre empresas"
+  && fail "company B's audit trail exposed company A's events"
+pass "audit trail isolated between companies"
 
-step "8. Recurso ainda existe para a empresa A"
+step "8. The resource still exists for company A"
 call GET "$API/api/v1/vulnerabilities/$VULN_ID" "$TOKEN_A" >/dev/null \
-  || fail "empresa A perdeu acesso ao próprio recurso"
-pass "empresa A continua enxergando os próprios dados"
+  || fail "company A lost access to its own resource"
+pass "company A still sees its own data"
 
-step "9. Renovação e encerramento de sessão"
+step "9. Session renewal and sign-out"
 REFRESH_A="$(printf '%s' "$login_a" | jq -r '.refreshToken')"
-[ -n "$REFRESH_A" ] && [ "$REFRESH_A" != "null" ] || fail "login não devolveu refreshToken"
+[ -n "$REFRESH_A" ] && [ "$REFRESH_A" != "null" ] || fail "login did not return a refreshToken"
 
 rotated="$(call POST "$API/api/v1/auth/refresh" "" "{\"refreshToken\": \"$REFRESH_A\"}")" \
-  || fail "refresh falhou"
+  || fail "refresh failed"
 ROTATED_TOKEN="$(printf '%s' "$rotated" | jq -r '.accessToken')"
 ROTATED_REFRESH="$(printf '%s' "$rotated" | jq -r '.refreshToken')"
-[ "$ROTATED_REFRESH" != "$REFRESH_A" ] || fail "refresh devolveu o mesmo token (não houve rotação)"
-call GET "$API/api/v1/auth/me" "$ROTATED_TOKEN" >/dev/null || fail "token renovado não é aceito"
-pass "refresh rotaciona o token e o novo access token vale"
+[ "$ROTATED_REFRESH" != "$REFRESH_A" ] || fail "refresh returned the same token (no rotation happened)"
+call GET "$API/api/v1/auth/me" "$ROTATED_TOKEN" >/dev/null || fail "the renewed token is not accepted"
+pass "refresh rotates the token and the new access token works"
 
-# Reapresentar o token recém-rotacionado dentro da janela de tolerância (REUSE_GRACE, 30s)
-# devolve 200 de propósito: duas abas, um retry de rede ou um timeout fazem o mesmo token
-# chegar duas vezes em segundos, e sem a janela a detecção de reuso deslogaria o usuário
-# legítimo em toda corrida benigna. Fora da janela a família inteira cai — isso é coberto por
-# RefreshTokenIntegrationTest, que controla o relógio; aqui o que se verifica é que o caminho
-# benigno não derruba ninguém.
+# Presenting the just-rotated token again inside the grace window (REUSE_GRACE, 30s) returns
+# 200 on purpose: two tabs, a network retry or a timeout make the same token arrive twice within
+# seconds, and without the window reuse detection would log the legitimate user out on every
+# benign race. Outside the window the whole family dies — that is covered by
+# RefreshTokenIntegrationTest, which controls the clock; what is checked here is that the benign
+# path does not log anyone out.
 code="$(status_of POST "$API/api/v1/auth/refresh" "" "{\"refreshToken\": \"$REFRESH_A\"}")"
-[ "$code" = "200" ] || fail "reuso dentro da janela de tolerância devolveu $code, esperado 200"
-pass "reuso imediato cai na janela de tolerância e não desloga o usuário"
+[ "$code" = "200" ] || fail "reuse inside the grace window returned $code, expected 200"
+pass "immediate reuse falls into the grace window and does not log the user out"
 
-# Cada login abre uma sessão nova, então esta não afeta o TOKEN_A usado acima.
+# Each login opens a new session, so this one does not affect the TOKEN_A used above.
 login_logout="$(call POST "$API/api/v1/auth/login" "" "{
   \"email\": \"admin-a-$SUFFIX@smoke.test\",
   \"password\": \"$PASSWORD\"
-}")" || fail "login para o teste de logout falhou"
+}")" || fail "login for the logout test failed"
 LOGOUT_REFRESH="$(printf '%s' "$login_logout" | jq -r '.refreshToken')"
 code="$(status_of POST "$API/api/v1/auth/logout" "" "{\"refreshToken\": \"$LOGOUT_REFRESH\"}")"
-[ "$code" = "204" ] || fail "logout devolveu $code, esperado 204"
+[ "$code" = "204" ] || fail "logout returned $code, expected 204"
 code="$(status_of POST "$API/api/v1/auth/refresh" "" "{\"refreshToken\": \"$LOGOUT_REFRESH\"}")"
-[ "$code" = "401" ] || fail "refresh após logout devolveu $code, esperado 401"
-pass "logout revoga a sessão no servidor"
+[ "$code" = "401" ] || fail "refresh after logout returned $code, expected 401"
+pass "logout revokes the session on the server"
 
-step "10. Recuperação de senha"
-# 202 nos dois casos: uma resposta diferente para e-mail desconhecido seria enumeração de contas.
+step "10. Password recovery"
+# 202 in both cases: a different answer for an unknown e-mail would be account enumeration.
 code="$(status_of POST "$API/api/v1/auth/password-reset/request" "" \
   "{\"email\": \"admin-a-$SUFFIX@smoke.test\"}")"
-[ "$code" = "202" ] || fail "solicitação de recuperação devolveu $code, esperado 202"
+[ "$code" = "202" ] || fail "the recovery request returned $code, expected 202"
 code="$(status_of POST "$API/api/v1/auth/password-reset/request" "" \
   "{\"email\": \"nao-existe-$SUFFIX@smoke.test\"}")"
-[ "$code" = "202" ] || fail "e-mail desconhecido devolveu $code — resposta distinta permite enumerar contas"
-pass "solicitação responde 202 para e-mail conhecido e desconhecido"
+[ "$code" = "202" ] || fail "an unknown e-mail returned $code — a distinct answer allows account enumeration"
+pass "the request answers 202 for both a known and an unknown e-mail"
 
 code="$(status_of POST "$API/api/v1/auth/password-reset/confirm" "" \
   "{\"token\": \"token-que-nunca-existiu\", \"password\": \"$PASSWORD-novo\"}")"
-[ "$code" = "400" ] || fail "confirmação com token inválido devolveu $code, esperado 400"
-pass "confirmação com token inválido é recusada"
+[ "$code" = "400" ] || fail "confirmation with an invalid token returned $code, expected 400"
+pass "confirmation with an invalid token is refused"
 
-step "11. Convites"
+step "11. Invitations"
 invitation="$(call POST "$API/api/v1/invitations" "$TOKEN_A" "{
   \"name\": \"Convidado Smoke\",
   \"email\": \"convidado-$SUFFIX@smoke.test\",
   \"role\": \"ANALYST\"
-}")" || fail "criação de convite falhou"
+}")" || fail "invitation creation failed"
 INVITATION_ID="$(printf '%s' "$invitation" | jq -r '.id')"
-[ "$(printf '%s' "$invitation" | jq -r '.status')" = "PENDING" ] || fail "convite não nasceu PENDING"
-# O token do convite nunca volta pela API: devolvê-lo permitiria assumir a conta do convidado.
+[ "$(printf '%s' "$invitation" | jq -r '.status')" = "PENDING" ] || fail "the invitation was not born PENDING"
+# The invitation token never comes back through the API: returning it would allow taking over
+# the invitee's account.
 printf '%s' "$invitation" | jq -e 'has("token") or has("tokenHash")' >/dev/null \
-  && fail "a resposta do convite carrega o token"
-pass "convite $INVITATION_ID criado, sem expor o token"
+  && fail "the invitation response carries the token"
+pass "invitation $INVITATION_ID created, without exposing the token"
 
-invitations="$(call GET "$API/api/v1/invitations" "$TOKEN_A")" || fail "listagem de convites falhou"
+invitations="$(call GET "$API/api/v1/invitations" "$TOKEN_A")" || fail "invitation listing failed"
 printf '%s' "$invitations" | jq -e ".[] | select(.id == $INVITATION_ID)" >/dev/null \
-  || fail "convite criado não aparece na listagem"
-pass "convite aparece na listagem da empresa"
+  || fail "the created invitation does not appear in the listing"
+pass "the invitation appears in the company listing"
 
 code="$(status_of GET "$API/api/v1/invitations/accept?token=token-que-nunca-existiu")"
-[ "$code" = "400" ] || fail "prévia com token inválido devolveu $code, esperado 400"
-pass "prévia pública recusa um token inválido"
+[ "$code" = "400" ] || fail "preview with an invalid token returned $code, expected 400"
+pass "the public preview refuses an invalid token"
 
 code="$(status_of DELETE "$API/api/v1/invitations/$INVITATION_ID" "$TOKEN_A")"
-[ "$code" = "204" ] || fail "revogação devolveu $code, esperado 204"
-pass "convite revogado"
+[ "$code" = "204" ] || fail "revocation returned $code, expected 204"
+pass "invitation revoked"
 
-step "12. Administração de usuários"
-users="$(call GET "$API/api/v1/users" "$TOKEN_A")" || fail "listagem de usuários falhou"
+step "12. User administration"
+users="$(call GET "$API/api/v1/users" "$TOKEN_A")" || fail "user listing failed"
 printf '%s' "$users" | jq -e ".[] | select(.id == $USER_A)" >/dev/null \
-  || fail "o próprio administrador não aparece na listagem"
-pass "listagem de usuários responde"
+  || fail "the administrator themselves does not appear in the listing"
+pass "the user listing responds"
 
-self="$(call GET "$API/api/v1/users/$USER_A" "$TOKEN_A")" || fail "GET /users/{id} falhou"
+self="$(call GET "$API/api/v1/users/$USER_A" "$TOKEN_A")" || fail "GET /users/{id} failed"
 [ "$(printf '%s' "$self" | jq -r '.email')" = "admin-a-$SUFFIX@smoke.test" ] \
-  || fail "GET /users/{id} devolveu outro usuário"
-pass "GET /users/{id} coerente"
+  || fail "GET /users/{id} returned a different user"
+pass "GET /users/{id} consistent"
 
 renamed="$(call PATCH "$API/api/v1/users/$USER_A" "$TOKEN_A" "{\"name\": \"Admin A Renomeado\"}")" \
-  || fail "PATCH /users/{id} falhou"
-[ "$(printf '%s' "$renamed" | jq -r '.name')" = "Admin A Renomeado" ] || fail "nome não foi gravado"
-pass "PATCH /users/{id} altera o nome"
+  || fail "PATCH /users/{id} failed"
+[ "$(printf '%s' "$renamed" | jq -r '.name')" = "Admin A Renomeado" ] || fail "the name was not stored"
+pass "PATCH /users/{id} changes the name"
 
-# A empresa A tem exatamente um administrador — o próprio chamador. Rebaixá-lo ou desativá-lo
-# deixaria a empresa sem ninguém capaz de administrá-la, e o backend recusa com 409.
+# Company A has exactly one administrator — the caller themselves. Demoting or deactivating
+# them would leave the company with nobody able to administer it, and the backend refuses with
+# 409.
 code="$(status_of PATCH "$API/api/v1/users/$USER_A/role" "$TOKEN_A" "{\"role\": \"VIEWER\"}")"
-[ "$code" = "409" ] || fail "rebaixar o último ADMIN devolveu $code, esperado 409"
+[ "$code" = "409" ] || fail "demoting the last ADMIN returned $code, expected 409"
 code="$(status_of PATCH "$API/api/v1/users/$USER_A/active" "$TOKEN_A" "{\"active\": false}")"
-[ "$code" = "409" ] || fail "desativar o último ADMIN devolveu $code, esperado 409"
-pass "o último administrador ativo não pode se rebaixar nem se desativar"
+[ "$code" = "409" ] || fail "deactivating the last ADMIN returned $code, expected 409"
+pass "the last active administrator can neither demote nor deactivate themselves"
 
-step "13. Exportação CSV"
+step "13. CSV export"
 csv="$(curl -s -H "Authorization: Bearer $TOKEN_A" "$API/api/v1/vulnerabilities/export")"
-printf '%s' "$csv" | head -n1 | grep -q 'severidade' || fail "CSV sem a linha de cabeçalho esperada"
+printf '%s' "$csv" | head -n1 | grep -q 'severidade' || fail "CSV without the expected header row"
 printf '%s' "$csv" | grep -q "SQL injection no endpoint de busca" \
-  || fail "CSV não contém a vulnerabilidade criada"
-pass "exportação devolve cabeçalho e a linha criada"
+  || fail "the CSV does not contain the created vulnerability"
+pass "the export returns the header and the created row"
 
 filtered="$(curl -s -H "Authorization: Bearer $TOKEN_A" \
   "$API/api/v1/vulnerabilities/export?severity=LOW")"
 printf '%s' "$filtered" | grep -q "SQL injection no endpoint de busca" \
-  && fail "filtro severity=LOW devolveu uma vulnerabilidade CRITICAL"
-pass "o filtro da exportação é o mesmo da listagem"
+  && fail "the severity=LOW filter returned a CRITICAL vulnerability"
+pass "the export filter is the same as the listing filter"
 
 code="$(status_of GET "$API/api/v1/vulnerabilities/export" "$TOKEN_B")"
-[ "$code" = "200" ] || fail "exportação da empresa B devolveu $code"
+[ "$code" = "200" ] || fail "company B export returned $code"
 other="$(curl -s -H "Authorization: Bearer $TOKEN_B" "$API/api/v1/vulnerabilities/export")"
 printf '%s' "$other" | grep -q "SQL injection no endpoint de busca" \
-  && fail "a exportação da empresa B contém dados da empresa A"
-pass "exportação isolada entre empresas"
+  && fail "company B's export contains company A's data"
+pass "export isolated between companies"
 
-step "14. Anexos"
+step "14. Attachments"
 EVIDENCE="$(mktemp -t smoke-evidencia-XXXXXX.pdf)"
 DOWNLOADED="$(mktemp -t smoke-download-XXXXXX.pdf)"
 REPORT="$(mktemp -t smoke-relatorio-XXXXXX.pdf)"
@@ -383,56 +385,57 @@ printf '%%PDF-1.7\nevidencia do smoke test\n%%%%EOF\n' > "$EVIDENCE"
 attachment="$(curl -s -H "Authorization: Bearer $TOKEN_A" -F "file=@$EVIDENCE" \
   "$API/api/v1/vulnerabilities/$VULN_ID/attachments")"
 ATTACHMENT_ID="$(printf '%s' "$attachment" | jq -r '.id')"
-[ -n "$ATTACHMENT_ID" ] && [ "$ATTACHMENT_ID" != "null" ] || fail "upload de anexo falhou: $attachment"
+[ -n "$ATTACHMENT_ID" ] && [ "$ATTACHMENT_ID" != "null" ] || fail "attachment upload failed: $attachment"
 [ "$(printf '%s' "$attachment" | jq -r '.contentType')" = "application/pdf" ] \
-  || fail "o tipo do anexo não foi detectado pelos bytes"
-pass "anexo $ATTACHMENT_ID enviado e reconhecido como application/pdf"
+  || fail "the attachment type was not detected from the bytes"
+pass "attachment $ATTACHMENT_ID uploaded and recognised as application/pdf"
 
 listed="$(call GET "$API/api/v1/vulnerabilities/$VULN_ID/attachments" "$TOKEN_A")" \
-  || fail "listagem de anexos falhou"
+  || fail "attachment listing failed"
 printf '%s' "$listed" | jq -e ".[] | select(.id == $ATTACHMENT_ID)" >/dev/null \
-  || fail "anexo não aparece na listagem"
-pass "anexo aparece na listagem da vulnerabilidade"
+  || fail "the attachment does not appear in the listing"
+pass "the attachment appears in the vulnerability listing"
 
 curl -s -H "Authorization: Bearer $TOKEN_A" -o "$DOWNLOADED" \
   "$API/api/v1/vulnerabilities/$VULN_ID/attachments/$ATTACHMENT_ID/download"
-cmp -s "$EVIDENCE" "$DOWNLOADED" || fail "o arquivo baixado difere do enviado"
-pass "download devolve exatamente os bytes enviados"
+cmp -s "$EVIDENCE" "$DOWNLOADED" || fail "the downloaded file differs from the uploaded one"
+pass "download returns exactly the bytes that were uploaded"
 
-# Cross-tenant é 404, nunca 403: um 403 confirmaria que o id existe em algum lugar.
+# Cross-tenant is 404, never 403: a 403 would confirm that the id exists somewhere.
 code="$(status_of GET "$API/api/v1/vulnerabilities/$VULN_ID/attachments" "$TOKEN_B")"
-[ "$code" = "404" ] || fail "empresa B listou anexos da empresa A (HTTP $code, esperado 404)"
+[ "$code" = "404" ] || fail "company B listed company A's attachments (HTTP $code, expected 404)"
 code="$(status_of GET "$API/api/v1/vulnerabilities/$VULN_ID/attachments/$ATTACHMENT_ID/download" "$TOKEN_B")"
-[ "$code" = "404" ] || fail "empresa B baixou anexo da empresa A (HTTP $code, esperado 404)"
-pass "anexos isolados entre empresas, com 404"
+[ "$code" = "404" ] || fail "company B downloaded company A's attachment (HTTP $code, expected 404)"
+pass "attachments isolated between companies, with 404"
 
 code="$(status_of DELETE "$API/api/v1/vulnerabilities/$VULN_ID/attachments/$ATTACHMENT_ID" "$TOKEN_A")"
-[ "$code" = "204" ] || fail "remoção do anexo devolveu $code, esperado 204"
-pass "anexo removido"
+[ "$code" = "204" ] || fail "attachment removal returned $code, expected 204"
+pass "attachment removed"
 
-step "15. Relatório executivo"
+step "15. Executive report"
 report_code="$(curl -s -o "$REPORT" -w '%{http_code}' -H "Authorization: Bearer $TOKEN_A" \
   "$API/api/v1/reports/executive")"
-[ "$report_code" = "200" ] || fail "relatório executivo devolveu $report_code"
-[ "$(head -c 5 "$REPORT")" = "%PDF-" ] || fail "o relatório não começa com %PDF-"
-[ "$(wc -c < "$REPORT")" -gt 1000 ] || fail "o relatório tem tamanho implausível"
-pass "relatório executivo é um PDF com conteúdo"
+[ "$report_code" = "200" ] || fail "the executive report returned $report_code"
+[ "$(head -c 5 "$REPORT")" = "%PDF-" ] || fail "the report does not start with %PDF-"
+[ "$(wc -c < "$REPORT")" -gt 1000 ] || fail "the report has an implausible size"
+pass "the executive report is a PDF with content"
 
-step "16. Importação de relatórios de varredura"
+step "16. Scan report import"
 
-# Um relatório de varredura chega como arquivo e vira **proposta**, não vulnerabilidade: o
-# envio só encena os achados em uma área de staging, e quem cria alguma coisa é a confirmação.
-# Cada formato é enviado duas vezes de propósito. A segunda vez é o que prova, contra o banco
-# de verdade, que a impressão digital de um achado já importado o marca como duplicado em vez
-# de criar uma segunda cópia de algo que alguém já está tratando.
+# A scan report arrives as a file and becomes a **proposal**, not a vulnerability: the upload
+# only stages the findings, and what creates anything is the confirmation. Each format is
+# uploaded twice on purpose. The second time is what proves, against the real database, that the
+# fingerprint of an already imported finding marks it as a duplicate instead of creating a
+# second copy of something someone is already working on.
 
 SCAN_DIR="$(mktemp -d -t smoke-scan-XXXXXX)"
-# Substitui o trap da seção 14 e repete o que ele fazia: um trap novo não acumula, ele troca.
+# Replaces the section 14 trap and repeats what it did: a new trap does not accumulate, it
+# replaces.
 trap 'rm -f "$EVIDENCE" "$DOWNLOADED" "$REPORT"; rm -rf "$SCAN_DIR"' EXIT
 
-# O alvo de um achado é casado com o `identifier` de um ativo **do projeto escolhido**, então
-# os relatórios abaixo apontam para os identificadores criados na seção 4. ZAP e nuclei
-# reportam URL, e é a URL inteira que precisa bater com o identificador — daí este ativo.
+# A finding's target is matched against the `identifier` of an asset **of the chosen project**,
+# so the reports below point at the identifiers created in section 4. ZAP and nuclei report a
+# URL, and it is the whole URL that has to match the identifier — hence this asset.
 WEB_IDENTIFIER="https://web-$SUFFIX.smoke.test"
 web_asset="$(call POST "$API/api/v1/assets" "$TOKEN_A" "{
   \"projectId\": $PROJECT_ID,
@@ -441,14 +444,14 @@ web_asset="$(call POST "$API/api/v1/assets" "$TOKEN_A" "{
   \"identifier\": \"$WEB_IDENTIFIER\",
   \"environment\": \"PRODUCTION\",
   \"criticality\": \"HIGH\"
-}")" || fail "criação do ativo web falhou"
+}")" || fail "web asset creation failed"
 WEB_ASSET_ID="$(printf '%s' "$web_asset" | jq -r '.id')"
-pass "ativo web $WEB_ASSET_ID criado para os alvos em forma de URL"
+pass "web asset $WEB_ASSET_ID created for the URL-shaped targets"
 
-backlog_before="$(call GET "$API/api/v1/vulnerabilities?size=1" "$TOKEN_A")" || fail "listagem falhou"
+backlog_before="$(call GET "$API/api/v1/vulnerabilities?size=1" "$TOKEN_A")" || fail "listing failed"
 BACKLOG_BEFORE="$(printf '%s' "$backlog_before" | jq -r '.totalElements')"
 
-# --- nmap: casa um alvo, deixa outro sem ativo, e ignora porta aberta ---------
+# --- nmap: matches one target, leaves another unmatched, and ignores open ports ---
 cat > "$SCAN_DIR/nmap.xml" <<XML
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE nmaprun PUBLIC "-//IDN nmap.org//DTD Nmap XML 1.04//EN" "https://svn.nmap.org/nmap/docs/nmap.dtd">
@@ -482,93 +485,93 @@ cat > "$SCAN_DIR/nmap.xml" <<XML
 XML
 
 nmap_import="$(scan_upload "$PROJECT_ID" NMAP_XML "$SCAN_DIR/nmap.xml" "$TOKEN_A")" \
-  || fail "envio do relatório nmap falhou"
+  || fail "the nmap report upload failed"
 NMAP_ID="$(printf '%s' "$nmap_import" | jq -r '.id')"
-[ "$(printf '%s' "$nmap_import" | jq -r '.status')" = "PENDING" ] || fail "a importação não nasceu PENDING"
-# Três resultados de script e duas portas abertas no arquivo: só os scripts viram achado.
-# Uma porta aberta não é uma vulnerabilidade, e importá-la encheria o backlog de ruído.
+[ "$(printf '%s' "$nmap_import" | jq -r '.status')" = "PENDING" ] || fail "the import was not born PENDING"
+# Three script results and two open ports in the file: only the scripts become findings.
+# An open port is not a vulnerability, and importing it would fill the backlog with noise.
 [ "$(printf '%s' "$nmap_import" | jq -r '.totalFindings')" = "3" ] \
-  || fail "o nmap deveria render 3 achados (só resultados de script NSE)"
-[ "$(printf '%s' "$nmap_import" | jq -r '.matchedCount')" = "2" ] || fail "contador de achados com ativo incorreto"
-[ "$(printf '%s' "$nmap_import" | jq -r '.unmatchedCount')" = "1" ] || fail "contador de achados sem ativo incorreto"
-[ "$(printf '%s' "$nmap_import" | jq -r '.duplicateCount')" = "0" ] || fail "importação inédita trouxe duplicados"
-pass "importação $NMAP_ID criada pendente: 3 achados, 2 com ativo, 1 sem ativo"
+  || fail "nmap should yield 3 findings (NSE script results only)"
+[ "$(printf '%s' "$nmap_import" | jq -r '.matchedCount')" = "2" ] || fail "wrong counter of findings with an asset"
+[ "$(printf '%s' "$nmap_import" | jq -r '.unmatchedCount')" = "1" ] || fail "wrong counter of findings without an asset"
+[ "$(printf '%s' "$nmap_import" | jq -r '.duplicateCount')" = "0" ] || fail "a first-time import brought duplicates"
+pass "import $NMAP_ID created pending: 3 findings, 2 with an asset, 1 without"
 
-# O envio não cria nada: é só uma proposta até alguém confirmar.
-backlog_staged="$(call GET "$API/api/v1/vulnerabilities?size=1" "$TOKEN_A")" || fail "listagem falhou"
+# The upload creates nothing: it is only a proposal until someone confirms.
+backlog_staged="$(call GET "$API/api/v1/vulnerabilities?size=1" "$TOKEN_A")" || fail "listing failed"
 [ "$(printf '%s' "$backlog_staged" | jq -r '.totalElements')" = "$BACKLOG_BEFORE" ] \
-  || fail "o envio do relatório criou vulnerabilidade antes da confirmação"
-pass "nada foi criado pelo envio"
+  || fail "the report upload created a vulnerability before confirmation"
+pass "nothing was created by the upload"
 
-# O alvo que não existe no inventário fica esperando uma pessoa: o importador nunca cria ativo.
+# A target that is not in the inventory waits for a person: the importer never creates an asset.
 FINDING_ID="$(printf '%s' "$nmap_import" | jq -r '[.findings[] | select(.status == "UNMATCHED")][0].id')"
 mapped="$(call PATCH "$API/api/v1/scan-imports/$NMAP_ID/findings/$FINDING_ID" "$TOKEN_A" \
-  "{\"assetId\": $ASSET_ID}")" || fail "mapeamento do achado falhou"
-[ "$(printf '%s' "$mapped" | jq -r '.status')" = "MATCHED" ] || fail "o achado mapeado não ficou MATCHED"
-[ "$(printf '%s' "$mapped" | jq -r '.assetId')" = "$ASSET_ID" ] || fail "o ativo do achado não foi gravado"
-preview="$(call GET "$API/api/v1/scan-imports/$NMAP_ID" "$TOKEN_A")" || fail "prévia falhou"
-[ "$(printf '%s' "$preview" | jq -r '.matchedCount')" = "3" ] || fail "o mapeamento não recontou a importação"
-[ "$(printf '%s' "$preview" | jq -r '.unmatchedCount')" = "0" ] || fail "ainda há achado sem ativo"
-pass "achado $FINDING_ID mapeado à mão e contadores recalculados"
+  "{\"assetId\": $ASSET_ID}")" || fail "mapping the finding failed"
+[ "$(printf '%s' "$mapped" | jq -r '.status')" = "MATCHED" ] || fail "the mapped finding did not become MATCHED"
+[ "$(printf '%s' "$mapped" | jq -r '.assetId')" = "$ASSET_ID" ] || fail "the finding's asset was not stored"
+preview="$(call GET "$API/api/v1/scan-imports/$NMAP_ID" "$TOKEN_A")" || fail "preview failed"
+[ "$(printf '%s' "$preview" | jq -r '.matchedCount')" = "3" ] || fail "the mapping did not recount the import"
+[ "$(printf '%s' "$preview" | jq -r '.unmatchedCount')" = "0" ] || fail "there is still a finding without an asset"
+pass "finding $FINDING_ID mapped by hand and counters recomputed"
 
-# A trilha recebe uma linha por importação, e não uma por vulnerabilidade criada: é o que
-# mantém a auditoria legível depois de um relatório de quatrocentos achados.
+# The trail gets one row per import, not one per created vulnerability: that is what keeps the
+# audit readable after a report with four hundred findings.
 creates_before="$(call GET "$API/api/v1/audit-logs?size=1&entityType=Vulnerability&action=CREATE" "$TOKEN_A")" \
-  || fail "consulta de auditoria falhou"
+  || fail "audit query failed"
 CREATES_BEFORE="$(printf '%s' "$creates_before" | jq -r '.totalElements')"
 
-confirmed="$(call POST "$API/api/v1/scan-imports/$NMAP_ID/confirm" "$TOKEN_A")" || fail "confirmação falhou"
-[ "$(printf '%s' "$confirmed" | jq -r '.status')" = "CONFIRMED" ] || fail "a importação não ficou CONFIRMED"
-[ "$(printf '%s' "$confirmed" | jq -r '.importedCount')" = "3" ] || fail "não foram criadas 3 vulnerabilidades"
-[ "$(printf '%s' "$confirmed" | jq -r '.skippedCount')" = "0" ] || fail "algum achado foi ignorado sem motivo"
+confirmed="$(call POST "$API/api/v1/scan-imports/$NMAP_ID/confirm" "$TOKEN_A")" || fail "confirmation failed"
+[ "$(printf '%s' "$confirmed" | jq -r '.status')" = "CONFIRMED" ] || fail "the import did not become CONFIRMED"
+[ "$(printf '%s' "$confirmed" | jq -r '.importedCount')" = "3" ] || fail "3 vulnerabilities were not created"
+[ "$(printf '%s' "$confirmed" | jq -r '.skippedCount')" = "0" ] || fail "some finding was skipped for no reason"
 [ "$(printf '%s' "$confirmed" | jq '[.findings[] | select(.status == "IMPORTED" and (.vulnerabilityId | type) == "number")] | length')" = "3" ] \
-  || fail "algum achado importado não aponta para a vulnerabilidade criada"
-backlog_after="$(call GET "$API/api/v1/vulnerabilities?size=1" "$TOKEN_A")" || fail "listagem falhou"
+  || fail "some imported finding does not point at the created vulnerability"
+backlog_after="$(call GET "$API/api/v1/vulnerabilities?size=1" "$TOKEN_A")" || fail "listing failed"
 [ "$(printf '%s' "$backlog_after" | jq -r '.totalElements')" = "$((BACKLOG_BEFORE + 3))" ] \
-  || fail "o backlog não cresceu exatamente 3 vulnerabilidades"
-pass "confirmação criou 3 vulnerabilidades, uma por achado com ativo"
+  || fail "the backlog did not grow by exactly 3 vulnerabilities"
+pass "confirmation created 3 vulnerabilities, one per finding with an asset"
 
 creates_after="$(call GET "$API/api/v1/audit-logs?size=1&entityType=Vulnerability&action=CREATE" "$TOKEN_A")" \
-  || fail "consulta de auditoria falhou"
+  || fail "audit query failed"
 [ "$(printf '%s' "$creates_after" | jq -r '.totalElements')" = "$CREATES_BEFORE" ] \
-  || fail "a confirmação escreveu CREATE por vulnerabilidade e enterrou a trilha"
+  || fail "confirmation wrote a CREATE per vulnerability and buried the trail"
 scan_audit="$(call GET "$API/api/v1/audit-logs?size=20&entityType=ScanImport&action=SCAN_IMPORT" "$TOKEN_A")" \
-  || fail "consulta de auditoria falhou"
+  || fail "audit query failed"
 printf '%s' "$scan_audit" | jq -e ".content[] | select(.entityId == $NMAP_ID)" >/dev/null \
-  || fail "a confirmação não deixou linha SCAN_IMPORT na auditoria"
+  || fail "confirmation left no SCAN_IMPORT row in the audit trail"
 [ "$(printf '%s' "$scan_audit" | jq "[.content[] | select(.entityId == $NMAP_ID)] | length")" = "1" ] \
-  || fail "a confirmação deixou mais de uma linha de auditoria"
-pass "auditoria tem exatamente uma linha SCAN_IMPORT e nenhum CREATE por achado"
+  || fail "confirmation left more than one audit row"
+pass "the audit trail has exactly one SCAN_IMPORT row and no CREATE per finding"
 
-# Uma importação encerrada não volta atrás: os dois caminhos respondem 409 e não 400, porque
-# o pedido está bem formado — o que está errado é o estado da linha.
+# A closed import does not go back: both paths answer 409 and not 400, because the request is
+# well formed — what is wrong is the state of the row.
 code="$(status_of POST "$API/api/v1/scan-imports/$NMAP_ID/confirm" "$TOKEN_A")"
-[ "$code" = "409" ] || fail "segunda confirmação devolveu $code, esperado 409"
+[ "$code" = "409" ] || fail "the second confirmation returned $code, expected 409"
 code="$(status_of DELETE "$API/api/v1/scan-imports/$NMAP_ID" "$TOKEN_A")"
-[ "$code" = "409" ] || fail "descarte de importação confirmada devolveu $code, esperado 409"
-pass "só uma importação pendente pode ser confirmada ou descartada"
+[ "$code" = "409" ] || fail "discarding a confirmed import returned $code, expected 409"
+pass "only a pending import can be confirmed or discarded"
 
-# O mesmo arquivo de novo: nenhum achado novo, todos marcados como já registrados. O que isso
-# protege é o trabalho humano — a vulnerabilidade da primeira importação pode já ter status,
-# responsável e discussão, e reimportar não pode desfazer nada disso.
+# The same file again: no new findings, all marked as already recorded. What this protects is
+# the human work — the vulnerability from the first import may already have a status, an
+# assignee and a discussion, and re-importing must not undo any of that.
 nmap_again="$(scan_upload "$PROJECT_ID" NMAP_XML "$SCAN_DIR/nmap.xml" "$TOKEN_A")" \
-  || fail "segundo envio do relatório nmap falhou"
+  || fail "the second nmap report upload failed"
 NMAP_AGAIN_ID="$(printf '%s' "$nmap_again" | jq -r '.id')"
-[ "$(printf '%s' "$nmap_again" | jq -r '.totalFindings')" = "3" ] || fail "o relatório mudou de tamanho"
+[ "$(printf '%s' "$nmap_again" | jq -r '.totalFindings')" = "3" ] || fail "the report changed size"
 [ "$(printf '%s' "$nmap_again" | jq -r '.duplicateCount')" = "3" ] \
-  || fail "a reimportação não reconheceu todos os achados como duplicados"
-[ "$(printf '%s' "$nmap_again" | jq -r '.matchedCount')" = "0" ] || fail "duplicado deveria vencer sobre com ativo"
-[ "$(printf '%s' "$nmap_again" | jq -r '.unmatchedCount')" = "0" ] || fail "contador de sem ativo incorreto"
+  || fail "the re-import did not recognise every finding as a duplicate"
+[ "$(printf '%s' "$nmap_again" | jq -r '.matchedCount')" = "0" ] || fail "duplicate should win over matched"
+[ "$(printf '%s' "$nmap_again" | jq -r '.unmatchedCount')" = "0" ] || fail "wrong unmatched counter"
 confirmed_again="$(call POST "$API/api/v1/scan-imports/$NMAP_AGAIN_ID/confirm" "$TOKEN_A")" \
-  || fail "confirmação da reimportação falhou"
-[ "$(printf '%s' "$confirmed_again" | jq -r '.importedCount')" = "0" ] || fail "a reimportação criou vulnerabilidade"
-[ "$(printf '%s' "$confirmed_again" | jq -r '.skippedCount')" = "3" ] || fail "os duplicados não foram ignorados"
-backlog_dup="$(call GET "$API/api/v1/vulnerabilities?size=1" "$TOKEN_A")" || fail "listagem falhou"
+  || fail "confirmation of the re-import failed"
+[ "$(printf '%s' "$confirmed_again" | jq -r '.importedCount')" = "0" ] || fail "the re-import created a vulnerability"
+[ "$(printf '%s' "$confirmed_again" | jq -r '.skippedCount')" = "3" ] || fail "the duplicates were not skipped"
+backlog_dup="$(call GET "$API/api/v1/vulnerabilities?size=1" "$TOKEN_A")" || fail "listing failed"
 [ "$(printf '%s' "$backlog_dup" | jq -r '.totalElements')" = "$((BACKLOG_BEFORE + 3))" ] \
-  || fail "reimportar o mesmo relatório mudou o tamanho do backlog"
-pass "reimportação do mesmo arquivo: 3 duplicados, 0 criados"
+  || fail "re-importing the same report changed the size of the backlog"
+pass "re-import of the same file: 3 duplicates, 0 created"
 
-# --- ZAP: uma instância por alerta, CVSS arredondado e o primeiro CVE da lista -
+# --- ZAP: one instance per alert, rounded CVSS and the first CVE in the list ---
 cat > "$SCAN_DIR/zap.json" <<JSON
 {
   "@programName": "ZAP",
@@ -602,42 +605,42 @@ cat > "$SCAN_DIR/zap.json" <<JSON
 JSON
 
 zap_import="$(scan_upload "$PROJECT_ID" ZAP_JSON "$SCAN_DIR/zap.json" "$TOKEN_A")" \
-  || fail "envio do relatório ZAP falhou"
+  || fail "the ZAP report upload failed"
 ZAP_ID="$(printf '%s' "$zap_import" | jq -r '.id')"
-[ "$(printf '%s' "$zap_import" | jq -r '.totalFindings')" = "2" ] || fail "o ZAP deveria render 2 achados"
-[ "$(printf '%s' "$zap_import" | jq -r '.matchedCount')" = "2" ] || fail "os dois alertas deveriam achar o ativo web"
-pass "importação $ZAP_ID criada: 2 achados, os dois com ativo"
+[ "$(printf '%s' "$zap_import" | jq -r '.totalFindings')" = "2" ] || fail "ZAP should yield 2 findings"
+[ "$(printf '%s' "$zap_import" | jq -r '.matchedCount')" = "2" ] || fail "both alerts should find the web asset"
+pass "import $ZAP_ID created: 2 findings, both with an asset"
 
 zap_confirmed="$(call POST "$API/api/v1/scan-imports/$ZAP_ID/confirm" "$TOKEN_A")" \
-  || fail "confirmação do ZAP falhou"
-[ "$(printf '%s' "$zap_confirmed" | jq -r '.importedCount')" = "2" ] || fail "o ZAP não criou 2 vulnerabilidades"
+  || fail "the ZAP confirmation failed"
+[ "$(printf '%s' "$zap_confirmed" | jq -r '.importedCount')" = "2" ] || fail "ZAP did not create 2 vulnerabilities"
 LOG4SHELL_ID="$(printf '%s' "$zap_confirmed" | jq -r '[.findings[] | select(.ruleId == "10038")][0].vulnerabilityId')"
-log4shell="$(call GET "$API/api/v1/vulnerabilities/$LOG4SHELL_ID" "$TOKEN_A")" || fail "leitura da vulnerabilidade falhou"
-# 7.53 não cabe em NUMERIC(3,1): o normalizador arredonda para 7.5 em vez de deixar o banco
-# recusar a linha inteira na confirmação.
-[ "$(printf '%s' "$log4shell" | jq -r '.cvssScore')" = "7.5" ] || fail "o CVSS do ZAP não foi normalizado para 7.5"
-# Um CVE por achado, e é o primeiro bem formado da lista que o ZAP mandou.
-[ "$(printf '%s' "$log4shell" | jq -r '.cve')" = "CVE-2021-44228" ] || fail "o CVE do ZAP não foi extraído"
-[ "$(printf '%s' "$log4shell" | jq -r '.severity')" = "HIGH" ] || fail "riskcode 3 deveria virar HIGH"
-pass "vulnerabilidade $LOG4SHELL_ID criada com CVSS 7.5, CVE-2021-44228 e severidade HIGH"
+log4shell="$(call GET "$API/api/v1/vulnerabilities/$LOG4SHELL_ID" "$TOKEN_A")" || fail "reading the vulnerability failed"
+# 7.53 does not fit in NUMERIC(3,1): the normaliser rounds to 7.5 instead of letting the
+# database refuse the whole row at confirmation.
+[ "$(printf '%s' "$log4shell" | jq -r '.cvssScore')" = "7.5" ] || fail "the ZAP CVSS was not normalised to 7.5"
+# One CVE per finding, and it is the first well-formed one in the list ZAP sent.
+[ "$(printf '%s' "$log4shell" | jq -r '.cve')" = "CVE-2021-44228" ] || fail "the ZAP CVE was not extracted"
+[ "$(printf '%s' "$log4shell" | jq -r '.severity')" = "HIGH" ] || fail "riskcode 3 should become HIGH"
+pass "vulnerability $LOG4SHELL_ID created with CVSS 7.5, CVE-2021-44228 and severity HIGH"
 
 zap_again="$(scan_upload "$PROJECT_ID" ZAP_JSON "$SCAN_DIR/zap.json" "$TOKEN_A")" \
-  || fail "segundo envio do relatório ZAP falhou"
+  || fail "the second ZAP report upload failed"
 ZAP_AGAIN_ID="$(printf '%s' "$zap_again" | jq -r '.id')"
 [ "$(printf '%s' "$zap_again" | jq -r '.duplicateCount')" = "2" ] \
-  || fail "a reimportação do ZAP não marcou todos os achados como duplicados"
-pass "reimportação do ZAP: 2 duplicados, 0 com ativo"
+  || fail "the ZAP re-import did not mark every finding as a duplicate"
+pass "ZAP re-import: 2 duplicates, 0 with an asset"
 
-# O descarte joga a proposta fora; as linhas de achado ficam, e o arquivo em disco some.
+# Discarding throws the proposal away; the finding rows stay, and the file on disk goes.
 code="$(status_of DELETE "$API/api/v1/scan-imports/$ZAP_AGAIN_ID" "$TOKEN_A")"
-[ "$code" = "204" ] || fail "descarte devolveu $code, esperado 204"
-discarded="$(call GET "$API/api/v1/scan-imports/$ZAP_AGAIN_ID" "$TOKEN_A")" || fail "prévia da descartada falhou"
-[ "$(printf '%s' "$discarded" | jq -r '.status')" = "DISCARDED" ] || fail "a importação não ficou DISCARDED"
+[ "$code" = "204" ] || fail "discarding returned $code, expected 204"
+discarded="$(call GET "$API/api/v1/scan-imports/$ZAP_AGAIN_ID" "$TOKEN_A")" || fail "the preview of the discarded import failed"
+[ "$(printf '%s' "$discarded" | jq -r '.status')" = "DISCARDED" ] || fail "the import did not become DISCARDED"
 [ "$(printf '%s' "$discarded" | jq '.findings | length')" = "2" ] \
-  || fail "o descarte apagou o que o relatório encontrou"
-pass "importação $ZAP_AGAIN_ID descartada, mantendo o que o relatório encontrou"
+  || fail "discarding deleted what the report found"
+pass "import $ZAP_AGAIN_ID discarded, keeping what the report found"
 
-# --- nuclei: um JSON por linha, e a linha que não é JSON é pulada -------------
+# --- nuclei: one JSON per line, and the line that is not JSON is skipped ------
 cat > "$SCAN_DIR/nuclei.jsonl" <<JSONL
 {"template-id":"springboot-actuators","info":{"name":"Spring Boot Actuator Exposure","description":"Actuator exposto sem autenticacao.","severity":"high","classification":{"cvss-score":8.6,"cve-id":["CVE-2023-1234"]}},"host":"$WEB_IDENTIFIER","matched-at":"$WEB_IDENTIFIER","timestamp":"2023-11-13T10:17:00Z"}
 nuclei: connection reset by peer while writing this line
@@ -645,71 +648,71 @@ nuclei: connection reset by peer while writing this line
 JSONL
 
 nuclei_import="$(scan_upload "$PROJECT_ID" NUCLEI_JSONL "$SCAN_DIR/nuclei.jsonl" "$TOKEN_A")" \
-  || fail "envio do relatório nuclei falhou"
+  || fail "the nuclei report upload failed"
 NUCLEI_ID="$(printf '%s' "$nuclei_import" | jq -r '.id')"
-# Três linhas no arquivo, duas viram achado: uma linha corrompida no meio do fluxo não pode
-# derrubar o relatório inteiro.
+# Three lines in the file, two become findings: a corrupted line in the middle of the stream
+# must not bring the whole report down.
 [ "$(printf '%s' "$nuclei_import" | jq -r '.totalFindings')" = "2" ] \
-  || fail "o nuclei deveria render 2 achados e pular a linha que não é JSON"
-[ "$(printf '%s' "$nuclei_import" | jq -r '.matchedCount')" = "2" ] || fail "os dois achados deveriam achar o ativo web"
-pass "importação $NUCLEI_ID criada: 2 achados, linha corrompida ignorada"
+  || fail "nuclei should yield 2 findings and skip the line that is not JSON"
+[ "$(printf '%s' "$nuclei_import" | jq -r '.matchedCount')" = "2" ] || fail "both findings should find the web asset"
+pass "import $NUCLEI_ID created: 2 findings, corrupted line ignored"
 
 nuclei_confirmed="$(call POST "$API/api/v1/scan-imports/$NUCLEI_ID/confirm" "$TOKEN_A")" \
-  || fail "confirmação do nuclei falhou"
-[ "$(printf '%s' "$nuclei_confirmed" | jq -r '.importedCount')" = "2" ] || fail "o nuclei não criou 2 vulnerabilidades"
-pass "confirmação do nuclei criou 2 vulnerabilidades"
+  || fail "the nuclei confirmation failed"
+[ "$(printf '%s' "$nuclei_confirmed" | jq -r '.importedCount')" = "2" ] || fail "nuclei did not create 2 vulnerabilities"
+pass "the nuclei confirmation created 2 vulnerabilities"
 
 nuclei_again="$(scan_upload "$PROJECT_ID" NUCLEI_JSONL "$SCAN_DIR/nuclei.jsonl" "$TOKEN_A")" \
-  || fail "segundo envio do relatório nuclei falhou"
+  || fail "the second nuclei report upload failed"
 NUCLEI_AGAIN_ID="$(printf '%s' "$nuclei_again" | jq -r '.id')"
 [ "$(printf '%s' "$nuclei_again" | jq -r '.duplicateCount')" = "2" ] \
-  || fail "a reimportação do nuclei não marcou todos os achados como duplicados"
+  || fail "the nuclei re-import did not mark every finding as a duplicate"
 code="$(status_of DELETE "$API/api/v1/scan-imports/$NUCLEI_AGAIN_ID" "$TOKEN_A")"
-[ "$code" = "204" ] || fail "descarte da reimportação do nuclei devolveu $code, esperado 204"
-pass "reimportação do nuclei: 2 duplicados, descartada em seguida"
+[ "$code" = "204" ] || fail "discarding the nuclei re-import returned $code, expected 204"
+pass "nuclei re-import: 2 duplicates, discarded afterwards"
 
-# --- o teto por arquivo -------------------------------------------------------
-# A importação é síncrona, e é esse teto que a mantém assim: acima dele o envio é recusado
-# antes de qualquer gravação, em vez de a requisição virar um trabalho de minutos.
+# --- the per-file ceiling -----------------------------------------------------
+# Import is synchronous, and it is this ceiling that keeps it so: above it the upload is
+# refused before anything is written, instead of the request becoming a job of minutes.
 awk -v host="$WEB_IDENTIFIER" 'BEGIN {
   for (i = 1; i <= 2001; i++)
     printf "{\"template-id\":\"limite-%d\",\"info\":{\"name\":\"Achado %d\",\"severity\":\"low\"},\"matched-at\":\"%s\",\"timestamp\":\"2026-01-01T00:00:00Z\"}\n", i, i, host
 }' > "$SCAN_DIR/nuclei-grande.jsonl"
 
-history_before="$(call GET "$API/api/v1/scan-imports?size=1" "$TOKEN_A")" || fail "histórico falhou"
+history_before="$(call GET "$API/api/v1/scan-imports?size=1" "$TOKEN_A")" || fail "history failed"
 HISTORY_BEFORE="$(printf '%s' "$history_before" | jq -r '.totalElements')"
 code="$(scan_upload_status "$PROJECT_ID" NUCLEI_JSONL "$SCAN_DIR/nuclei-grande.jsonl" "$TOKEN_A")"
-[ "$code" = "400" ] || fail "relatório acima do teto devolveu $code, esperado 400"
-history_after="$(call GET "$API/api/v1/scan-imports?size=1" "$TOKEN_A")" || fail "histórico falhou"
+[ "$code" = "400" ] || fail "a report above the ceiling returned $code, expected 400"
+history_after="$(call GET "$API/api/v1/scan-imports?size=1" "$TOKEN_A")" || fail "history failed"
 [ "$(printf '%s' "$history_after" | jq -r '.totalElements')" = "$HISTORY_BEFORE" ] \
-  || fail "o relatório recusado deixou uma importação no histórico"
-pass "relatório acima do teto é recusado sem deixar linha nenhuma"
+  || fail "the refused report left an import in the history"
+pass "a report above the ceiling is refused without leaving any row"
 
-# --- histórico ----------------------------------------------------------------
-history="$(call GET "$API/api/v1/scan-imports?size=50" "$TOKEN_A")" || fail "histórico falhou"
+# --- history ------------------------------------------------------------------
+history="$(call GET "$API/api/v1/scan-imports?size=50" "$TOKEN_A")" || fail "history failed"
 printf '%s' "$history" | jq -e ".content[] | select(.id == $NMAP_ID and .status == \"CONFIRMED\")" >/dev/null \
-  || fail "a importação confirmada não aparece no histórico"
+  || fail "the confirmed import does not appear in the history"
 printf '%s' "$history" | jq -e ".content[] | select(.id == $ZAP_AGAIN_ID and .status == \"DISCARDED\")" >/dev/null \
-  || fail "a importação descartada não aparece no histórico"
-# A listagem carrega os contadores e não os achados: uma página de vinte importações com todos
-# os achados de cada uma seriam milhares de linhas para desenhar seis números.
+  || fail "the discarded import does not appear in the history"
+# The listing carries the counters and not the findings: a page of twenty imports with all the
+# findings of each one would be thousands of rows to draw six numbers.
 printf '%s' "$history" | jq -e '.content[0] | has("findings")' >/dev/null \
-  && fail "o histórico está carregando os achados de cada importação"
-pass "histórico lista as importações com os contadores, sem os achados"
+  && fail "the history is loading the findings of each import"
+pass "the history lists the imports with the counters, without the findings"
 
-# --- isolamento entre empresas ------------------------------------------------
-# 404 e nunca 403, como no resto da API: um 403 confirmaria que o id existe.
+# --- isolation between companies ----------------------------------------------
+# 404 and never 403, like the rest of the API: a 403 would confirm that the id exists.
 for path in "/scan-imports/$NMAP_ID" "/scan-imports/$ZAP_ID"; do
   code="$(status_of GET "$API/api/v1$path" "$TOKEN_B")"
-  [ "$code" = "404" ] || fail "empresa B leu $path da empresa A (HTTP $code, esperado 404)"
+  [ "$code" = "404" ] || fail "company B read company A's $path (HTTP $code, expected 404)"
 done
 code="$(status_of DELETE "$API/api/v1/scan-imports/$NMAP_ID" "$TOKEN_B")"
-[ "$code" = "404" ] || fail "empresa B descartou importação da empresa A (HTTP $code, esperado 404)"
+[ "$code" = "404" ] || fail "company B discarded company A's import (HTTP $code, expected 404)"
 code="$(scan_upload_status "$PROJECT_ID" NMAP_XML "$SCAN_DIR/nmap.xml" "$TOKEN_B")"
-[ "$code" = "404" ] || fail "empresa B importou para um projeto da empresa A (HTTP $code, esperado 404)"
-history_b="$(call GET "$API/api/v1/scan-imports?size=50" "$TOKEN_B")" || fail "histórico da empresa B falhou"
+[ "$code" = "404" ] || fail "company B imported into a project of company A (HTTP $code, expected 404)"
+history_b="$(call GET "$API/api/v1/scan-imports?size=50" "$TOKEN_B")" || fail "company B history failed"
 printf '%s' "$history_b" | jq -e ".content[] | select(.id == $NMAP_ID)" >/dev/null \
-  && fail "o histórico da empresa B expôs uma importação da empresa A"
-pass "importações isoladas entre empresas, com 404"
+  && fail "company B's history exposed an import of company A"
+pass "imports isolated between companies, with 404"
 
-printf '\n\033[32mSmoke test concluído com sucesso.\033[0m\n'
+printf '\n\033[32mSmoke test completed successfully.\033[0m\n'

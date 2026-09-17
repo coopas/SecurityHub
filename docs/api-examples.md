@@ -1,43 +1,43 @@
-# Exemplos da API
+# API examples
 
-Referência prática de toda a API do SecurityHub, derivada do código (`backend/src/main/java/com/securityhub`).
-Cada endpoint traz método, caminho, quem pode chamar (matriz de `docs/permissions.md`), corpo da requisição quando houver
-e uma resposta realista.
+Practical reference for the whole SecurityHub API, derived from the code (`backend/src/main/java/com/securityhub`).
+Each endpoint gives the method, the path, who may call it (matrix in `docs/permissions.md`), the request body where
+there is one and a realistic response.
 
-Para executar as chamadas: `docs/http/securityhub.http` (REST Client / IntelliJ) e
-`docs/http/SecurityHub.postman_collection.json` (Postman). O contrato formal e navegável está no Swagger UI em
+To run the calls: `docs/http/securityhub.http` (REST Client / IntelliJ) and
+`docs/http/SecurityHub.postman_collection.json` (Postman). The formal, browsable contract is in the Swagger UI at
 `http://localhost:8080/swagger-ui.html`.
 
 ---
 
-## Convenções
+## Conventions
 
-| Item | Valor |
+| Item | Value |
 | --- | --- |
-| Prefixo | `/api/v1` (base local: `http://localhost:8080/api/v1`) |
-| Formato | JSON em camelCase, `Content-Type: application/json` |
-| Autenticação | `Authorization: Bearer <accessToken>` |
-| Datas | ISO-8601 em UTC (`2026-09-17T12:00:00Z`); `trend` usa datas civis `YYYY-MM-DD` |
-| Tenant | Nunca vai no corpo nem na query. Sai sempre do JWT (`companyId`) |
+| Prefix | `/api/v1` (local base: `http://localhost:8080/api/v1`) |
+| Format | camelCase JSON, `Content-Type: application/json` |
+| Authentication | `Authorization: Bearer <accessToken>` |
+| Dates | ISO-8601 in UTC (`2026-09-17T12:00:00Z`); `trend` uses civil dates `YYYY-MM-DD` |
+| Tenant | Never in the body or the query string. Always taken from the JWT (`companyId`) |
 
-### Campos nulos não aparecem
+### Null fields do not appear
 
-`spring.jackson.default-property-inclusion: non_null` (ver `application.yml`). Um campo nulo é **omitido** do
-payload, não serializado como `null`. Uma vulnerabilidade não resolvida simplesmente **não tem a chave
-`resolvedAt`**; um ativo sem `identifier` não tem a chave `identifier`; o `refreshToken` do login (V2, ainda
-não implementado) não aparece na resposta.
+`spring.jackson.default-property-inclusion: non_null` (see `application.yml`). A null field is **omitted** from the
+payload, not serialised as `null`. An unresolved vulnerability simply **has no `resolvedAt` key**; an asset without
+an `identifier` has no `identifier` key; the login `refreshToken` (V2, not implemented yet) does not appear in the
+response.
 
-A recíproca vale para campos primitivos: `overdue`, `editable`, `active`, `assetCount`, `vulnerabilityCount`,
-`expiresIn` e todos os contadores do dashboard são `boolean`/`long` primitivos e por isso estão **sempre**
-presentes, inclusive quando valem `false` ou `0`.
+The converse holds for primitive fields: `overdue`, `editable`, `active`, `assetCount`, `vulnerabilityCount`,
+`expiresIn` and every dashboard counter are primitive `boolean`/`long` and are therefore **always** present,
+including when they are `false` or `0`.
 
-No lado da requisição, `null` é significativo em um único lugar: `PATCH /vulnerabilities/{id}/assignee` com
-`{"userId": null}` é como se desatribui um item.
+On the request side, `null` is meaningful in exactly one place: `PATCH /vulnerabilities/{id}/assignee` with
+`{"userId": null}` is how an item is unassigned.
 
-### Envelope de listagem paginada
+### Paginated listing envelope
 
-Todas as listagens paginadas (`/projects`, `/assets`, `/vulnerabilities`, `/vulnerabilities/{id}/comments`,
-`/audit-logs`, `/scan-imports`) devolvem `PageResponse`:
+Every paginated listing (`/projects`, `/assets`, `/vulnerabilities`, `/vulnerabilities/{id}/comments`,
+`/audit-logs`, `/scan-imports`) returns a `PageResponse`:
 
 ```json
 {
@@ -50,23 +50,23 @@ Todas as listagens paginadas (`/projects`, `/assets`, `/vulnerabilities`, `/vuln
 }
 ```
 
-`sort` ecoa a ordenação **efetivamente aplicada** pelo servidor, já depois da sanitização — é por ele que se
-confere se o `sort` enviado foi aceito (veja a allowlist abaixo). Com múltiplas ordenações os pares vêm
-separados por `;`, por exemplo `"createdAt,asc;id,asc"`. Se a ordenação for vazia, a chave `sort` é omitida
-(regra `non_null`).
+`sort` echoes the ordering **actually applied** by the server, after sanitisation — it is what you check to see
+whether the `sort` you sent was accepted (see the allowlist below). With multiple orderings the pairs come
+separated by `;`, for example `"createdAt,asc;id,asc"`. If the ordering is empty, the `sort` key is omitted
+(`non_null` rule).
 
-Duas listagens **não** usam este envelope, de propósito:
+Two listings do **not** use this envelope, on purpose:
 
-- `GET /users` devolve um array puro: a lista é curta, limitada à empresa, e existe para preencher um seletor
-  de responsável.
-- `GET /dashboard/severity-distribution` e `GET /dashboard/status-distribution` devolvem arrays fixos de 4
-  elementos (um por valor do enum). Envolver um agregado de tamanho constante em `page`/`size`/`totalPages`
-  daria ao cliente cinco campos constantes e nenhuma ação possível. A deviation está registrada no javadoc de
+- `GET /users` returns a plain array: the list is short, limited to the company, and exists to populate an
+  assignee selector.
+- `GET /dashboard/severity-distribution` and `GET /dashboard/status-distribution` return fixed arrays of 4
+  elements (one per enum value). Wrapping a constant-size aggregate in `page`/`size`/`totalPages` would give the
+  client five constant fields and no possible action. The deviation is recorded in the javadoc of
   `SeverityDistributionResponse`.
 
-### Envelope de erro
+### Error envelope
 
-Toda falha — validação, autenticação, autorização, conflito, erro inesperado — responde `ApiError`:
+Every failure — validation, authentication, authorisation, conflict, unexpected error — answers with `ApiError`:
 
 ```json
 {
@@ -80,44 +80,44 @@ Toda falha — validação, autenticação, autorização, conflito, erro inespe
 }
 ```
 
-`fieldErrors` só existe em erros de validação; nos demais a chave é omitida. `traceId` casa com o header
-`X-Request-Id` da resposta e com a linha de log correspondente.
+`fieldErrors` exists only on validation errors; on the others the key is omitted. `traceId` matches the
+`X-Request-Id` response header and the corresponding log line.
 
-Valores possíveis de `code` (`ErrorCode`): `VALIDATION_ERROR`, `BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`,
+Possible values of `code` (`ErrorCode`): `VALIDATION_ERROR`, `BAD_REQUEST`, `UNAUTHORIZED`, `FORBIDDEN`,
 `NOT_FOUND`, `CONFLICT`, `PAYLOAD_TOO_LARGE`, `UNSUPPORTED_MEDIA_TYPE`, `INTERNAL_ERROR`.
 
-### Paginação e ordenação
+### Pagination and sorting
 
-| Parâmetro | Padrão | Observação |
+| Parameter | Default | Note |
 | --- | --- | --- |
-| `page` | `0` | Valores negativos são elevados a `0` |
-| `size` | `20` | Limitado ao intervalo `[1, 100]` (`PageableSupport.MAX_PAGE_SIZE`) |
-| `sort` | por módulo | `sort=campo,asc` ou `sort=campo,desc`; repetir o parâmetro para ordenar por mais de um campo |
+| `page` | `0` | Negative values are raised to `0` |
+| `size` | `20` | Clamped to the range `[1, 100]` (`PageableSupport.MAX_PAGE_SIZE`) |
+| `sort` | per module | `sort=field,asc` or `sort=field,desc`; repeat the parameter to sort by more than one field |
 
-**A allowlist de ordenação falha em silêncio, por design.** `PageableSupport.sanitize` descarta qualquer
-propriedade fora da lista do módulo; se sobrar nenhuma, aplica a ordenação padrão. Um `sort=passwordHash,asc`
-ou `sort=company.name,asc` não vira 400 nem 500 — vira a ordenação padrão. O motivo é que a propriedade
-enviada pelo cliente chega ao Spring Data como um caminho de atributo de entidade; aceitar qualquer string
-transformaria o parâmetro em um caminho arbitrário até associações não previstas. Como o descarte é
-silencioso, **confira a chave `sort` da resposta** para saber o que o servidor realmente usou.
+**The sort allowlist fails silently, by design.** `PageableSupport.sanitize` discards any property outside the
+module's list; if nothing is left, it applies the default ordering. A `sort=passwordHash,asc` or
+`sort=company.name,asc` does not become a 400 or a 500 — it becomes the default ordering. The reason is that the
+property sent by the client reaches Spring Data as an entity attribute path; accepting any string would turn the
+parameter into an arbitrary path into unintended associations. Because the discard is silent, **check the `sort`
+key of the response** to see what the server actually used.
 
-| Módulo | Propriedades ordenáveis | Ordenação padrão |
+| Module | Sortable properties | Default ordering |
 | --- | --- | --- |
-| Projetos | `name`, `status`, `createdAt`, `updatedAt` | `createdAt,desc` |
-| Ativos | `name`, `type`, `environment`, `criticality`, `createdAt`, `updatedAt` | `createdAt,desc` |
-| Vulnerabilidades | `title`, `severity`, `status`, `cvssScore`, `discoveredAt`, `dueDate`, `resolvedAt`, `createdAt`, `updatedAt` | `createdAt,desc` |
-| Comentários | `createdAt` | `createdAt,asc;id,asc` |
-| Auditoria | `createdAt`, `action`, `entityType` | `createdAt,desc` |
-| Importações | `createdAt`, `updatedAt`, `status`, `format`, `sizeBytes`, `totalFindings` | `createdAt,desc` |
-| Usuários | — (sem paginação e sem `sort`) | sempre `name,asc` |
+| Projects | `name`, `status`, `createdAt`, `updatedAt` | `createdAt,desc` |
+| Assets | `name`, `type`, `environment`, `criticality`, `createdAt`, `updatedAt` | `createdAt,desc` |
+| Vulnerabilities | `title`, `severity`, `status`, `cvssScore`, `discoveredAt`, `dueDate`, `resolvedAt`, `createdAt`, `updatedAt` | `createdAt,desc` |
+| Comments | `createdAt` | `createdAt,asc;id,asc` |
+| Audit trail | `createdAt`, `action`, `entityType` | `createdAt,desc` |
+| Imports | `createdAt`, `updatedAt`, `status`, `format`, `sizeBytes`, `totalFindings` | `createdAt,desc` |
+| Users | — (no pagination and no `sort`) | always `name,asc` |
 
-A ordenação ascendente dos comentários é deliberada: uma discussão se lê do mais antigo para o mais novo,
-ao contrário do resto da API. O `id` entra como desempate para que dois comentários gravados no mesmo
-microssegundo não alternem de página entre duas leituras.
+The ascending ordering of comments is deliberate: a discussion is read from oldest to newest, unlike the rest of
+the API. The `id` comes in as a tie-breaker so that two comments written in the same microsecond do not swap pages
+between two reads.
 
 ### Enums
 
-| Enum | Valores |
+| Enum | Values |
 | --- | --- |
 | `Role` | `ADMIN`, `ANALYST`, `DEVELOPER`, `VIEWER` |
 | `ProjectStatus` | `ACTIVE`, `ARCHIVED` |
@@ -131,28 +131,28 @@ microssegundo não alternem de página entre duas leituras.
 | `ScanFindingStatus` | `MATCHED`, `UNMATCHED`, `DUPLICATE`, `IMPORTED`, `SKIPPED` |
 | `AuditAction` | `LOGIN`, `LOGIN_FAILED`, `REGISTER`, `CREATE`, `UPDATE`, `DELETE`, `STATUS_CHANGE`, `ASSIGN`, `COMMENT`, `PASSWORD_RESET`, `USER_INVITED`, `USER_UPDATED`, `EXPORT`, `SCAN_IMPORT` |
 
-`Severity` e `Criticality` listam os mesmos quatro níveis mas são enums distintos: criticidade descreve o
-quanto um ativo importa, severidade o quanto um achado é grave.
+`Severity` and `Criticality` list the same four levels but are distinct enums: criticality describes how much an
+asset matters, severity how serious a finding is.
 
-Um valor de enum inválido em query ou corpo responde **400 `BAD_REQUEST`** ("Requisição malformada"), sem
-`fieldErrors`, porque a falha acontece na desserialização, antes da validação.
+An invalid enum value in a query string or a body answers **400 `BAD_REQUEST`** ("Requisição malformada"), with no
+`fieldErrors`, because the failure happens during deserialisation, before validation.
 
 ---
 
-## Autenticação
+## Authentication
 
-| Método | Endpoint | Acesso |
+| Method | Endpoint | Access |
 | --- | --- | --- |
-| POST | `/auth/register` | público |
-| POST | `/auth/login` | público |
-| GET | `/auth/me` | autenticado (qualquer papel) |
+| POST | `/auth/register` | public |
+| POST | `/auth/login` | public |
+| GET | `/auth/me` | authenticated (any role) |
 
 ### POST /auth/register
 
-Cria a empresa e o seu primeiro usuário, sempre com papel `ADMIN`. É o único caminho para criar uma empresa.
+Creates the company and its first user, always with the `ADMIN` role. It is the only way to create a company.
 
-Validações: `companyName` e `name` de 2 a 120 caracteres, `email` válido com até 180, `password` de **10 a
-100 caracteres**.
+Validation: `companyName` and `name` from 2 to 120 characters, a valid `email` of up to 180, `password` from **10
+to 100 characters**.
 
 ```http
 POST /api/v1/auth/register
@@ -185,13 +185,13 @@ Content-Type: application/json
 }
 ```
 
-Note o que **não** está ali: `refreshToken` é nulo no MVP (refresh é V2) e some pela regra `non_null`;
-`lastLoginAt` ainda não existe para um usuário recém-criado; `createdAt` do usuário aparece a partir da
-leitura em `/auth/me`. `expiresIn` é em segundos e reflete `securityhub.jwt.expiration-minutes` (60 por
-padrão).
+Note what is **not** there: `refreshToken` is null in the MVP (refresh is V2) and disappears through the
+`non_null` rule; `lastLoginAt` does not exist yet for a freshly created user; the user's `createdAt` appears from
+the `/auth/me` read onwards. `expiresIn` is in seconds and reflects `securityhub.jwt.expiration-minutes` (60 by
+default).
 
-O e-mail é único **globalmente**, não por empresa (ver `docs/adr/0004-global-email-uniqueness.md`), então um
-e-mail já usado em outra empresa responde `409 CONFLICT` com "E-mail já cadastrado".
+The e-mail is unique **globally**, not per company (see `docs/adr/0004-global-email-uniqueness.md`), so an e-mail
+already used in another company answers `409 CONFLICT` with "E-mail já cadastrado".
 
 ### POST /auth/login
 
@@ -205,7 +205,7 @@ Content-Type: application/json
 }
 ```
 
-`200 OK` — mesma forma do register, agora com `lastLoginAt` preenchido no próximo `/auth/me`.
+`200 OK` — same shape as register, now with `lastLoginAt` filled in on the next `/auth/me`.
 
 ```json
 {
@@ -224,9 +224,10 @@ Content-Type: application/json
 }
 ```
 
-Credencial errada, e-mail inexistente ou usuário desativado respondem todos o mesmo `401 UNAUTHORIZED` com
-"Credenciais inválidas". Quando o e-mail não existe o serviço ainda verifica a senha contra um hash descartável
-para que o tempo de resposta não diferencie os dois casos — o endpoint não serve para enumerar contas.
+Wrong credentials, a non-existent e-mail and a deactivated user all answer the same `401 UNAUTHORIZED` with
+"Credenciais inválidas". When the e-mail does not exist the service still checks the password against a throwaway
+hash so that the response time does not tell the two cases apart — the endpoint is not usable for enumerating
+accounts.
 
 ### GET /auth/me
 
@@ -253,12 +254,12 @@ Authorization: Bearer {{accessToken}}
 
 ---
 
-## Projetos
+## Projects
 
-| Método | Endpoint | Acesso |
+| Method | Endpoint | Access |
 | --- | --- | --- |
-| GET | `/projects` | qualquer papel autenticado |
-| GET | `/projects/{id}` | qualquer papel autenticado |
+| GET | `/projects` | any authenticated role |
+| GET | `/projects/{id}` | any authenticated role |
 | POST | `/projects` | `ADMIN` |
 | PUT | `/projects/{id}` | `ADMIN` |
 | DELETE | `/projects/{id}` | `ADMIN` |
@@ -267,11 +268,11 @@ Authorization: Bearer {{accessToken}}
 
 `GET /projects?page=&size=&sort=&search=&status=`
 
-| Parâmetro | Tipo | Efeito |
+| Parameter | Type | Effect |
 | --- | --- | --- |
-| `search` | texto | `contains` sem distinguir maiúsculas em `name` **ou** `description` |
-| `status` | `ProjectStatus` | igualdade exata |
-| `page`, `size`, `sort` | — | veja "Paginação e ordenação"; ordenáveis: `name`, `status`, `createdAt`, `updatedAt` |
+| `search` | text | case-insensitive `contains` on `name` **or** `description` |
+| `status` | `ProjectStatus` | exact equality |
+| `page`, `size`, `sort` | — | see "Pagination and sorting"; sortable: `name`, `status`, `createdAt`, `updatedAt` |
 
 ```http
 GET /api/v1/projects?page=0&size=20&sort=name,asc&search=portal&status=ACTIVE
@@ -302,13 +303,13 @@ Authorization: Bearer {{accessToken}}
 }
 ```
 
-`assetCount` vem de uma única query agrupada para a página inteira, não de uma coleção mapeada — por isso não
-há N+1 ao listar projetos. Um projeto sem descrição não traz a chave `description`.
+`assetCount` comes from a single grouped query for the whole page, not from a mapped collection — which is why
+there is no N+1 when listing projects. A project without a description does not carry the `description` key.
 
 ### POST /projects
 
-`status` é opcional na criação; ausente significa `ACTIVE`. `name` tem de 2 a 140 caracteres, `description`
-até 2000. Não há `companyId` no corpo, nem aqui nem em nenhum outro endpoint: o tenant sai do token.
+`status` is optional on creation; absent means `ACTIVE`. `name` is 2 to 140 characters, `description` up to 2000.
+There is no `companyId` in the body, neither here nor in any other endpoint: the tenant comes from the token.
 
 ```http
 POST /api/v1/projects
@@ -337,17 +338,18 @@ Content-Type: application/json
 }
 ```
 
-Nome repetido na mesma empresa (comparação sem distinguir maiúsculas) responde `409 CONFLICT`: "Já existe um
-projeto com esse nome nesta empresa".
+A repeated name in the same company (case-insensitive comparison) answers `409 CONFLICT`: "Já existe um projeto
+com esse nome nesta empresa".
 
 ### GET /projects/{id}
 
-`200 OK` com o mesmo objeto acima. Um id de outra empresa responde `404` — veja "Isolamento entre empresas".
+`200 OK` with the same object as above. An id from another company answers `404` — see "Isolation between
+companies".
 
 ### PUT /projects/{id}
 
-Substituição completa: `name` é obrigatório, `description` ausente **apaga** a descrição, e `status` ausente
-**preserva** o status atual (é o único campo cuja ausência não zera o valor).
+Full replacement: `name` is required, an absent `description` **clears** the description, and an absent `status`
+**preserves** the current status (it is the only field whose absence does not reset the value).
 
 ```http
 PUT /api/v1/projects/7
@@ -361,25 +363,25 @@ Content-Type: application/json
 }
 ```
 
-`200 OK` com o projeto atualizado (mesma forma do `POST`).
+`200 OK` with the updated project (same shape as the `POST`).
 
 ### DELETE /projects/{id}
 
-`204 No Content`, sem corpo.
+`204 No Content`, with no body.
 
-Um projeto que ainda tem ativos responde `409 CONFLICT` com a contagem na mensagem: "O projeto possui 3
-ativo(s) e não pode ser excluído". A regra do produto é não apagar filhos em cascata silenciosamente;
-a chave estrangeira não tem `ON DELETE CASCADE`, então a alternativa seria uma violação de integridade crua
-em vez de um conflito legível.
+A project that still has assets answers `409 CONFLICT` with the count in the message: "O projeto possui 3
+ativo(s) e não pode ser excluído". The product rule is not to delete children through a silent cascade; the
+foreign key has no `ON DELETE CASCADE`, so the alternative would be a raw integrity violation instead of a
+readable conflict.
 
 ---
 
-## Ativos
+## Assets
 
-| Método | Endpoint | Acesso |
+| Method | Endpoint | Access |
 | --- | --- | --- |
-| GET | `/assets` | qualquer papel autenticado |
-| GET | `/assets/{id}` | qualquer papel autenticado |
+| GET | `/assets` | any authenticated role |
+| GET | `/assets/{id}` | any authenticated role |
 | POST | `/assets` | `ADMIN` |
 | PUT | `/assets/{id}` | `ADMIN` |
 | DELETE | `/assets/{id}` | `ADMIN` |
@@ -388,14 +390,14 @@ em vez de um conflito legível.
 
 `GET /assets?page=&size=&sort=&search=&projectId=&type=&environment=&criticality=`
 
-| Parâmetro | Tipo | Efeito |
+| Parameter | Type | Effect |
 | --- | --- | --- |
-| `search` | texto | `contains` sem distinguir maiúsculas em `name`, `description` **ou** `identifier` |
-| `projectId` | `Long` | ativos de um projeto |
-| `type` | `AssetType` | igualdade exata |
-| `environment` | `Environment` | igualdade exata |
-| `criticality` | `Criticality` | igualdade exata |
-| `page`, `size`, `sort` | — | ordenáveis: `name`, `type`, `environment`, `criticality`, `createdAt`, `updatedAt` |
+| `search` | text | case-insensitive `contains` on `name`, `description` **or** `identifier` |
+| `projectId` | `Long` | assets of one project |
+| `type` | `AssetType` | exact equality |
+| `environment` | `Environment` | exact equality |
+| `criticality` | `Criticality` | exact equality |
+| `page`, `size`, `sort` | — | sortable: `name`, `type`, `environment`, `criticality`, `createdAt`, `updatedAt` |
 
 ```http
 GET /api/v1/assets?projectId=7&environment=PRODUCTION&criticality=CRITICAL&sort=criticality,desc
@@ -442,13 +444,13 @@ Authorization: Bearer {{accessToken}}
 }
 ```
 
-O segundo ativo mostra a regra `non_null` em ação: sem descrição e sem identificador, nenhuma das duas chaves
-aparece.
+The second asset shows the `non_null` rule in action: with no description and no identifier, neither key
+appears.
 
 ### POST /assets
 
-`projectId`, `name`, `type`, `environment` e `criticality` são obrigatórios. `identifier` é opcional (até 255
-caracteres) e uma string em branco é normalizada para ausente.
+`projectId`, `name`, `type`, `environment` and `criticality` are required. `identifier` is optional (up to 255
+characters) and a blank string is normalised to absent.
 
 ```http
 POST /api/v1/assets
@@ -466,62 +468,62 @@ Content-Type: application/json
 }
 ```
 
-`201 Created` com o objeto de ativo e `vulnerabilityCount: 0`.
+`201 Created` with the asset object and `vulnerabilityCount: 0`.
 
-Conflitos e erros específicos:
+Specific conflicts and errors:
 
-- Identificador repetido **no mesmo projeto** (sem distinguir maiúsculas): `409 CONFLICT` — "Já existe um ativo
-  com esse identificador neste projeto". Identificador ausente nunca conflita: vários ativos do mesmo projeto
-  podem não ter nenhum.
-- `projectId` de outra empresa ou inexistente: `404 NOT_FOUND` — "Projeto 999 não encontrado".
+- A repeated identifier **within the same project** (case-insensitively): `409 CONFLICT` — "Já existe um ativo
+  com esse identificador neste projeto". An absent identifier never conflicts: several assets of the same
+  project may have none.
+- A `projectId` from another company or a non-existent one: `404 NOT_FOUND` — "Projeto 999 não encontrado".
 
 ### PUT /assets/{id}
 
-Aceita mover o ativo para outro projeto **da mesma empresa** enviando outro `projectId`; a checagem de
-identificador único passa a rodar contra o projeto de destino. Um `projectId` de outra empresa é `404`.
+Accepts moving the asset to another project **of the same company** by sending a different `projectId`; the
+unique-identifier check then runs against the destination project. A `projectId` from another company is a `404`.
 
 ### DELETE /assets/{id}
 
-`204 No Content`. Um ativo com vulnerabilidades responde `409 CONFLICT`: "O ativo possui 4 vulnerabilidade(s)
-e não pode ser excluído".
+`204 No Content`. An asset with vulnerabilities answers `409 CONFLICT`: "O ativo possui 4 vulnerabilidade(s) e
+não pode ser excluído".
 
 ---
 
-## Vulnerabilidades
+## Vulnerabilities
 
-| Método | Endpoint | Acesso |
+| Method | Endpoint | Access |
 | --- | --- | --- |
-| GET | `/vulnerabilities` | qualquer papel autenticado |
-| GET | `/vulnerabilities/{id}` | qualquer papel autenticado |
+| GET | `/vulnerabilities` | any authenticated role |
+| GET | `/vulnerabilities/{id}` | any authenticated role |
 | POST | `/vulnerabilities` | `ADMIN`, `ANALYST` |
 | PUT | `/vulnerabilities/{id}` | `ADMIN`, `ANALYST` |
 | DELETE | `/vulnerabilities/{id}` | `ADMIN` |
-| PATCH | `/vulnerabilities/{id}/status` | `ADMIN`, `ANALYST`; `DEVELOPER` apenas em item atribuído a si |
+| PATCH | `/vulnerabilities/{id}/status` | `ADMIN`, `ANALYST`; `DEVELOPER` only on an item assigned to them |
 | PATCH | `/vulnerabilities/{id}/assignee` | `ADMIN`, `ANALYST` |
 
 ### GET /vulnerabilities
 
 `GET /vulnerabilities?page=&size=&sort=&search=&projectId=&assetId=&severity=&status=&assignedTo=&overdue=`
 
-| Parâmetro | Tipo | Efeito |
+| Parameter | Type | Effect |
 | --- | --- | --- |
-| `search` | texto | `contains` sem distinguir maiúsculas em `title`, `description` **ou** `cve` |
-| `projectId` | `Long` | alcança o projeto através do ativo (`asset.project.id`), não por coluna denormalizada |
-| `assetId` | `Long` | igualdade exata |
-| `severity` | `Severity` | igualdade exata |
-| `status` | `VulnerabilityStatus` | igualdade exata |
-| `assignedTo` | `Long` | id do responsável |
-| `overdue` | `boolean` | veja abaixo |
-| `page`, `size`, `sort` | — | ordenáveis: `title`, `severity`, `status`, `cvssScore`, `discoveredAt`, `dueDate`, `resolvedAt`, `createdAt`, `updatedAt` |
+| `search` | text | case-insensitive `contains` on `title`, `description` **or** `cve` |
+| `projectId` | `Long` | reaches the project through the asset (`asset.project.id`), not through a denormalised column |
+| `assetId` | `Long` | exact equality |
+| `severity` | `Severity` | exact equality |
+| `status` | `VulnerabilityStatus` | exact equality |
+| `assignedTo` | `Long` | assignee id |
+| `overdue` | `boolean` | see below |
+| `page`, `size`, `sort` | — | sortable: `title`, `severity`, `status`, `cvssScore`, `discoveredAt`, `dueDate`, `resolvedAt`, `createdAt`, `updatedAt` |
 
-**Definição de `overdue`**: `dueDate != null` **e** `dueDate < agora` **e** o status é `OPEN` ou `IN_PROGRESS`.
-Uma vulnerabilidade `RESOLVED` ou `ACCEPTED_RISK` nunca está atrasada, por mais antiga que seja a data. O campo
-`overdue` da resposta é calculado, nunca armazenado, e usa o mesmo instante para a página inteira — filtro e
-flag de cada linha são avaliados contra o mesmo "agora".
+**Definition of `overdue`**: `dueDate != null` **and** `dueDate < now` **and** the status is `OPEN` or
+`IN_PROGRESS`. A `RESOLVED` or `ACCEPTED_RISK` vulnerability is never overdue, however old the date is. The
+`overdue` field of the response is computed, never stored, and uses the same instant for the whole page — the
+filter and each row's flag are evaluated against the same "now".
 
-`overdue=false` devolve tudo que **não** está atrasado, incluindo as vulnerabilidades sem `dueDate`. Isso não é
-automático em SQL (`NULL < agora` é UNKNOWN), e por isso a negação é aplicada sobre a conjunção inteira em
-`VulnerabilitySpecifications`.
+`overdue=false` returns everything that is **not** overdue, including the vulnerabilities with no `dueDate`. That
+is not automatic in SQL (`NULL < now` is UNKNOWN), which is why the negation is applied over the whole
+conjunction in `VulnerabilitySpecifications`.
 
 ```http
 GET /api/v1/vulnerabilities?severity=CRITICAL&status=OPEN&overdue=true&sort=cvssScore,desc&size=5
@@ -561,25 +563,25 @@ Authorization: Bearer {{accessToken}}
 }
 ```
 
-Este achado ainda não foi resolvido nem atribuído: **não há chave `resolvedAt` nem chave `assignedTo`**. Já
-`overdue` é primitivo e aparece sempre.
+This finding has not been resolved or assigned yet: **there is no `resolvedAt` key and no `assignedTo` key**.
+`overdue`, being primitive, always appears.
 
-O painel "itens recentes" do dashboard é esta mesma listagem com
-`?page=0&size=5&sort=createdAt,desc` — não existe um quinto endpoint de dashboard para isso.
+The dashboard's "recent items" panel is this same listing with `?page=0&size=5&sort=createdAt,desc` — there is
+no fifth dashboard endpoint for it.
 
 ### POST /vulnerabilities
 
-Obrigatórios: `assetId`, `title` (3 a 200 caracteres) e `severity`. Opcionais: `description` (até 4000),
+Required: `assetId`, `title` (3 to 200 characters) and `severity`. Optional: `description` (up to 4000),
 `cvssScore`, `cve`, `discoveredAt`, `dueDate`, `assignedToId`.
 
-- `cvssScore`: `BigDecimal` entre `0.0` e `10.0`, no máximo uma casa decimal.
-- `cve`: aceita o padrão `CVE-AAAA-NNNN` (com quatro ou mais dígitos finais) **ou string vazia**. A string
-  vazia é aceita de propósito — um formulário reativo do Angular envia `""` para um campo opcional intocado — e
-  vira `null`; o resto é normalizado para maiúsculas.
-- `discoveredAt` ausente significa "descoberta agora", não a época zero.
-- **Não existe `status` no corpo.** Toda vulnerabilidade nasce `OPEN`, e status só muda por
-  `PATCH /status`. Aceitar `status` aqui transformaria o `PUT` — que a matriz reserva a ADMIN e ANALYST — em um
-  segundo caminho, menos guardado, para levar um achado a `RESOLVED`.
+- `cvssScore`: a `BigDecimal` between `0.0` and `10.0`, with at most one decimal place.
+- `cve`: accepts the pattern `CVE-YYYY-NNNN` (with four or more trailing digits) **or an empty string**. The
+  empty string is accepted on purpose — an Angular reactive form sends `""` for an untouched optional field —
+  and becomes `null`; the rest is normalised to upper case.
+- An absent `discoveredAt` means "discovered now", not the zero epoch.
+- **There is no `status` in the body.** Every vulnerability is born `OPEN`, and the status changes only through
+  `PATCH /status`. Accepting `status` here would turn the `PUT` — which the matrix reserves to ADMIN and
+  ANALYST — into a second, less guarded path for driving a finding to `RESOLVED`.
 
 ```http
 POST /api/v1/vulnerabilities
@@ -622,14 +624,14 @@ Content-Type: application/json
 }
 ```
 
-`assetId` de outra empresa: `404` ("Ativo 999 não encontrado"). `assignedToId` desconhecido, de outra empresa
-ou de um usuário desativado: `404` ("Usuário 999 não encontrado") — os três casos são indistinguíveis de
-propósito.
+An `assetId` from another company: `404` ("Ativo 999 não encontrado"). An unknown `assignedToId`, one from
+another company or one belonging to a deactivated user: `404` ("Usuário 999 não encontrado") — the three cases
+are indistinguishable on purpose.
 
 ### PUT /vulnerabilities/{id}
 
-Mesmo corpo do `POST`. Pode mover o achado para outro ativo da mesma empresa e pode alterar o responsável via
-`assignedToId` (ausente **desatribui**). Não toca em `status` nem em `resolvedAt`.
+Same body as the `POST`. It can move the finding to another asset of the same company and can change the
+assignee through `assignedToId` (absent **unassigns**). It touches neither `status` nor `resolvedAt`.
 
 ### PATCH /vulnerabilities/{id}/status
 
@@ -641,17 +643,17 @@ Content-Type: application/json
 { "status": "IN_PROGRESS" }
 ```
 
-`200 OK` com a vulnerabilidade completa.
+`200 OK` with the complete vulnerability.
 
-Regras:
+Rules:
 
-- `status` é obrigatório; ausente responde `400` com `fieldErrors: [{ "field": "status", "message": "é obrigatório" }]`.
-- Não há máquina de estados: **qualquer transição é aceita**, inclusive `RESOLVED → OPEN`.
-- Entrar em `RESOLVED` carimba `resolvedAt` com o instante atual; sair de `RESOLVED` limpa o carimbo. A mesma
-  equivalência é uma constraint `CHECK` na migração V5, então um bug aqui não consegue persistir.
-- Mudar para o status que o item já tem é um no-op: responde `200` e **não** grava linha de auditoria.
+- `status` is required; absent it answers `400` with `fieldErrors: [{ "field": "status", "message": "é obrigatório" }]`.
+- There is no state machine: **any transition is accepted**, including `RESOLVED → OPEN`.
+- Entering `RESOLVED` stamps `resolvedAt` with the current instant; leaving `RESOLVED` clears the stamp. The
+  same equivalence is a `CHECK` constraint in migration V5, so a bug here cannot persist.
+- Changing to the status the item already has is a no-op: it answers `200` and writes **no** audit row.
 
-Resposta após `{"status": "RESOLVED"}` — agora a chave `resolvedAt` existe e `overdue` voltou a `false`:
+Response after `{"status": "RESOLVED"}` — the `resolvedAt` key now exists and `overdue` is back to `false`:
 
 ```json
 {
@@ -691,40 +693,40 @@ Content-Type: application/json
 { "userId": 3 }
 ```
 
-`200 OK` com a vulnerabilidade, agora com o bloco `assignedTo` (um `UserSummary`: `id`, `name`, `email`,
+`200 OK` with the vulnerability, now carrying the `assignedTo` block (a `UserSummary`: `id`, `name`, `email`,
 `role`).
 
-`{"userId": null}` é uma requisição válida e **desatribui** o item — `userId` não é `@NotNull` justamente por
-isso. Depois disso a chave `assignedTo` some da resposta.
+`{"userId": null}` is a valid request and **unassigns** the item — `userId` is not `@NotNull` for exactly that
+reason. After that the `assignedTo` key disappears from the response.
 
-O responsável precisa ser um usuário **ativo** da mesma empresa; qualquer outro caso é `404`.
+The assignee has to be an **active** user of the same company; every other case is a `404`.
 
 ### DELETE /vulnerabilities/{id}
 
-`204 No Content`. Diferente de projetos e ativos, **os comentários são removidos junto** em vez de bloquear a
-exclusão: não existe endpoint que apague um comentário (§6), então um conflito aqui tornaria toda vulnerabilidade
-comentada permanentemente indeletável. Quantos comentários foram removidos vai para a trilha de auditoria
-(`commentCount` no `oldValue`), que é o que mantém a exclusão prestável de contas.
+`204 No Content`. Unlike projects and assets, **the comments are removed along with it** instead of blocking the
+deletion: there is no endpoint that deletes a comment (§6), so a conflict here would make every commented
+vulnerability permanently undeletable. How many comments were removed goes into the audit trail (`commentCount`
+in the `oldValue`), which is what keeps the deletion accountable.
 
 ---
 
-## Comentários
+## Comments
 
-Aninhados sob a vulnerabilidade, porque um comentário não tem significado próprio. **Não há endpoint de
-exclusão** no MVP.
+Nested under the vulnerability, because a comment has no meaning of its own. **There is no delete endpoint** in
+the MVP.
 
-| Método | Endpoint | Acesso |
+| Method | Endpoint | Access |
 | --- | --- | --- |
-| GET | `/vulnerabilities/{vulnerabilityId}/comments` | qualquer papel autenticado |
+| GET | `/vulnerabilities/{vulnerabilityId}/comments` | any authenticated role |
 | POST | `/vulnerabilities/{vulnerabilityId}/comments` | `ADMIN`, `ANALYST`, `DEVELOPER` |
-| PUT | `/vulnerabilities/{vulnerabilityId}/comments/{commentId}` | autor do comentário **ou** `ADMIN` |
+| PUT | `/vulnerabilities/{vulnerabilityId}/comments/{commentId}` | the comment's author **or** `ADMIN` |
 
-Em qualquer das três operações, a vulnerabilidade pai é carregada e validada contra a empresa do chamador
-antes de tudo: um pai de outro tenant é `404` antes que qualquer coisa possa observar que o comentário existe.
+In any of the three operations, the parent vulnerability is loaded and validated against the caller's company
+first: a parent from another tenant is a `404` before anything can observe that the comment exists.
 
 ### GET .../comments
 
-Aceita `page`, `size` e `sort` (única propriedade ordenável: `createdAt`; padrão `createdAt,asc;id,asc`).
+Accepts `page`, `size` and `sort` (the only sortable property is `createdAt`; default `createdAt,asc;id,asc`).
 
 ```http
 GET /api/v1/vulnerabilities/101/comments?page=0&size=20
@@ -759,15 +761,15 @@ Authorization: Bearer {{accessToken}}
 }
 ```
 
-`editable` espelha no servidor a regra que o servidor vai reaplicar na edição (autor ou ADMIN) — a UI usa esse
-campo para decidir se mostra o botão "editar", em vez de deduzir a regra por conta própria. Ele varia conforme
-quem está lendo: o mesmo comentário vem com `editable: true` para o autor e `editable: false` para um colega
-`ANALYST`.
+`editable` mirrors on the server the rule the server will reapply on the edit (author or ADMIN) — the UI uses
+that field to decide whether to show the "edit" button, instead of deducing the rule on its own. It varies with
+who is reading: the same comment comes with `editable: true` for the author and `editable: false` for an
+`ANALYST` colleague.
 
 ### POST .../comments
 
-O corpo carrega apenas o texto: a vulnerabilidade vem do caminho, o autor e a empresa vêm do principal.
-`content` é obrigatório e tem até 2000 caracteres.
+The body carries only the text: the vulnerability comes from the path, the author and the company come from the
+principal. `content` is required and goes up to 2000 characters.
 
 ```http
 POST /api/v1/vulnerabilities/101/comments
@@ -777,47 +779,47 @@ Content-Type: application/json
 { "content": "Correção iniciada; o parâmetro passa a usar bind." }
 ```
 
-`201 Created` com o objeto de comentário acima.
+`201 Created` with the comment object above.
 
-`VIEWER` recebe `403 FORBIDDEN` ("Acesso negado"): é estritamente somente leitura.
+A `VIEWER` gets `403 FORBIDDEN` ("Acesso negado"): the role is strictly read-only.
 
 ### PUT .../comments/{commentId}
 
-Mesmo corpo do `POST`, `200 OK` na resposta. Quem não é o autor nem `ADMIN` recebe `403 FORBIDDEN` com
-"Apenas o autor ou um administrador pode editar o comentário".
+Same body as the `POST`, `200 OK` in the response. Anyone who is neither the author nor an `ADMIN` gets
+`403 FORBIDDEN` with "Apenas o autor ou um administrador pode editar o comentário".
 
-A ordem importa: o pai e o comentário são carregados **antes** da checagem de autoria, então algo fora da
-empresa do chamador é `404` e o `403` só pode significar "isto existe aqui, mas não é seu".
+The order matters: the parent and the comment are loaded **before** the authorship check, so anything outside
+the caller's company is a `404` and the `403` can only mean "this exists here, but it is not yours".
 
-**A trilha de auditoria não guarda o texto do comentário**, apenas `contentLength`. `AuditSanitizer` mascara
-por nome de chave, não por valor, então uma credencial colada em um comentário cairia legível na trilha de
-todo ADMIN. Nada se perde: sem exclusão física, o texto está sempre disponível no próprio endpoint.
+**The audit trail does not store the comment text**, only `contentLength`. `AuditSanitizer` masks by key name,
+not by value, so a credential pasted into a comment would land readable in every ADMIN's trail. Nothing is lost:
+with no physical deletion, the text is always available from the endpoint itself.
 
 ---
 
-## Usuários
+## Users
 
-| Método | Endpoint | Acesso |
+| Method | Endpoint | Access |
 | --- | --- | --- |
 | GET | `/users` | `ADMIN`, `ANALYST` |
 
 `GET /users?role=&active=&search=`
 
-| Parâmetro | Tipo | Efeito |
+| Parameter | Type | Effect |
 | --- | --- | --- |
-| `role` | `Role` | igualdade exata |
-| `active` | `boolean` | igualdade exata |
-| `search` | texto | `contains` sem distinguir maiúsculas em `name` **ou** `email` |
+| `role` | `Role` | exact equality |
+| `active` | `boolean` | exact equality |
+| `search` | text | case-insensitive `contains` on `name` **or** `email` |
 
-Sem paginação e sem `sort`: sempre ordenado por `name` ascendente, sempre limitado à empresa do chamador.
-`ANALYST` está incluído porque atribuir uma vulnerabilidade exige escolher um usuário.
+No pagination and no `sort`: always ordered by `name` ascending, always limited to the caller's company.
+`ANALYST` is included because assigning a vulnerability requires choosing a user.
 
 ```http
 GET /api/v1/users?active=true&role=DEVELOPER
 Authorization: Bearer {{accessToken}}
 ```
 
-`200 OK` — array puro, sem envelope:
+`200 OK` — plain array, no envelope:
 
 ```json
 [
@@ -835,28 +837,28 @@ Authorization: Bearer {{accessToken}}
 ]
 ```
 
-Um usuário que nunca entrou não traz a chave `lastLoginAt`.
+A user who has never signed in does not carry the `lastLoginAt` key.
 
 ---
 
-## Auditoria
+## Audit trail
 
-| Método | Endpoint | Acesso |
+| Method | Endpoint | Access |
 | --- | --- | --- |
 | GET | `/audit-logs` | `ADMIN` |
 
-A trilha é somente leitura pela API: não existe endpoint que altere ou apague uma entrada.
+The trail is read-only through the API: there is no endpoint that changes or deletes an entry.
 
 `GET /audit-logs?page=&size=&sort=&entityType=&actorId=&action=&from=&to=`
 
-| Parâmetro | Tipo | Efeito |
+| Parameter | Type | Effect |
 | --- | --- | --- |
-| `entityType` | texto | igualdade exata; valores usados: `Company`, `User`, `Project`, `Asset`, `Vulnerability`, `Comment` |
-| `actorId` | `Long` | id de quem agiu |
-| `action` | `AuditAction` | igualdade exata |
+| `entityType` | text | exact equality; values in use: `Company`, `User`, `Project`, `Asset`, `Vulnerability`, `Comment` |
+| `actorId` | `Long` | id of whoever acted |
+| `action` | `AuditAction` | exact equality |
 | `from` | ISO-8601 | `createdAt >= from` |
 | `to` | ISO-8601 | `createdAt <= to` |
-| `page`, `size`, `sort` | — | ordenáveis: `createdAt`, `action`, `entityType`; padrão `createdAt,desc` |
+| `page`, `size`, `sort` | — | sortable: `createdAt`, `action`, `entityType`; default `createdAt,desc` |
 
 ```http
 GET /api/v1/audit-logs?entityType=Vulnerability&action=STATUS_CHANGE&from=2026-09-17T00:00:00Z&size=20
@@ -909,33 +911,33 @@ Authorization: Bearer {{accessToken}}
 }
 ```
 
-Detalhes que valem conhecer:
+Details worth knowing:
 
-- `oldValue` e `newValue` são mapas livres, gravados como texto para que a trilha preserve a forma que a
-  entidade tinha na época. Um `CREATE` não tem `oldValue`, um `DELETE` não tem `newValue` — e, pela regra
-  `non_null`, a chave correspondente some.
-- As chaves de `snapshot` variam por ação de propósito: um `STATUS_CHANGE` grava só `status` e `resolvedAt`,
-  um `ASSIGN` grava só `assignedToId` e `assignedToEmail`, um `CREATE`/`UPDATE` grava a linha inteira. Uma
-  mudança de status diz o que mudou, não a entidade toda de novo.
-- Campos cujo **nome** sugira credencial (`password`, `senha`, `hash`, `token`, `secret`, `credential`,
-  `authorization`, `apikey`, `otp`, `cvv`, ...) são substituídos por `"***"` antes de serializar.
-- `LOGIN_FAILED` é gravado em transação própria, então a tentativa fica registrada mesmo com a requisição
-  terminando em `401`.
-- `ipAddress` respeita `X-Forwarded-For` quando presente.
+- `oldValue` and `newValue` are free-form maps, stored as text so that the trail preserves the shape the entity
+  had at the time. A `CREATE` has no `oldValue`, a `DELETE` has no `newValue` — and, by the `non_null` rule, the
+  corresponding key disappears.
+- The `snapshot` keys vary by action on purpose: a `STATUS_CHANGE` records only `status` and `resolvedAt`, an
+  `ASSIGN` records only `assignedToId` and `assignedToEmail`, a `CREATE`/`UPDATE` records the whole row. A
+  status change says what changed, not the whole entity again.
+- Fields whose **name** suggests a credential (`password`, `senha`, `hash`, `token`, `secret`, `credential`,
+  `authorization`, `apikey`, `otp`, `cvv`, ...) are replaced by `"***"` before serialising.
+- `LOGIN_FAILED` is written in its own transaction, so the attempt is recorded even though the request ends in a
+  `401`.
+- `ipAddress` respects `X-Forwarded-For` when it is present.
 
 ---
 
 ## Dashboard
 
-Quatro endpoints; todos exigem apenas autenticação, porque a matriz de permissões dá "ver dashboard" aos quatro papéis.
-Todos escopados pela empresa do token.
+Four endpoints; they all require only authentication, because the permission matrix gives "view dashboard" to
+all four roles. All of them scoped by the company in the token.
 
-| Método | Endpoint | Acesso |
+| Method | Endpoint | Access |
 | --- | --- | --- |
-| GET | `/dashboard/summary` | qualquer papel autenticado |
-| GET | `/dashboard/severity-distribution` | qualquer papel autenticado |
-| GET | `/dashboard/status-distribution` | qualquer papel autenticado |
-| GET | `/dashboard/trend?days=30` | qualquer papel autenticado |
+| GET | `/dashboard/summary` | any authenticated role |
+| GET | `/dashboard/severity-distribution` | any authenticated role |
+| GET | `/dashboard/status-distribution` | any authenticated role |
+| GET | `/dashboard/trend?days=30` | any authenticated role |
 
 ### GET /dashboard/summary
 
@@ -955,19 +957,19 @@ Todos escopados pela empresa do token.
 }
 ```
 
-- `openVulnerabilities` **não** é uma contagem de status: é o balde "ainda acionável", `OPEN + IN_PROGRESS`.
-  O detalhamento por status pertence a `/status-distribution` — dois donos para o mesmo número é como eles
-  divergem.
-- `overdueVulnerabilities` usa exatamente o predicado de `GET /vulnerabilities?overdue=true`.
-- `topProjects` traz no máximo dez linhas, ordenadas por `total` desc e depois `projectName` asc; projetos sem
-  nenhum achado não aparecem. Uma empresa sem vulnerabilidades devolve `topProjects: []`.
-- Todos os contadores são primitivos e aparecem mesmo valendo `0`.
+- `openVulnerabilities` is **not** a status count: it is the "still actionable" bucket, `OPEN + IN_PROGRESS`.
+  The per-status breakdown belongs to `/status-distribution` — two owners for the same number is how they end up
+  disagreeing.
+- `overdueVulnerabilities` uses exactly the predicate of `GET /vulnerabilities?overdue=true`.
+- `topProjects` returns at most ten rows, ordered by `total` desc and then `projectName` asc; projects with no
+  findings do not appear. A company with no vulnerabilities returns `topProjects: []`.
+- Every counter is primitive and appears even when it is `0`.
 
 ### GET /dashboard/severity-distribution
 
-Array puro com as quatro severidades **sempre presentes**, na ordem de declaração do enum, inclusive as que
-valem zero — uma legenda de gráfico que ganha e perde entradas (e embaralha as cores) entre dois recarregamentos
-é pior que uma com zeros visíveis.
+A plain array with the four severities **always present**, in the enum's declaration order, including the ones
+that are zero — a chart legend that gains and loses entries (and shuffles the colours) between two reloads is
+worse than one with visible zeros.
 
 ```json
 [
@@ -980,7 +982,7 @@ valem zero — uma legenda de gráfico que ganha e perde entradas (e embaralha a
 
 ### GET /dashboard/status-distribution
 
-Mesma forma, com os quatro status:
+Same shape, with the four statuses:
 
 ```json
 [
@@ -993,16 +995,16 @@ Mesma forma, com os quatro status:
 
 ### GET /dashboard/trend
 
-`days` é opcional e vale `30` por padrão. O valor é **limitado em silêncio** ao intervalo `[1, 90]` — um
-controle de gráfico não pode abrir uma caixa de erro — e a resposta ecoa a janela efetivamente usada, que é o
-que mantém esse clamp visível em vez de escondido. `days=365` responde `200` com `days: 90`.
+`days` is optional and defaults to `30`. The value is **silently clamped** to the range `[1, 90]` — a chart
+control cannot open an error box — and the response echoes the window actually used, which is what keeps that
+clamp visible instead of hidden. `days=365` answers `200` with `days: 90`.
 
-A janela é `[hoje - (days - 1), hoje]` em UTC, ambos inclusivos, então `days=30` devolve exatamente 30 pontos,
-do mais antigo para o mais novo, com dias vazios presentes zerados.
+The window is `[today - (days - 1), today]` in UTC, both inclusive, so `days=30` returns exactly 30 points, from
+oldest to newest, with empty days present and zeroed.
 
-`opened` conta por `discoveredAt`, `resolved` por `resolvedAt`. Nenhuma das séries usa `createdAt`: em uma base
-semeada ou importada todas as linhas compartilham um `createdAt` e a tendência viraria um único pico que não
-diz nada sobre o backlog.
+`opened` counts by `discoveredAt`, `resolved` by `resolvedAt`. Neither series uses `createdAt`: in a seeded or
+imported database every row shares a `createdAt` and the trend would become a single spike that says nothing
+about the backlog.
 
 ```http
 GET /api/v1/dashboard/trend?days=7
@@ -1028,53 +1030,52 @@ Authorization: Bearer {{accessToken}}
 
 ---
 
-## Importação de scans
+## Scan import
 
-| Método | Endpoint | Acesso |
+| Method | Endpoint | Access |
 | --- | --- | --- |
 | POST | `/scan-imports` | `ADMIN`, `ANALYST` |
-| GET | `/scan-imports/{id}` | qualquer papel autenticado |
+| GET | `/scan-imports/{id}` | any authenticated role |
 | PATCH | `/scan-imports/{id}/findings/{findingId}` | `ADMIN`, `ANALYST` |
 | POST | `/scan-imports/{id}/confirm` | `ADMIN`, `ANALYST` |
 | DELETE | `/scan-imports/{id}` | `ADMIN`, `ANALYST` |
-| GET | `/scan-imports` | qualquer papel autenticado |
+| GET | `/scan-imports` | any authenticated role |
 
-O fluxo é **enviar, revisar, e então confirmar ou descartar**. O envio não cria nada: ele lê o
-relatório, procura para cada achado um ativo do projeto escolhido, marca os achados que a
-empresa já registrou e grava tudo isso como proposta. Só a confirmação cria vulnerabilidades, e
-só para os achados que ainda estejam com ativo naquele momento.
+The flow is **upload, review, then confirm or discard**. The upload creates nothing: it reads the report, looks
+for an asset of the chosen project for each finding, marks the findings the company has already recorded and
+stores all of that as a proposal. Only the confirmation creates vulnerabilities, and only for the findings that
+still have an asset at that moment.
 
-Três regras explicam quase todo o resto:
+Three rules explain almost everything else:
 
-- **Nenhum ativo é criado.** O alvo de um achado é comparado com o `identifier` dos ativos **do
-  projeto escolhido**, sem distinguir maiúsculas e ignorando espaços nas pontas. Sem
-  correspondência, o achado fica `UNMATCHED` e espera alguém dizer que ativo é aquele — inventar
-  um ativo a partir de um hostname encheria o inventário de linhas sem dono.
-- **Duplicado é ignorado e contado, nunca mesclado.** A impressão digital de um achado é
-  `sha256(scanner:ruleId:target:cve)` — severidade e CVSS ficam de fora de propósito, porque
-  mudam entre versões do scanner sem o achado ser outro. Um achado cuja impressão digital a
-  empresa já carrega vira `DUPLICATE` e é ignorado na confirmação: atualizar ou reabrir a
-  vulnerabilidade existente desfaria, em silêncio, o status, o responsável e a discussão que
-  alguém pôs ali.
-- **A importação é síncrona, com teto.** `securityhub.scan.max-findings` (padrão 2000) limita
-  quantos achados um arquivo pode encenar; acima disso o envio é recusado com 400 **antes de
-  qualquer gravação**, e não existe endpoint de status para consultar depois.
+- **No asset is created.** A finding's target is compared with the `identifier` of the assets **of the chosen
+  project**, case-insensitively and ignoring surrounding whitespace. With no match, the finding stays
+  `UNMATCHED` and waits for someone to say which asset it is — inventing an asset from a hostname would fill
+  the inventory with ownerless rows.
+- **A duplicate is skipped and counted, never merged.** A finding's fingerprint is
+  `sha256(scanner:ruleId:target:cve)` — severity and CVSS are left out on purpose, because they change between
+  scanner versions without the finding being a different one. A finding whose fingerprint the company already
+  carries becomes `DUPLICATE` and is skipped at confirmation: updating or reopening the existing vulnerability
+  would silently undo the status, the assignee and the discussion someone put there.
+- **Import is synchronous, with a ceiling.** `securityhub.scan.max-findings` (default 2000) limits how many
+  findings a file can stage; above that the upload is refused with a 400 **before anything is written**, and
+  there is no status endpoint to poll afterwards.
 
-O que cada formato lê:
+What each format reads:
 
-| `format` | Origem | O que vira achado | Alvo |
+| `format` | Source | What becomes a finding | Target |
 | --- | --- | --- | --- |
-| `NMAP_XML` | `nmap -oX` | **Apenas resultado de script NSE.** Uma porta aberta não é uma vulnerabilidade, e um banner de serviço também não | hostname do host quando o nmap resolveu um, senão o endereço (nunca o MAC) |
-| `ZAP_JSON` | relatório JSON do OWASP ZAP | um achado por **instância** de cada alerta; um alerta sem instâncias fica com o site | a `uri` da instância, inteira |
-| `NUCLEI_JSONL` | `nuclei -jsonl` | um achado por linha; uma linha que não é JSON é pulada e o resto do arquivo continua | `matched-at`, com `host` como reserva |
+| `NMAP_XML` | `nmap -oX` | **NSE script results only.** An open port is not a vulnerability, and neither is a service banner | the host's hostname when nmap resolved one, otherwise the address (never the MAC) |
+| `ZAP_JSON` | OWASP ZAP JSON report | one finding per **instance** of each alert; an alert with no instances keeps the site | the instance's `uri`, in full |
+| `NUCLEI_JSONL` | `nuclei -jsonl` | one finding per line; a line that is not JSON is skipped and the rest of the file continues | `matched-at`, with `host` as a fallback |
 
-O formato é **declarado por quem envia** e nunca deduzido dos bytes: os três são texto UTF-8, e
-adivinhar acertaria "isto é XML" sem acertar "isto é um relatório de nmap".
+The format is **declared by the uploader** and never inferred from the bytes: all three are UTF-8 text, and
+guessing would get "this is XML" right without getting "this is an nmap report" right.
 
 ### POST /scan-imports
 
-`multipart/form-data` com três partes: `file`, `projectId` e `format`. `projectId` e `format`
-são lidos como parâmetros de requisição, então também funcionam na query string.
+`multipart/form-data` with three parts: `file`, `projectId` and `format`. `projectId` and `format` are read as
+request parameters, so they also work in the query string.
 
 ```http
 POST /api/v1/scan-imports
@@ -1097,8 +1098,8 @@ Content-Type: application/xml
 ------exemplo--
 ```
 
-`201 Created` com a importação **e todos os seus achados** — o cliente acabou de enviar o
-arquivo e precisa mostrar a prévia, não fazer uma segunda chamada para buscá-la:
+`201 Created` with the import **and all of its findings** — the client has just uploaded the file and needs to
+show the preview, not make a second call to fetch it:
 
 ```json
 {
@@ -1158,44 +1159,42 @@ arquivo e precisa mostrar a prévia, não fazer uma segunda chamada para buscá-
 }
 ```
 
-Repare no que **não** está lá: o achado 42 não tem `assetId` nem `assetName` (a regra
-`non_null` tira a chave), nenhum achado tem `vulnerabilityId` enquanto a importação está
-pendente, e o achado 41 não tem `cvssScore` porque o nmap não dá nota — a severidade dele é
-derivada do texto do script (citar um CVE ou a palavra `VULNERABLE` é `HIGH`, o resto é
-`MEDIUM`; `CRITICAL` nunca é inventado). O nome do arquivo em disco nunca é exposto.
+Notice what is **not** there: finding 42 has no `assetId` and no `assetName` (the `non_null` rule removes the
+key), no finding has a `vulnerabilityId` while the import is pending, and finding 41 has no `cvssScore` because
+nmap does not give a score — its severity is derived from the script text (citing a CVE or the word `VULNERABLE`
+is `HIGH`, the rest is `MEDIUM`; `CRITICAL` is never invented). The file name on disk is never exposed.
 
-O achado 43 chegou como `DUPLICATE` mesmo tendo encontrado o ativo: duplicado vence sobre "com
-ativo", porque um duplicado com ativo continua sendo algo que a empresa já registrou.
+Finding 43 arrived as `DUPLICATE` even though it found the asset: duplicate wins over "matched", because a
+duplicate with an asset is still something the company has already recorded.
 
-Erros específicos:
+Specific errors:
 
-- Arquivo vazio, ou ilegível para o interpretador do formato escolhido: `400 BAD_REQUEST` —
-  "O relatório nmap enviado não é um XML válido".
-- Acima de `securityhub.scan.max-findings`: `400 BAD_REQUEST` — "O relatório contém 5120 achados
-  e o limite por importação é 2000; filtre o relatório no scanner (por severidade ou por host)
-  ou divida-o em arquivos menores e envie um de cada vez". Nada é gravado e nenhum arquivo fica
-  em disco.
-- Acima de `securityhub.scan.max-upload-bytes` (padrão 10 MiB): `413 PAYLOAD_TOO_LARGE`.
-- `format` fora do enum: `400 BAD_REQUEST`, na desserialização, antes de o serviço rodar.
-- `projectId` de outra empresa ou inexistente: `404 NOT_FOUND` — "Projeto 999 não encontrado".
-- Papel `DEVELOPER` ou `VIEWER`: `403 FORBIDDEN`.
+- An empty file, or one unreadable by the parser for the chosen format: `400 BAD_REQUEST` — "O relatório nmap
+  enviado não é um XML válido".
+- Above `securityhub.scan.max-findings`: `400 BAD_REQUEST` — "O relatório contém 5120 achados e o limite por
+  importação é 2000; filtre o relatório no scanner (por severidade ou por host) ou divida-o em arquivos menores
+  e envie um de cada vez". Nothing is written and no file stays on disk.
+- Above `securityhub.scan.max-upload-bytes` (default 10 MiB): `413 PAYLOAD_TOO_LARGE`.
+- A `format` outside the enum: `400 BAD_REQUEST`, during deserialisation, before the service runs.
+- A `projectId` from another company or a non-existent one: `404 NOT_FOUND` — "Projeto 999 não encontrado".
+- The `DEVELOPER` or `VIEWER` role: `403 FORBIDDEN`.
 
 ### GET /scan-imports/{id}
 
-A prévia: a mesma estrutura do envio, com os achados no estado em que estão agora. Os achados
-não são paginados — a quantidade já está limitada por `max-findings`, e paginar a tela de
-revisão pediria ao operador que mapeasse vinte de cada vez.
+The preview: the same structure as the upload, with the findings in the state they are in now. The findings are
+not paginated — their number is already capped by `max-findings`, and paginating the review screen would ask the
+operator to map twenty at a time.
 
 ```http
 GET /api/v1/scan-imports/12
 Authorization: Bearer {{accessToken}}
 ```
 
-Aberto a qualquer papel da empresa. Uma importação de outra empresa é `404`, nunca `403`.
+Open to any role in the company. An import from another company is a `404`, never a `403`.
 
 ### PATCH /scan-imports/{id}/findings/{findingId}
 
-Dá a um achado `UNMATCHED` o ativo que o alvo dele não resolveu sozinho.
+Gives an `UNMATCHED` finding the asset its target did not resolve on its own.
 
 ```http
 PATCH /api/v1/scan-imports/12/findings/42
@@ -1207,7 +1206,7 @@ Content-Type: application/json
 }
 ```
 
-`200 OK` com o achado atualizado — e só ele, porque é a única linha que mudou de estado:
+`200 OK` with the updated finding — and only it, because it is the only row that changed state:
 
 ```json
 {
@@ -1225,35 +1224,33 @@ Content-Type: application/json
 }
 ```
 
-Os contadores da importação são recalculados na mesma transação, então o próximo `GET` já traz
-`matchedCount` maior e `unmatchedCount` menor.
+The import counters are recomputed in the same transaction, so the next `GET` already carries a larger
+`matchedCount` and a smaller `unmatchedCount`.
 
-O ativo precisa ser **da empresa**, e não necessariamente do projeto da importação: uma
-varredura que reportou `10.0.0.11` pode ter acertado um ativo registrado em outro projeto do
-mesmo tenant, e recusar isso deixaria o operador com um achado que ele sabe de quem é e não
-consegue importar. (A tela oferece apenas os ativos do projeto da importação, que é o caso
-comum; a API aceita os demais.)
+The asset has to belong to **the company**, and not necessarily to the import's project: a scan that reported
+`10.0.0.11` may have hit an asset registered in another project of the same tenant, and refusing that would
+leave the operator with a finding they know the owner of and cannot import. (The screen offers only the assets
+of the import's project, which is the common case; the API accepts the others.)
 
-Erros específicos:
+Specific errors:
 
-- Achado que não é `UNMATCHED`: `409 CONFLICT` — "Somente um achado sem ativo pode ser mapeado;
-  este está MATCHED". Um achado já resolvido não tem o que mudar, e um `DUPLICATE` não seria
-  importado de todo jeito.
-- Importação já confirmada ou descartada: `409 CONFLICT`.
-- `assetId` de outra empresa ou inexistente: `404 NOT_FOUND` — "Ativo 999 não encontrado".
-- `findingId` que não pertence a esta importação: `404 NOT_FOUND`.
+- A finding that is not `UNMATCHED`: `409 CONFLICT` — "Somente um achado sem ativo pode ser mapeado; este está
+  MATCHED". A finding that is already resolved has nothing to change, and a `DUPLICATE` would not be imported
+  anyway.
+- An import that is already confirmed or discarded: `409 CONFLICT`.
+- An `assetId` from another company or a non-existent one: `404 NOT_FOUND` — "Ativo 999 não encontrado".
+- A `findingId` that does not belong to this import: `404 NOT_FOUND`.
 
 ### POST /scan-imports/{id}/confirm
 
-Cria uma vulnerabilidade por achado `MATCHED`, em um único lote, e encerra a importação. Sem
-corpo.
+Creates one vulnerability per `MATCHED` finding, in a single batch, and closes the import. No body.
 
 ```http
 POST /api/v1/scan-imports/12/confirm
 Authorization: Bearer {{accessToken}}
 ```
 
-`200 OK` com a importação já em `CONFIRMED`:
+`200 OK` with the import already in `CONFIRMED`:
 
 ```json
 {
@@ -1315,52 +1312,50 @@ Authorization: Bearer {{accessToken}}
 }
 ```
 
-**Os contadores viram outra coisa depois da confirmação**: as cinco situações são exclusivas,
-então `matchedCount` cai a zero e o que era `MATCHED` aparece em `importedCount`. Tudo que não
-era `MATCHED` — o que ninguém mapeou e o que a empresa já tinha — vira `SKIPPED`.
+**The counters mean something different after the confirmation**: the five statuses are mutually exclusive, so
+`matchedCount` drops to zero and what was `MATCHED` appears in `importedCount`. Everything that was not
+`MATCHED` — what nobody mapped and what the company already had — becomes `SKIPPED`.
 
-A duplicidade é verificada **de novo** aqui, e não reaproveitada do envio: uma importação
-encenada ontem pode ser confirmada depois de outra já ter criado o mesmo achado. Por isso um
-achado que estava `MATCHED` na prévia pode terminar `SKIPPED`.
+Duplication is checked **again** here, not reused from the upload: an import staged yesterday may be confirmed
+after another one has already created the same finding. That is why a finding that was `MATCHED` in the preview
+can end up `SKIPPED`.
 
-Cada vulnerabilidade criada nasce `OPEN`, sem responsável, com `createdBy` de quem confirmou,
-e carrega a impressão digital do achado — é ela que faz a próxima importação do mesmo relatório
-não criar nada.
+Every vulnerability created is born `OPEN`, with no assignee, with `createdBy` set to whoever confirmed, and it
+carries the finding's fingerprint — that is what makes the next import of the same report create nothing.
 
-Na trilha de auditoria isso aparece como **uma** entrada `SCAN_IMPORT` sobre `ScanImport`,
-carregando os contadores, o projeto, o formato e o nome do arquivo. Não há uma `CREATE` por
-vulnerabilidade: centenas de linhas idênticas enterrariam a trilha, e a rastreabilidade por
-achado está em `scan_findings.vulnerability_id`, que a prévia devolve como `vulnerabilityId`.
+In the audit trail this appears as **one** `SCAN_IMPORT` entry about `ScanImport`, carrying the counters, the
+project, the format and the file name. There is no `CREATE` per vulnerability: hundreds of identical rows would
+bury the trail, and per-finding traceability lives in `scan_findings.vulnerability_id`, which the preview
+returns as `vulnerabilityId`.
 
-Erros específicos:
+Specific errors:
 
-- Importação que não está `PENDING`: `409 CONFLICT` — "Não é possível confirmar uma importação
-  com status CONFIRMED; apenas importações pendentes podem ser alteradas". Uma segunda
-  confirmação **não** é um sucesso idempotente: a primeira criou linhas, e responder 200 diria a
-  um cliente que repetiu a chamada que ela também criou.
+- An import that is not `PENDING`: `409 CONFLICT` — "Não é possível confirmar uma importação com status
+  CONFIRMED; apenas importações pendentes podem ser alteradas". A second confirmation is **not** an idempotent
+  success: the first one created rows, and answering 200 would tell a client that repeated the call that it
+  created rows too.
 
 ### DELETE /scan-imports/{id}
 
-Descarta uma importação pendente. `204 No Content`.
+Discards a pending import. `204 No Content`.
 
 ```http
 DELETE /api/v1/scan-imports/12
 Authorization: Bearer {{accessToken}}
 ```
 
-Apesar do verbo, **nada é excluído do histórico**: a importação passa a `DISCARDED` e continua
-listada, com os achados que o relatório trouxe. O que some é o arquivo em disco, removido
-depois do commit — os contadores de uma importação descartada são como alguém responde, meses
-depois, "sim, varremos aquele host, e escolhemos não importar".
+Despite the verb, **nothing is deleted from the history**: the import moves to `DISCARDED` and stays listed,
+with the findings the report brought. What goes is the file on disk, removed after the commit — the counters of
+a discarded import are how someone answers, months later, "yes, we scanned that host, and we chose not to
+import".
 
-Uma importação confirmada responde `409 CONFLICT`: o arquivo dela sustenta vulnerabilidades que
-existem, e é o único desta funcionalidade que ganhou o direito de ficar.
+A confirmed import answers `409 CONFLICT`: its file backs vulnerabilities that exist, and it is the only one in
+this feature that has earned the right to stay.
 
 ### GET /scan-imports
 
-Histórico paginado da empresa, mais novo primeiro. **Sem os achados** — uma página de vinte
-importações carregando todos os achados de cada uma seriam milhares de linhas para desenhar
-seis números.
+The company's paginated history, newest first. **Without the findings** — a page of twenty imports carrying all
+the findings of each one would be thousands of rows to draw six numbers.
 
 ```http
 GET /api/v1/scan-imports?page=0&size=20&sort=createdAt,desc
@@ -1397,17 +1392,17 @@ Authorization: Bearer {{accessToken}}
 }
 ```
 
-`importedByName` é o nome de quem importou, nunca o id nem o e-mail. Os seis contadores são
-primitivos e por isso aparecem sempre, inclusive zerados.
+`importedByName` is the name of whoever imported, never the id or the e-mail. The six counters are primitive and
+therefore always appear, including when they are zero.
 
 ---
 
-## Passo a passo ponta a ponta
+## End-to-end walkthrough
 
-Este é o mesmo fluxo que `scripts/smoke-test.sh` executa contra uma pilha rodando, e o mesmo que
-`docs/http/securityhub.http` executa de cima para baixo. Os ids são os do exemplo; substitua pelos seus.
+This is the same flow `scripts/smoke-test.sh` runs against a running stack, and the same one
+`docs/http/securityhub.http` runs from top to bottom. The ids are the example's; substitute your own.
 
-### 1. Cadastro da empresa
+### 1. Company registration
 
 ```http
 POST /api/v1/auth/register
@@ -1421,7 +1416,7 @@ Content-Type: application/json
 }
 ```
 
-`201` — o primeiro usuário é sempre `ADMIN`. Guarde `user.id` (aqui: `12`); ele será o responsável no passo 5.
+`201` — the first user is always `ADMIN`. Keep `user.id` (here: `12`); it will be the assignee in step 5.
 
 ### 2. Login
 
@@ -1432,18 +1427,18 @@ Content-Type: application/json
 { "email": "admin@acme.test", "password": "uma-senha-suficientemente-longa" }
 ```
 
-`200` — guarde `accessToken`. Todas as chamadas seguintes levam `Authorization: Bearer <accessToken>`.
+`200` — keep the `accessToken`. Every following call carries `Authorization: Bearer <accessToken>`.
 
-### 3. Criar o projeto
+### 3. Create the project
 
 ```http
 POST /api/v1/projects
 { "name": "Projeto Acme", "description": "Criado no passo a passo" }
 ```
 
-`201` → `id: 7`. Sem `status` no corpo, o projeto nasce `ACTIVE` com `assetCount: 0`.
+`201` → `id: 7`. With no `status` in the body, the project is born `ACTIVE` with `assetCount: 0`.
 
-### 4. Criar o ativo
+### 4. Create the asset
 
 ```http
 POST /api/v1/assets
@@ -1459,7 +1454,7 @@ POST /api/v1/assets
 
 `201` → `id: 21`, `vulnerabilityCount: 0`.
 
-### 5. Criar a vulnerabilidade
+### 5. Create the vulnerability
 
 ```http
 POST /api/v1/vulnerabilities
@@ -1474,73 +1469,74 @@ POST /api/v1/vulnerabilities
 }
 ```
 
-`201` → `id: 101`, `status: "OPEN"`, sem `resolvedAt` e sem `assignedTo`.
+`201` → `id: 101`, `status: "OPEN"`, with no `resolvedAt` and no `assignedTo`.
 
-### 6. Atribuir
+### 6. Assign
 
 ```http
 PATCH /api/v1/vulnerabilities/101/assignee
 { "userId": 12 }
 ```
 
-`200` — a resposta ganha o bloco `assignedTo` com `id`, `name`, `email` e `role`.
+`200` — the response gains the `assignedTo` block with `id`, `name`, `email` and `role`.
 
-### 7. Mover para em andamento
+### 7. Move to in progress
 
 ```http
 PATCH /api/v1/vulnerabilities/101/status
 { "status": "IN_PROGRESS" }
 ```
 
-`200` — `status: "IN_PROGRESS"`; ainda sem `resolvedAt`.
+`200` — `status: "IN_PROGRESS"`; still no `resolvedAt`.
 
-### 8. Comentar
+### 8. Comment
 
 ```http
 POST /api/v1/vulnerabilities/101/comments
 { "content": "Correção iniciada; o parâmetro passa a usar bind." }
 ```
 
-`201` → `id: 55`, com `author` e `editable: true` (você é o autor).
+`201` → `id: 55`, with `author` and `editable: true` (you are the author).
 
-### 9. Resolver
+### 9. Resolve
 
 ```http
 PATCH /api/v1/vulnerabilities/101/status
 { "status": "RESOLVED" }
 ```
 
-`200` — agora a chave `resolvedAt` **aparece**, carimbada com o instante da transição, e `overdue` é `false`.
+`200` — the `resolvedAt` key now **appears**, stamped with the instant of the transition, and `overdue` is
+`false`.
 
-### 10. Ler a trilha de auditoria
+### 10. Read the audit trail
 
 ```http
 GET /api/v1/audit-logs?size=50
 ```
 
-`200` — a trilha já contém, do mais recente para o mais antigo: `STATUS_CHANGE` (para `RESOLVED`), `COMMENT`,
-`STATUS_CHANGE` (para `IN_PROGRESS`), `ASSIGN`, `CREATE` (Vulnerability), `CREATE` (Asset), `CREATE` (Project),
-`LOGIN` e `REGISTER`. Nenhum campo sensível aparece em claro.
+`200` — the trail already contains, from newest to oldest: `STATUS_CHANGE` (to `RESOLVED`), `COMMENT`,
+`STATUS_CHANGE` (to `IN_PROGRESS`), `ASSIGN`, `CREATE` (Vulnerability), `CREATE` (Asset), `CREATE` (Project),
+`LOGIN` and `REGISTER`. No sensitive field appears in the clear.
 
-### 11. Ler o dashboard
+### 11. Read the dashboard
 
 ```http
 GET /api/v1/dashboard/summary
 ```
 
 `200` — `totalProjects: 1`, `totalAssets: 1`, `totalVulnerabilities: 1`, `resolvedVulnerabilities: 1`,
-`openVulnerabilities: 0`, e `topProjects` com uma linha para "Projeto Acme".
+`openVulnerabilities: 0`, and `topProjects` with one row for "Projeto Acme".
 
-Os outros três endpoints do dashboard (`severity-distribution`, `status-distribution`, `trend?days=30`)
-respondem a partir dos mesmos dados.
+The other three dashboard endpoints (`severity-distribution`, `status-distribution`, `trend?days=30`) answer
+from the same data.
 
 ---
 
-## Erros que importam
+## Errors that matter
 
-### 401 — sem token, ou com token inválido/expirado
+### 401 — no token, or an invalid/expired one
 
-Qualquer endpoint fora da lista pública. Resposta do `RestAuthenticationEntryPoint`:
+Any endpoint outside the public list. Response from `RestAuthenticationEntryPoint`:
 
 ```http
 GET /api/v1/projects
@@ -1559,13 +1555,13 @@ GET /api/v1/projects
 }
 ```
 
-Um token assinado com outro segredo, expirado ou de um usuário desativado dá exatamente o mesmo corpo — a
-resposta não diz qual dos casos ocorreu. A mensagem "Credenciais inválidas" (também `401`) só aparece no
+A token signed with another secret, an expired one or one from a deactivated user gives exactly the same body —
+the response does not say which case occurred. The "Credenciais inválidas" message (also `401`) appears only on
 `POST /auth/login`.
 
-### 403 — autenticado, mas o papel não tem a permissão
+### 403 — authenticated, but the role does not have the permission
 
-Um `DEVELOPER` tentando criar um projeto (a matriz reserva projetos a `ADMIN`):
+A `DEVELOPER` trying to create a project (the matrix reserves projects to `ADMIN`):
 
 ```http
 POST /api/v1/projects
@@ -1587,15 +1583,15 @@ Authorization: Bearer <token de DEVELOPER>
 }
 ```
 
-Mesma resposta para `VIEWER` comentando, `ANALYST` excluindo uma vulnerabilidade, ou qualquer papel que não
-`ADMIN` consultando `/audit-logs`. A checagem vive no **serviço**, não só no controller, então um chamador que
-não passe por HTTP (agendador, importador) também esbarra nela.
+The same response for a `VIEWER` commenting, an `ANALYST` deleting a vulnerability, or any role other than
+`ADMIN` querying `/audit-logs`. The check lives in the **service**, not only in the controller, so a caller that
+does not go through HTTP (a scheduler, an importer) runs into it too.
 
-### 404 — recurso de outra empresa
+### 404 — a resource from another company
 
 ```http
 GET /api/v1/projects/7
-Authorization: Bearer <token da empresa B, projeto 7 é da empresa A>
+Authorization: Bearer <token of company B; project 7 belongs to company A>
 ```
 
 `404 Not Found`
@@ -1611,21 +1607,22 @@ Authorization: Bearer <token da empresa B, projeto 7 é da empresa A>
 }
 ```
 
-**Por que 404 e não 403.** Um `403` responderia "isto existe, mas não é seu" — e essa é exatamente a informação
-que um atacante quer. Varrendo `/projects/1`, `/projects/2`, ... ele mapearia quais ids estão ocupados no banco
-inteiro, quantos projetos o sistema tem e a que taxa nascem, sem nunca ver um único dado. A API viraria um
-oráculo de enumeração. Com `404`, um recurso de outra empresa é **indistinguível de um que não existe**, e a
-varredura não devolve nenhum bit.
+**Why 404 and not 403.** A `403` would answer "this exists, but it is not yours" — and that is exactly the
+information an attacker wants. By sweeping `/projects/1`, `/projects/2`, ... they would map which ids are taken
+across the whole database, how many projects the system has and at what rate they are created, without ever
+seeing a single piece of data. The API would become an enumeration oracle. With a `404`, a resource from another
+company is **indistinguishable from one that does not exist**, and the sweep returns no bits.
 
-Por isso a regra é uniforme: `require(...)` carrega a linha filtrando por `companyId` e lança `404`; nenhum
-serviço de domínio lança `403` por tenant. Vale para `GET`, `PUT`, `PATCH` e `DELETE`, e também para
-referências no corpo — um `projectId`, `assetId` ou `assignedToId` de outra empresa é `404`, não `403`.
+That is why the rule is uniform: `require(...)` loads the row filtering by `companyId` and throws `404`; no
+domain service throws `403` for a tenant. It holds for `GET`, `PUT`, `PATCH` and `DELETE`, and also for
+references in the body — a `projectId`, `assetId` or `assignedToId` from another company is a `404`, not a
+`403`.
 
-Consequência intencional: o `403` fica reservado a "você está no lugar certo, mas não pode fazer isso" — papel
-sem permissão, comentário de outra pessoa, achado atribuído a outro. Um `403` nunca confirma a existência de
-nada fora da sua empresa.
+Intended consequence: the `403` is reserved for "you are in the right place, but you cannot do this" — a role
+without permission, someone else's comment, a finding assigned to someone else. A `403` never confirms the
+existence of anything outside your company.
 
-### 409 — nome duplicado
+### 409 — duplicate name
 
 ```http
 POST /api/v1/projects
@@ -1645,10 +1642,10 @@ POST /api/v1/projects
 }
 ```
 
-Variantes: "Já existe um ativo com esse identificador neste projeto" (`POST`/`PUT /assets`) e "E-mail já
+Variants: "Já existe um ativo com esse identificador neste projeto" (`POST`/`PUT /assets`) and "E-mail já
 cadastrado" (`POST /auth/register`).
 
-### 409 — excluir um pai que ainda tem filhos
+### 409 — deleting a parent that still has children
 
 ```http
 DELETE /api/v1/projects/7
@@ -1667,11 +1664,11 @@ DELETE /api/v1/projects/7
 }
 ```
 
-E o equivalente para ativos: "O ativo possui 4 vulnerabilidade(s) e não pode ser excluído". Vulnerabilidade é
-a exceção deliberada da regra — seus comentários são apagados junto, porque não há endpoint que apague um
-comentário isoladamente.
+And the equivalent for assets: "O ativo possui 4 vulnerabilidade(s) e não pode ser excluído". A vulnerability is
+the deliberate exception to the rule — its comments are deleted along with it, because there is no endpoint that
+deletes a comment on its own.
 
-### 400 — validação com `fieldErrors`
+### 400 — validation with `fieldErrors`
 
 ```http
 POST /api/v1/vulnerabilities
@@ -1697,26 +1694,26 @@ POST /api/v1/vulnerabilities
 }
 ```
 
-Todos os campos inválidos vêm de uma vez; a ordem do array não é garantida. `message` é sempre "Dados
-inválidos" — a informação acionável está em `fieldErrors`.
+Every invalid field comes back at once; the order of the array is not guaranteed. `message` is always "Dados
+inválidos" — the actionable information is in `fieldErrors`.
 
-Não confunda com o outro `400`: JSON malformado, enum inválido (`"severity": "URGENTE"`) ou tipo incompatível
-na query (`?projectId=abc`) respondem `code: "BAD_REQUEST"`, `message: "Requisição malformada"` e **sem**
-`fieldErrors`, porque a falha acontece na desserialização, antes da validação rodar.
+Do not confuse it with the other `400`: malformed JSON, an invalid enum (`"severity": "URGENTE"`) or an
+incompatible type in the query string (`?projectId=abc`) answer `code: "BAD_REQUEST"`,
+`message: "Requisição malformada"` and **no** `fieldErrors`, because the failure happens during
+deserialisation, before validation runs.
 
 ---
 
-## A regra de propriedade do DEVELOPER
+## The DEVELOPER ownership rule
 
-A matriz de permissões dá ao `DEVELOPER` uma única permissão de escrita sobre vulnerabilidades: **alterar o status de um
-item atribuído a ele próprio** (além de comentar). Ele não cria, não edita, não exclui e não atribui.
+The permission matrix gives the `DEVELOPER` a single write permission over vulnerabilities: **changing the
+status of an item assigned to them** (besides commenting). They do not create, edit, delete or assign.
 
-A regra não cabe em uma anotação, porque depende da linha: `@PreAuthorize("hasAnyRole('ADMIN','ANALYST','DEVELOPER')")`
-é só o portão grosso que deixa o `DEVELOPER` entrar em `PATCH /status`; a checagem fina roda no corpo do
-método, depois de carregar a vulnerabilidade.
+The rule does not fit in an annotation, because it depends on the row:
+`@PreAuthorize("hasAnyRole('ADMIN','ANALYST','DEVELOPER')")` is only the coarse gate that lets the `DEVELOPER`
+into `PATCH /status`; the fine check runs in the method body, after loading the vulnerability.
 
-Como isso aparece — `DEVELOPER` tentando mexer num achado atribuído a outra pessoa (ou não atribuído a
-ninguém):
+How that looks — a `DEVELOPER` trying to touch a finding assigned to someone else (or to nobody):
 
 ```http
 PATCH /api/v1/vulnerabilities/101/status
@@ -1739,17 +1736,18 @@ Content-Type: application/json
 }
 ```
 
-Repare que a mensagem é **específica**, diferente do "Acesso negado" genérico do `403` por papel. Isso é
-seguro justamente porque a ordem das checagens garante que este `403` só pode ocorrer dentro da própria
-empresa: a vulnerabilidade é carregada com `findByIdAndCompanyId` **antes** da regra de propriedade, então um
-id de outro tenant já saiu como `404`. Se a checagem fosse feita com `@PostAuthorize`, o `403` apareceria
-também para itens de outra empresa e vazaria a existência deles.
+Note that the message is **specific**, unlike the generic "Acesso negado" of the role `403`. That is safe
+precisely because the order of the checks guarantees that this `403` can only occur inside your own company: the
+vulnerability is loaded with `findByIdAndCompanyId` **before** the ownership rule, so an id from another tenant
+has already come out as a `404`. If the check were done with `@PostAuthorize`, the `403` would appear for items
+from another company too and would leak their existence.
 
-Pontos finos:
+Fine points:
 
-- Um item **não atribuído** não é "de ninguém para todos": é de ninguém, e o `DEVELOPER` recebe o mesmo `403`.
-- `ADMIN` e `ANALYST` passam direto, sem a checagem de propriedade.
-- `VIEWER` nunca chega aqui: o `@PreAuthorize` o barra antes, com o "Acesso negado" genérico.
-- Estar atribuído **não** dá ao `DEVELOPER` acesso a `PUT /vulnerabilities/{id}` nem a `PATCH /assignee` —
-  esses continuam `403` para ele. É por isso que `status` não existe no corpo do `PUT`: se existisse,
-  `PUT` seria um segundo caminho para resolver um achado, com um guarda diferente.
+- An **unassigned** item is not "nobody's, so everybody's": it is nobody's, and the `DEVELOPER` gets the same
+  `403`.
+- `ADMIN` and `ANALYST` go straight through, with no ownership check.
+- A `VIEWER` never gets here: the `@PreAuthorize` blocks them first, with the generic "Acesso negado".
+- Being assigned does **not** give the `DEVELOPER` access to `PUT /vulnerabilities/{id}` or to
+  `PATCH /assignee` — those stay `403` for them. That is why `status` does not exist in the `PUT` body: if it
+  did, `PUT` would be a second path to resolving a finding, with a different guard.

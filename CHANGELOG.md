@@ -1,229 +1,231 @@
 # Changelog
 
-Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
-versionamento conforme [SemVer](https://semver.org/lang/pt-BR/).
+Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
+versioning follows [SemVer](https://semver.org/).
 
 ## [1.3.0] — 2026-09-17
 
-Redesenho da interface inteira, da tela de entrada às listagens, e tema escuro.
+Redesign of the whole interface, from the sign-in screen to the listings, and a dark theme.
 
-### Adicionado
+### Added
 
-- **Tema escuro**, com alternador na barra superior. Na primeira visita segue a preferência
-  do sistema; depois vale a escolha, guardada por navegador. O tema é aplicado antes do
-  primeiro quadro, para não piscar branco a cada visita de quem usa o escuro.
-- `scripts/capture-screenshots.sh` regera as imagens do README nos dois temas.
+- **Dark theme**, with a toggle in the top bar. On the first visit it follows the system
+  preference; after that the choice wins, stored per browser. The theme is applied before the
+  first frame, so it does not flash white on every visit for someone using dark mode.
+- `scripts/capture-screenshots.sh` regenerates the README images in both themes.
 
-### Alterado
+### Changed
 
-- Sistema de design próprio: cor, espaçamento, tipografia, forma, elevação e movimento
-  viraram tokens, e as telas pararam de repetir valor solto. Tipografia Plus Jakarta Sans,
-  com pilha de reserva para rede fechada.
-- A barra superior deixou de ser uma faixa cheia da cor da marca. Num painel, 64px de cor
-  forte no topo competem com o conteúdo, que é o produto.
-- Tela de entrada redesenhada em duas colunas, com painel de marca que recolhe em telas
-  estreitas. As cinco telas públicas compartilham a mesma casca — telas de credencial que
-  destoam entre si são o que um phishing imita.
-- Selos de severidade, situação e criticidade unificados num componente só, com ícone e
-  rótulo além da cor.
+- A design system of its own: colour, spacing, typography, shape, elevation and motion became
+  tokens, and the screens stopped repeating loose values. Plus Jakarta Sans typography, with a
+  fallback stack for a closed network.
+- The top bar is no longer a full band in the brand colour. On a dashboard, 64px of strong
+  colour at the top competes with the content, which is the product.
+- Sign-in screen redesigned in two columns, with a brand panel that collapses on narrow
+  screens. The five public screens share the same shell — credential screens that clash with
+  each other are what a phishing page imitates.
+- Severity, status and criticality badges unified into a single component, with an icon and a
+  label in addition to the colour.
 
-### Acessibilidade
+### Accessibility
 
-- Toda combinação de texto e fundo foi medida contra a WCAG antes de entrar. A medição
-  reprovou o verde da identidade com texto branco (3.77:1) e os selos de fundo translúcido,
-  que caíam a 3.90:1 sobre a linha realçada pelo cursor; ambos foram trocados.
-- As paletas do Material passaram a ser distintas por tema: o azul-cofre sobre a superfície
-  escura dava 1.2:1, e o botão principal praticamente sumia.
-- Alvos de toque de 44px, `prefers-reduced-motion` respeitado, e foco visível que deixou de
-  deformar o elemento que circunda.
+- Every text-and-background combination was measured against WCAG before going in. The
+  measurement failed the brand green with white text (3.77:1) and the translucent-background
+  badges, which dropped to 3.90:1 on the row highlighted by the cursor; both were replaced.
+- The Material palettes are now distinct per theme: the vault blue on the dark surface gave
+  1.2:1, and the primary button all but disappeared.
+- 44px touch targets, `prefers-reduced-motion` respected, and a visible focus ring that no
+  longer deforms the element it surrounds.
 
-### Corrigido
+### Fixed
 
-- Vulnerabilidade criada por importação não podia ser excluída: a linha de `scan_findings`
-  segurava a exclusão e o ativo e o projeto ficavam presos junto (migration `V10`).
-- Primeiro envio de relatório falhava em instalação nova, porque o diretório montado pelo
-  Compose nascia como root enquanto a aplicação roda como `securityhub`.
-- Achado sem CVSS imprimia "CVSS" sem número: a API omite o campo nulo em vez de enviá-lo.
-- Tabelas equivalentes dos gráficos, invisíveis, empurravam rolagem horizontal na área de
-  conteúdo.
-- A fileira de cartões do dashboard transbordava o contêiner entre 1160px e 1400px.
+- A vulnerability created by an import could not be deleted: the `scan_findings` row held the
+  deletion back and the asset and the project were stuck along with it (migration `V10`).
+- The first report upload failed on a fresh installation, because the directory mounted by
+  Compose was created as root while the application runs as `securityhub`.
+- A finding without CVSS printed "CVSS" with no number: the API omits the null field instead of
+  sending it.
+- The charts' equivalent tables, invisible, pushed horizontal scrolling into the content area.
+- The dashboard's row of cards overflowed its container between 1160px and 1400px.
 
 ## [1.2.0] — 2026-09-17
 
-Importação de relatórios de scanner, que era a última lacuna funcional registrada no README.
+Import of scanner reports, which was the last functional gap recorded in the README.
 
-### Adicionado
+### Added
 
-**Importação**
-- Leitura de relatórios do **Nmap (XML)**, **OWASP ZAP (JSON)** e **Nuclei (JSONL)**. Do Nmap
-  entram apenas os resultados de script NSE: uma porta aberta não é uma vulnerabilidade, e
-  importá-la encheria o backlog de ruído.
-- Revisão antes de gravar. O arquivo é lido uma vez e fica em estado pendente; a tela mostra
-  achado por achado com o ativo correspondente, e nada vira vulnerabilidade até alguém
-  confirmar.
-- Ligação do achado ao ativo pelo `identifier` do projeto, sem diferenciar maiúsculas e
-  ignorando espaços nas pontas. O que não casa fica para ser escolhido na tela — **nenhum
-  ativo é criado automaticamente.**
-- Deduplicação por impressão digital `sha256(scanner:ruleId:alvo:cve)`, garantida por índice
-  único parcial `(company_id, fingerprint)`. Severidade e CVSS ficam de fora de propósito:
-  mudam entre versões do scanner sem que o achado seja outro.
-- Histórico paginado das importações, com os contadores de cada uma.
-- Uma única linha de auditoria `SCAN_IMPORT` por importação confirmada, com o resumo. A
-  rastreabilidade por achado fica em `scan_findings`, que é o lugar certo para ela.
+**Import**
+- Reading of **Nmap (XML)**, **OWASP ZAP (JSON)** and **Nuclei (JSONL)** reports. From Nmap only
+  the NSE script results go in: an open port is not a vulnerability, and importing it would fill
+  the backlog with noise.
+- Review before writing. The file is read once and stays in a pending state; the screen shows
+  finding by finding with the matching asset, and nothing becomes a vulnerability until someone
+  confirms.
+- Linking a finding to an asset by the project's `identifier`, case-insensitively and ignoring
+  surrounding whitespace. Whatever does not match is left to be chosen on screen — **no asset is
+  created automatically.**
+- Deduplication by the `sha256(scanner:ruleId:target:cve)` fingerprint, guaranteed by the
+  partial unique index `(company_id, fingerprint)`. Severity and CVSS are left out on purpose:
+  they change between scanner versions without the finding being a different one.
+- Paginated import history, with the counters of each one.
+- A single `SCAN_IMPORT` audit row per confirmed import, with the summary. Per-finding
+  traceability stays in `scan_findings`, which is the right place for it.
 
-### Decisões
+### Decisions
 
-- **Reimportar o mesmo relatório não cria nada e não altera nada.** Um achado repetido é
-  contado e ignorado, nunca reaberto ou sobrescrito: quem mudou um status, assumiu um achado
-  ou escreveu um comentário não perde esse trabalho por causa de uma nova varredura.
-- **A importação é síncrona, com teto** (`securityhub.scan.max-findings`, 2000 por padrão).
-  Acima disso o arquivo é recusado com 400 antes de qualquer gravação. Um job assíncrono
-  resolveria um problema que este produto não tem.
-- Só uma importação pendente pode ser confirmada ou descartada. Descartar apaga o arquivo;
-  confirmar o mantém, porque ele é o documento por trás das vulnerabilidades criadas.
+- **Re-importing the same report creates nothing and changes nothing.** A repeated finding is
+  counted and ignored, never reopened or overwritten: someone who changed a status, took on a
+  finding or wrote a comment does not lose that work because of a new scan.
+- **Import is synchronous, with a ceiling** (`securityhub.scan.max-findings`, 2000 by default).
+  Above that the file is refused with a 400 before anything is written. An asynchronous job
+  would solve a problem this product does not have.
+- Only a pending import can be confirmed or discarded. Discarding deletes the file; confirming
+  keeps it, because it is the document behind the vulnerabilities that were created.
 
-### Segurança
+### Security
 
-- O parser de XML recusa DTD e entidades externas, o que fecha XXE no formato que o Nmap
-  emite com DOCTYPE. O teste afirma a recusa do documento, e não a ausência do conteúdo:
-  o JDK já bloqueia entidade em valor de atributo por conta própria, então um teste escrito
-  sobre atributos continuaria verde com a proteção removida.
-- Enviar, mapear, confirmar e descartar exigem ADMIN ou ANALISTA; o histórico e a revisão são
-  leitura para qualquer membro da empresa. Recurso de outra empresa continua respondendo 404.
+- The XML parser refuses DTDs and external entities, which closes XXE in the format Nmap emits
+  with a DOCTYPE. The test asserts that the document is refused, not that the content is absent:
+  the JDK already blocks entities in an attribute value on its own, so a test written over
+  attributes would stay green with the protection removed.
+- Uploading, mapping, confirming and discarding require ADMIN or ANALYST; the history and the
+  review are readable by any member of the company. A resource from another company still
+  answers 404.
 
 ## [1.1.0] — 2026-09-17
 
-Fecha as lacunas de identidade e acrescenta os entregáveis que faltavam.
+Closes the identity gaps and adds the deliverables that were missing.
 
-### Adicionado
+### Added
 
-**Sessão**
-- Refresh token rotativo, guardado apenas como digest, com revogação por família e detecção
-  de reuso. A interface renova a sessão e repete a requisição que falhou, em vez de mandar o
-  usuário de volta ao login no meio de uma tarefa.
-- `POST /auth/logout`, que revoga a família no servidor.
-- Recuperação de senha por link de uso único, com expiração, sem revelar se a conta existe.
+**Session**
+- Rotating refresh token, stored only as a digest, with family revocation and reuse detection.
+  The interface renews the session and repeats the failed request, instead of sending the user
+  back to the login screen in the middle of a task.
+- `POST /auth/logout`, which revokes the family on the server.
+- Password recovery through a single-use link, with expiry, without revealing whether the
+  account exists.
 
-**Usuários**
-- Convite por e-mail, com aceite que cria a conta e já devolve uma sessão.
-- Alteração de papel, alteração de nome e ativação/desativação, com as regras do último
-  administrador ativo e da autodesativação.
-- Tela de administração de usuários e de convites pendentes.
+**Users**
+- Invitation by e-mail, with an acceptance that creates the account and already returns a
+  session.
+- Role change, name change and activation/deactivation, with the last-active-administrator and
+  self-deactivation rules.
+- Administration screen for users and pending invitations.
 
-**Conteúdo**
-- Anexos em vulnerabilidades, com allowlist de tipo verificada pelos bytes, limite de
-  tamanho, nome em disco gerado e download como `attachment`.
-- Exportação da listagem de vulnerabilidades em CSV, com os mesmos filtros da tela.
-- Relatório executivo em PDF, com os números do dashboard.
+**Content**
+- Attachments on vulnerabilities, with a type allowlist verified from the bytes, a size limit, a
+  generated name on disk and download as `attachment`.
+- Export of the vulnerability listing as CSV, with the same filters as the screen.
+- Executive PDF report, with the dashboard figures.
 
-**Operação**
-- Métricas em `/actuator/prometheus` e log estruturado em JSON no profile de produção.
-- Testes E2E com Cypress nos fluxos críticos.
-- MailHog no Compose, para o fluxo de e-mail funcionar sem provedor externo.
+**Operations**
+- Metrics at `/actuator/prometheus` and structured JSON logging in the production profile.
+- E2E tests with Cypress on the critical flows.
+- MailHog in Compose, so the e-mail flow works without an external provider.
 
-### Corrigido
+### Fixed
 
-- **O botão de sair não revogava a sessão no servidor.** A chamada não era assinada, e um
-  observable frio não dispara: a sessão local ia embora enquanto a família de refresh token
-  continuava válida até expirar.
-- **`/actuator/metrics` era legível por qualquer papel autenticado**, inclusive o de leitura.
-  As métricas passaram a ser servidas numa porta de gerenciamento separada, publicada apenas
-  em loopback. O administrador aqui é o do cliente, não o operador da infraestrutura, e a
-  matriz de papéis não tem como expressar essa diferença.
-- O indicador de saúde do e-mail derrubava `/actuator/health` quando o SMTP estava fora,
-  contradizendo o fato de que o envio é deliberadamente tolerante a falha.
-- Em respostas binárias, o erro chegava ao usuário como mensagem genérica ao lado da
-  mensagem real, porque o corpo não podia ser lido como JSON pelo interceptor.
+- **The sign-out button did not revoke the session on the server.** The call was not subscribed,
+  and a cold observable does not fire: the local session went away while the refresh token
+  family stayed valid until it expired.
+- **`/actuator/metrics` was readable by any authenticated role**, including the read-only one.
+  Metrics are now served on a separate management port, published on loopback only. The
+  administrator here is the customer's, not the infrastructure operator, and the role matrix has
+  no way to express that difference.
+- The e-mail health indicator brought `/actuator/health` down when SMTP was unavailable,
+  contradicting the fact that sending is deliberately failure-tolerant.
+- On binary responses, the error reached the user as a generic message next to the real message,
+  because the body could not be read as JSON by the interceptor.
 
-### Segurança
+### Security
 
-- Material de credencial é guardado como SHA-256, e o banco recusa qualquer outra forma.
-- O tipo de um anexo é determinado pelos bytes; o tipo declarado pelo cliente é ignorado.
-- A exportação neutraliza fórmulas e sempre delimita as células, porque o prefixo sozinho
-  não impede que uma célula com vírgula parta a linha.
-- Nenhuma vulnerabilidade crítica nas dependências de produção.
+- Credential material is stored as SHA-256, and the database refuses any other form.
+- An attachment's type is determined from the bytes; the type declared by the client is ignored.
+- The export neutralises formulas and always quotes the cells, because the prefix alone does not
+  stop a cell containing a comma from breaking the row.
+- No critical vulnerabilities in the production dependencies.
 
-### Infraestrutura
+### Infrastructure
 
-- Todos os jobs de CI passaram a declarar tempo limite, e o navegador que o puppeteer baixa
-  é cacheado. Sem isso, uma instalação estolada ocupava um runner até o teto de seis horas.
+- Every CI job now declares a timeout, and the browser that puppeteer downloads is cached.
+  Without that, a stalled install occupied a runner up to the six-hour ceiling.
 
 [1.1.0]: https://github.com/coopas/SecurityHub/releases/tag/v1.1.0
 
 ## [1.0.0] — 2026-09-17
 
-Primeira versão publicável. Gestão multiempresa de ativos e vulnerabilidades de segurança,
-com autorização por papel, trilha de auditoria e dashboard.
+First publishable version. Multi-company management of security assets and vulnerabilities, with
+role authorisation, an audit trail and a dashboard.
 
-### Adicionado
+### Added
 
-**Autenticação e tenant**
-- Cadastro transacional de empresa com o primeiro administrador, e login com JWT assinado
-  em HS256 e senhas em BCrypt custo 12.
-- Filtro JWT que revalida assinatura, expiração, papel, empresa e situação do usuário a
-  cada requisição.
-- Isolamento por empresa em todos os repositórios: o `companyId` vem sempre do token, e
-  recurso de outra empresa responde 404, nunca 403.
-- Autorização por papel (ADMIN, ANALYST, DEVELOPER, VIEWER) aplicada em métodos de serviço.
+**Authentication and tenant**
+- Transactional registration of a company with its first administrator, and login with a JWT
+  signed with HS256 and passwords with BCrypt cost 12.
+- JWT filter that revalidates signature, expiry, role, company and user status on every request.
+- Per-company isolation in every repository: the `companyId` always comes from the token, and a
+  resource from another company answers 404, never 403.
+- Role authorisation (ADMIN, ANALYST, DEVELOPER, VIEWER) applied on service methods.
 
-**Domínio**
-- CRUD de projetos, ativos e vulnerabilidades com busca, filtros, ordenação e paginação
-  server-side, com allowlist de ordenação e limite de tamanho de página.
-- Atribuição de responsável restrita a usuário ativo da mesma empresa.
-- Transição de status com `resolvedAt` preenchido ao entrar em `RESOLVED` e limpo ao sair,
-  garantido também por constraint no banco.
-- Comentários em vulnerabilidades, com edição restrita ao autor ou a um administrador.
-- Exclusão de pai com filhos bloqueada com conflito legível, em vez de cascata silenciosa.
+**Domain**
+- CRUD for projects, assets and vulnerabilities with search, filters, sorting and server-side
+  pagination, with a sort allowlist and a page-size limit.
+- Assignment restricted to an active user of the same company.
+- Status transition with `resolvedAt` filled in on entering `RESOLVED` and cleared on leaving,
+  guaranteed by a database constraint as well.
+- Comments on vulnerabilities, with editing restricted to the author or an administrator.
+- Deletion of a parent that still has children blocked with a readable conflict, instead of a
+  silent cascade.
 
-**Auditoria**
-- Trilha append-only com ator, horário, entidade, valores antes e depois, e endereço de
-  origem, sanitizando campos sensíveis por nome de chave.
-- Consulta paginada com filtros, exclusiva de administradores.
+**Auditing**
+- Append-only trail with actor, time, entity, before and after values, and source address,
+  sanitising sensitive fields by key name.
+- Paginated query with filters, restricted to administrators.
 
 **Dashboard**
-- Resumo, distribuição por severidade e por status, e série temporal diária de achados
-  abertos e resolvidos, com três índices adicionados a partir de medição real.
+- Summary, distribution by severity and by status, and a daily time series of open and resolved
+  findings, with three indexes added from real measurement.
 
 **Interface**
-- Angular 16 com carregamento lazy por funcionalidade: login, registro, dashboard,
-  projetos, ativos, vulnerabilidades e auditoria, além das páginas 403 e 404.
-- Filtros refletidos na URL, estados de carregamento, vazio e erro em toda tela assíncrona,
-  confirmação antes de excluir, e severidade e status sempre com ícone e texto.
+- Angular 16 with lazy loading per feature: login, registration, dashboard, projects, assets,
+  vulnerabilities and auditing, plus the 403 and 404 pages.
+- Filters reflected in the URL, loading, empty and error states on every asynchronous screen,
+  confirmation before deleting, and severity and status always with an icon and text.
 
-**Infraestrutura e documentação**
-- Docker Compose com PostgreSQL 15, backend e frontend, todos com healthcheck.
-- Seed idempotente do perfil `demo` com duas empresas e um usuário por papel.
-- Arquitetura, DER, matriz de permissões, exemplos de API, análise de dependências, ADRs e
-  coleções `.http` e Postman.
-- Script de smoke test cobrindo o fluxo completo e o isolamento entre empresas.
+**Infrastructure and documentation**
+- Docker Compose with PostgreSQL 15, backend and frontend, all with healthchecks.
+- Idempotent seed for the `demo` profile with two companies and one user per role.
+- Architecture, ER diagram, permission matrix, API examples, dependency analysis, ADRs and
+  `.http` and Postman collections.
+- Smoke test script covering the full flow and the isolation between companies.
 
-### Corrigido
+### Fixed
 
-- **`recordIndependently` da auditoria não era independente.** Os métodos de
-  `AuditLogWriter` eram package-private, e o Spring só aplica `@Transactional` a métodos
-  públicos, então `REQUIRES_NEW` era silenciosamente ignorado. Como consequência, um login
-  que falhava não deixava rastro, e uma falha ao gravar a trilha derrubava a requisição do
-  chamador com 500.
-- **Filtros opcionais quebravam quando deixados em branco.** O PostgreSQL não infere o tipo
-  de um parâmetro nulo em `:param is null or ...`; os filtros passaram a ser montados com a
-  Criteria API.
-- **`overdue=false` omitia vulnerabilidades sem prazo.** Negar apenas a comparação de data
-  resulta em `UNKNOWN` no SQL; o predicado passou a ser negado como conjunção completa.
-- **A busca da listagem não reaplicava um termo idêntico** depois de limpar os filtros,
-  porque `distinctUntilChanged` guardava um valor que a rota já havia sobrescrito.
+- **The audit trail's `recordIndependently` was not independent.** The `AuditLogWriter` methods
+  were package-private, and Spring only applies `@Transactional` to public methods, so
+  `REQUIRES_NEW` was silently ignored. As a consequence, a failed login left no trace, and a
+  failure to write the trail brought the caller's request down with a 500.
+- **Optional filters broke when left blank.** PostgreSQL does not infer the type of a null
+  parameter in `:param is null or ...`; the filters are now built with the Criteria API.
+- **`overdue=false` omitted vulnerabilities without a due date.** Negating only the date
+  comparison results in `UNKNOWN` in SQL; the predicate is now negated as a complete
+  conjunction.
+- **The listing's search did not reapply an identical term** after clearing the filters, because
+  `distinctUntilChanged` held a value the route had already overwritten.
 
-### Segurança
+### Security
 
-- Driver PostgreSQL elevado de 42.3.8 para 42.7.7, acima da CVE-2024-1597 (CVSS 10.0). Não
-  era explorável nesta aplicação, que usa o modo de consulta estendido padrão.
-- Nenhuma vulnerabilidade crítica nas dependências de produção. As demais estão analisadas
-  e justificadas em `docs/security-dependencies.md`.
+- PostgreSQL driver raised from 42.3.8 to 42.7.7, above CVE-2024-1597 (CVSS 10.0). It was not
+  exploitable in this application, which uses the default extended query mode.
+- No critical vulnerabilities in the production dependencies. The remaining ones are analysed
+  and justified in `docs/security-dependencies.md`.
 
-### Limitações conhecidas
+### Known limitations
 
-- Sem refresh token, recuperação de senha ou gestão de usuários pela interface. O login
-  usa um access token de vida curta e os usuários são criados no cadastro da empresa.
-- `GET /users` e as distribuições do dashboard devolvem array puro em vez do envelope
-  paginado, por serem agregados de tamanho fixo. A decisão está registrada no código.
+- No refresh token, password recovery or user management in the interface. Login uses a
+  short-lived access token and users are created when the company registers.
+- `GET /users` and the dashboard distributions return a plain array instead of the paginated
+  envelope, because they are fixed-size aggregates. The decision is recorded in the code.
 
 [1.0.0]: https://github.com/coopas/SecurityHub/releases/tag/v1.0.0

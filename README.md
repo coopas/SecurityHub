@@ -1,67 +1,124 @@
-# SecurityHub
+<h1 align="center">SecurityHub</h1>
 
-Aplicação web para uma equipe de segurança acompanhar vulnerabilidades: você cadastra os
-projetos e os ativos da empresa, registra os achados, atribui um responsável e acompanha
-até a correção. Cada empresa enxerga apenas os próprios dados, cada papel tem permissões
-diferentes, e toda alteração relevante fica registrada numa trilha de auditoria.
+<p align="center">
+  A multi-tenant vulnerability management platform — scanner report import, triage and
+  remediation tracking, with an audit trail that does not leak secrets.
+</p>
 
-Foi construído como projeto de portfólio, então a ideia não era só fazer funcionar, mas
-tomar as decisões que um sistema desse tipo exige de verdade: isolamento entre clientes,
-autorização que não dependa da interface, e uma trilha que não vaze segredo.
+<p align="center">
+  <a href="https://github.com/coopas/SecurityHub/actions/workflows/ci.yml"><img src="https://github.com/coopas/SecurityHub/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
+</p>
 
-![Dashboard](docs/screenshots/dashboard.png)
+## Screenshots
 
-## O que dá para fazer
+| Dashboard | Vulnerabilities |
+| :-------: | :-------------: |
+| <img src="docs/screenshots/dashboard.png" alt="Dashboard with summary tiles, distribution and trend" width="420"> | <img src="docs/screenshots/vulnerabilities.png" alt="Vulnerability list with filters" width="420"> |
 
-Depois de registrar a empresa e o primeiro administrador, você organiza o trabalho em
-projetos, cadastra os ativos de cada um (uma API, um servidor, um site) e registra as
-vulnerabilidades encontradas, com severidade, CVSS, CVE e prazo.
+| Scan import | Audit trail |
+| :---------: | :---------: |
+| <img src="docs/screenshots/imports.png" alt="Scanner report import" width="420"> | <img src="docs/screenshots/audit.png" alt="Audit trail with before and after comparison" width="420"> |
 
-O fluxo do dia a dia é atribuir o achado a alguém, mudar o status conforme o trabalho
-anda, discutir nos comentários e resolver. Um desenvolvedor só consegue mexer no status
-do que está atribuído a ele; um analista mexe em qualquer um; um leitor não mexe em nada.
+| Sign in | Dark theme |
+| :-----: | :--------: |
+| <img src="docs/screenshots/login.png" alt="Sign-in screen" width="420"> | <img src="docs/screenshots/dashboard-dark.png" alt="Dashboard in the dark theme" width="420"> |
 
-Cada achado aceita anexos, para guardar a evidência junto do registro: um PDF de
-varredura, uma captura de tela, um log. A lista pode ser exportada em CSV com os mesmos
-filtros que estão na tela.
+The interface is in Portuguese. The layout works on desktop and tablet
+([the same dashboard at 834px](docs/screenshots/dashboard-tablet.png)).
 
-Relatório de scanner entra pela tela de importação: Nmap em XML, OWASP ZAP em JSON e
-Nuclei em JSONL. O arquivo é lido uma vez e fica pendente de revisão — a tela mostra cada
-achado com o ativo que ele casou pelo identificador, você escolhe à mão o que não casou, e
-só então confirma. Nada vira vulnerabilidade sem alguém confirmar, e nenhum ativo é criado
-sozinho. Reimportar o mesmo relatório não duplica nem reabre nada: o achado repetido é
-contado e ignorado, para que uma varredura nova não apague o status, o responsável ou o
-comentário que alguém colocou ali.
+## Features
 
-O dashboard resume a situação: quantas vulnerabilidades existem, quantas continuam
-abertas, quantas passaram do prazo, como se distribuem por severidade e status, e como
-isso evoluiu nos últimos 30 dias. Dali sai também um relatório executivo em PDF, com os
-mesmos números. A tela de auditoria mostra quem mudou o quê, quando, e qual era o valor
-antes.
+- Projects, assets and vulnerabilities, with severity, CVSS, CVE and due date
+- Scanner report import for **Nmap (XML)**, **OWASP ZAP (JSON)** and **Nuclei (JSONL)**,
+  reviewed before anything is written and deduplicated by fingerprint across re-imports
+- Assignment, status workflow and a comment thread per finding
+- File attachments, with the type decided by the bytes rather than by what the client declared
+- CSV export honouring the filters on screen, and an executive PDF report
+- Dashboard with counts, distribution by severity and status, and a 30-day trend
+- Audit trail recording who changed what, when, and what the value was before
+- Four roles — administrator, analyst, developer, reader — enforced in the service layer
+- Invitations by e-mail, password recovery, and sessions that renew without interrupting work
+- Light and dark theme, following the system setting until the user chooses
 
-Um administrador convida novas pessoas por e-mail, muda papéis e desativa contas. Quem
-esquece a senha se recupera por um link de uso único, e a sessão se renova sozinha sem
-derrubar quem está no meio de uma tarefa.
+## Tech stack
 
-| | |
+Java 11 with Spring Boot 2.7 on the backend, Angular 16 on the frontend, PostgreSQL 15 for
+storage. The versions are pinned deliberately — [ADR 0001](docs/adr/0001-stack-java-11-spring-boot-2-7.md)
+records why this stays on Java 11 and `javax.*` instead of moving to Spring Boot 3.
+
+| Technology | Used for |
 | --- | --- |
-| ![Vulnerabilidades](docs/screenshots/vulnerabilities.png) | ![Importações](docs/screenshots/imports.png) |
-| Lista de vulnerabilidades com filtros | Importação de relatórios de scanner |
-| ![Ativos](docs/screenshots/assets.png) | ![Auditoria](docs/screenshots/audit.png) |
-| Ativos por projeto, tipo e criticidade | Auditoria com comparação antes/depois |
-| ![Login](docs/screenshots/login.png) | ![Login no tema escuro](docs/screenshots/login-dark.png) |
-| Autenticação | A mesma tela no tema escuro |
+| Spring Security 5.7 | Authentication, and `@PreAuthorize` on service methods |
+| Spring Data JPA | Persistence, with the Criteria API for dynamic filters |
+| Flyway 9.22 | Schema migrations, never edited once applied |
+| Angular Material 16 | Component library, themed from the project's own palettes |
+| Chart.js | Dashboard distribution and trend charts |
+| Testcontainers | A real PostgreSQL 15 for every integration test |
+| JUnit 5, Mockito, Jasmine, Cypress | Unit, integration and end-to-end tests |
+| OpenPDF | The executive report |
+| Docker Compose | Running the whole stack locally |
 
-Tem tema claro e escuro, com alternador na barra superior. Quem nunca escolheu segue a
-preferência do sistema, e a escolha fica salva no navegador. O tema é pintado antes do
-primeiro quadro, então não há o lampejo branco a cada visita — que é justamente o que
-incomoda quem usa o escuro.
+## Security
 
-O layout funciona em desktop e tablet ([mesmo dashboard em 834px](docs/screenshots/dashboard-tablet.png)).
+**A resource belonging to another company answers 404, never 403.** A 403 would confirm that
+the record exists, which is enough to map a competitor's identifiers. The `companyId` always
+comes from the signed token, never from the request body or the query string, and it is
+revalidated against the user's row on every request.
 
-## Rodando
+**Authorization lives in the service layer, not in the controller and not in the screen.**
+Hiding a button in Angular is not access control. The negative tests call the API directly
+with the wrong role and expect 403. The developer's ownership rule needs the row loaded
+before it can be evaluated, so it sits in the method body after the company-scoped lookup,
+which is what keeps another company on 404 rather than 403.
 
-Precisa de Docker e Docker Compose v2.
+**The audit trail stores the length of a comment, not its text.** The sanitiser masks by
+field name, not by value. If someone pasted a credential into a comment, the text would reach
+the trail intact and be readable by every administrator.
+
+**Refresh tokens are opaque and stored only as a SHA-256 digest**, rotated per family, with
+reuse detection: presenting a token twice revokes the whole family. Passwords use BCrypt at
+cost 12.
+
+**Uploads are validated by content, not by claim.** The declared content type is ignored and
+the format is decided by magic number. CSV export neutralises formula injection and quotes
+every cell. The XML parser refuses DTDs and external entities, which closes XXE on the one
+format — Nmap — that ships a DOCTYPE.
+
+**Deduplication is a database guarantee, not only a service rule.** A finding is identified by
+`sha256(scanner:rule:target:cve)` under a partial unique index on `(company_id, fingerprint)`,
+so re-importing a report cannot undo a status, an assignee or a comment a human set.
+
+**What this does not do:** there is no SSO, no MFA, and no rate limiting on authentication
+beyond what a reverse proxy would provide. The demo seed ships a public password, documented
+below, meant to be changed or disabled before the stack is exposed.
+
+## Project structure
+
+```text
+backend/src/main/java/com/securityhub/
+├── asset/ attachment/ audit/ auth/     # one package per domain, each with its entity,
+├── comment/ company/ dashboard/        # repository, service, controller and DTOs
+├── invitation/ project/ report/
+├── scan/                               # scanner parsers and the import pipeline
+├── user/ vulnerability/
+├── security/                           # JWT, filters, the security filter chain
+├── config/ mail/ demo/
+└── shared/                             # error envelope, pagination, specifications
+
+frontend/src/app/
+├── core/                               # guards, interceptors, models, singleton services
+├── features/                           # one lazy module per screen group
+│   ├── assets/ audit/ auth/ dashboard/
+│   ├── errors/ imports/ projects/
+│   └── users/ vulnerabilities/
+├── layout/                             # authenticated shell: toolbar and sidenav
+└── shared/                             # reusable components and the Material imports
+```
+
+## Getting started
+
+Requires Docker and Docker Compose v2.
 
 ```bash
 git clone https://github.com/coopas/SecurityHub.git
@@ -71,168 +128,82 @@ sed -i "s|^SECURITYHUB_JWT_SECRET=.*|SECURITYHUB_JWT_SECRET=$(openssl rand -base
 docker compose up --build
 ```
 
-Na primeira vez o build demora alguns minutos, porque compila o backend e o frontend do
-zero. Depois disso:
+The first build takes a few minutes, because it compiles both the backend and the frontend.
 
 | | |
 | --- | --- |
-| Aplicação | http://localhost:8081 |
+| Application | http://localhost:8081 |
 | API | http://localhost:8080/api/v1 |
 | Swagger | http://localhost:8080/swagger-ui.html |
-| Caixa de entrada (MailHog) | http://localhost:8025 |
+| Mailbox (MailHog) | http://localhost:8025 |
 
-Para derrubar tudo e apagar os dados: `docker compose down -v`.
+To tear everything down and drop the data: `docker compose down -v`.
 
-### Entrando
+### Signing in
 
-O Compose sobe no perfil `demo`, que popula duas empresas com dados realistas. Todas as
-contas usam a senha `Demo@SecurityHub2026`:
+Compose starts with the `demo` profile, which seeds two companies with realistic data. Every
+account uses the password `Demo@SecurityHub2026`:
 
-| E-mail | Papel |
+| E-mail | Role |
 | --- | --- |
-| `admin@demo.test` | Administrador |
-| `analyst@demo.test` | Analista |
-| `developer@demo.test` | Desenvolvedor |
-| `viewer@demo.test` | Leitor |
+| `admin@demo.test` | Administrator |
+| `analyst@demo.test` | Analyst |
+| `developer@demo.test` | Developer |
+| `viewer@demo.test` | Reader |
 
-Entre com cada um para ver as permissões mudando. Existe também
-`admin@northwind.test`, de outra empresa: o dashboard dele é completamente diferente, o
-que é a forma mais rápida de ver o isolamento funcionando.
+Signing in as each one shows the permissions changing. There is also `admin@northwind.test`,
+from a different company: its dashboard is completely different, which is the quickest way to
+see the tenant isolation working.
 
-Para experimentar a recuperação de senha ou um convite, peça o link na tela e abra
-http://localhost:8025 — o compose sobe um MailHog, que é uma caixa de entrada local. Nada
-sai da sua máquina e não é preciso configurar provedor nenhum.
+That password is public on purpose, so the demo runs with no configuration. It protects
+synthetic data in a database you just created on your own machine. Before hosting this
+anywhere reachable, set `SECURITYHUB_DEMO_PASSWORD` in `.env` or disable the seed with
+`securityhub.demo.seed-enabled: false`. The JWT secret is never committed.
 
-Essa senha é pública de propósito, para a demo funcionar sem configuração. Ela protege
-dados sintéticos num banco que você acabou de criar na sua máquina. Se for hospedar isso
-em algum lugar acessível, defina `SECURITYHUB_DEMO_PASSWORD` no `.env` ou desligue o seed
-com `securityhub.demo.seed-enabled: false`. O segredo do JWT nunca é versionado.
-
-## Stack
-
-| | |
-| --- | --- |
-| Backend | Java 11, Spring Boot 2.7.18, Spring Security 5.7, Spring Data JPA |
-| Banco | PostgreSQL 15, migrations com Flyway |
-| Frontend | Angular 16 com TypeScript strict, Angular Material, RxJS |
-| Testes | JUnit 5, Mockito, Testcontainers, Jasmine/Karma |
-| Infra | Docker Compose |
-
-As versões são fixas de propósito. O projeto fica em Java 11 e `javax.*`, sem migrar para
-Spring Boot 3, e o motivo está em [`docs/adr/0001`](docs/adr/0001-stack-java-11-spring-boot-2-7.md).
-
-## Algumas decisões
-
-**Recurso de outra empresa responde 404, não 403.** Um 403 confirmaria que o registro
-existe, e isso basta para alguém mapear os ids de um concorrente. O `companyId` vem sempre
-do token assinado, nunca do corpo ou da query, e é revalidado contra a linha do usuário a
-cada requisição.
-
-**A autorização mora no serviço, não no controller nem na tela.** Esconder um botão no
-Angular não é controle de acesso. Os testes negativos chamam a API direto com o papel
-errado e esperam 403. A regra de posse do desenvolvedor precisa da linha carregada para
-ser avaliada, então ela fica no corpo do método, depois da busca que já é escopada por
-empresa, para que outra empresa continue recebendo 404.
-
-**A auditoria guarda o tamanho do comentário, não o texto.** O sanitizador mascara por
-nome de campo, não por valor. Se alguém colar uma credencial num comentário, o texto iria
-íntegro para a trilha e ficaria legível para todo administrador.
-
-**Filtros são montados com a Criteria API.** A forma comum, `:param is null or coluna =
-:param`, quebra no PostgreSQL quando o filtro chega vazio, porque ele não infere o tipo de
-um parâmetro nulo nessa posição.
-
-**As cores foram medidas, não escolhidas no olho.** Cada par de texto e fundo passou por um
-verificador de contraste antes de entrar. Isso reprovou escolhas que pareciam boas: o verde
-da identidade dá 3.77:1 com texto branco, abaixo do mínimo de 4.5, então ele só preenche e
-um tom mais fechado carrega texto. Os selos de severidade usam fundo opaco porque tinta
-translúcida soma com o realce da linha sob o cursor — "média sobre média" caía para 3.90 ao
-passar o mouse. Severidade e status nunca dependem só da cor: levam ícone e rótulo, já que
-cerca de 8% dos homens não distinguem vermelho de verde, e severidade é exatamente a
-informação que não pode se perder aí.
-
-**Reimportar um relatório não pode desfazer trabalho humano.** O achado repetido é
-reconhecido por `sha256(scanner:regra:alvo:cve)` e ignorado. Severidade e CVSS ficam de fora
-do hash de propósito: mudam quando o scanner é atualizado, e o achado continua sendo o
-mesmo. A garantia é um índice único parcial `(company_id, fingerprint)`, não só a regra no
-serviço — e ela é reconferida na confirmação, porque entre enviar e confirmar outra
-importação pode ter criado o mesmo achado.
-
-**Vulnerabilidade não guarda `project_id`.** Um ativo pode ser movido de projeto, então a
-coluna ficaria desatualizada. O projeto é lido pelo ativo, e a listagem já faz esse join
-para mostrar o nome.
-
-Mais contexto em [`docs/architecture.md`](docs/architecture.md) e nos
-[ADRs](docs/adr/).
-
-## Testes
+## Development
 
 ```bash
-cd backend  && ./mvnw verify      # 518 testes
-cd frontend && npm ci && npm run lint && npm run test:ci && npm run build   # 477 testes
-./scripts/smoke-test.sh           # fluxo completo, com a aplicação no ar
+cd backend  && ./mvnw verify                                                # 518 tests
+cd frontend && npm ci && npm run lint && npm run test:ci && npm run build   # 477 tests
+cd frontend && npm run e2e:ci                                               # 21 end-to-end
+./scripts/smoke-test.sh                                                     # full stack
 ```
 
-Os testes de integração sobem um PostgreSQL 15 de verdade via Testcontainers, então
-precisam de um Docker acessível. Nenhum teste usa H2: um banco em memória com dialeto
-diferente não provaria que as constraints e os índices parciais funcionam.
+These same commands run in CI on every push and pull request to `main`.
 
-O `smoke-test.sh` percorre o caminho inteiro contra a pilha rodando, incluindo cadastro,
-login, o fluxo de correção, a auditoria e uma verificação de que uma empresa não alcança
-os dados da outra.
+Integration tests start a real PostgreSQL 15 through Testcontainers, so a reachable Docker is
+required. No test uses H2: an in-memory database with a different dialect would not prove that
+the constraints and the partial indexes work. If `./mvnw test` reports that it could not find
+a Docker environment, your user is probably not in the `docker` group; on engines older than
+25.0, run with `-Ddocker.api.version=1.41`
+([why](docs/adr/0005-pin-docker-api-version-for-testcontainers.md)).
 
-As imagens deste README são refeitas por `./scripts/capture-screenshots.sh`, com a pilha no
-ar. Ele não roda na CI nem conta como teste: existe para que as capturas possam ser
-regeradas por um comando, nos dois temas, em vez de alguém precisar lembrar quais telas
-fotografar e em que largura.
+`scripts/capture-screenshots.sh` regenerates the images in this README against the running
+stack, in both themes. It is not a test and stays out of the end-to-end spec pattern.
 
-Se `./mvnw test` reclamar que não encontrou um ambiente Docker, provavelmente seu usuário
-não está no grupo `docker`. Em engines anteriores à 25.0, rode com
-`-Ddocker.api.version=1.41` ([o motivo](docs/adr/0005-pin-docker-api-version-for-testcontainers.md)).
+## Roadmap
 
-## Rodando sem Docker
+- corporate SSO and MFA
+- scanner formats beyond Nmap, ZAP and Nuclei, each of which needs its own parser
+- asynchronous import, so reports above the current 2,000-finding ceiling can be accepted
+- a paginated envelope for the user list and the dashboard distributions, which today return a
+  plain array because they are fixed-size aggregates
 
-Precisa de JDK 11, Node 18 (veja `frontend/.nvmrc`) e um PostgreSQL 15.
+## Contributing
 
-```bash
-cd backend
-export SECURITYHUB_JWT_SECRET=$(openssl rand -base64 48)
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+Contributions are welcome. To propose a change:
 
-cd frontend
-npm ci && npm start     # porta 4200, com proxy para o backend
-```
+1. fork the repository and create a branch for your feature or fix
+2. run the backend and frontend checks listed under [Development](#development)
+3. open a pull request describing what changed and why
 
-O Flyway cria o schema na primeira execução contra um banco vazio. As variáveis `DB_HOST`,
-`DB_PORT`, `DB_NAME`, `DB_USER` e `DB_PASSWORD` têm padrões de desenvolvimento.
+Please keep changes small and consistent with the existing architecture, and add a new
+migration rather than editing one that has already been applied.
 
-## Documentação
+## Author
 
-| | |
-| --- | --- |
-| [`docs/architecture.md`](docs/architecture.md) | Camadas, isolamento entre empresas, auditoria |
-| [`docs/data-model.md`](docs/data-model.md) | Diagrama e as decisões de modelagem |
-| [`docs/permissions.md`](docs/permissions.md) | Matriz de permissões e onde cada regra é aplicada |
-| [`docs/api-examples.md`](docs/api-examples.md) | Requisições e respostas de toda a API |
-| [`docs/security-dependencies.md`](docs/security-dependencies.md) | Análise de dependências |
-| [`docs/http/`](docs/http/) | Coleções `.http` e Postman |
+- [coopas](https://github.com/coopas)
 
-## O que ainda não tem
+## License
 
-Não há SSO corporativo nem aplicativo móvel. A importação de scanner cobre Nmap, ZAP e
-Nuclei; outros formatos exigem um parser novo.
-
-A importação é síncrona e recusa relatórios acima de 2000 achados, o que é bastante para
-uma varredura comum e pouco para um inventário inteiro. Acima disso o arquivo é rejeitado
-antes de qualquer gravação, em vez de a tela ficar pendurada.
-
-A listagem de usuários e as distribuições do dashboard devolvem um array simples em vez
-do envelope paginado, porque são agregados de tamanho fixo. A decisão está registrada no
-código.
-
-O [`CHANGELOG.md`](CHANGELOG.md) lista o que entrou em cada versão e as limitações
-conhecidas.
-
-## Licença
-
-MIT, veja [`LICENSE`](LICENSE).
+Released under the MIT License. See [LICENSE](LICENSE) for details.

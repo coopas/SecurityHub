@@ -1,21 +1,21 @@
-### SecurityHub — coleção de requisições
-### Compatível com o REST Client do VS Code e com o cliente HTTP do IntelliJ.
-### Nenhum segredo aqui: o token é capturado da resposta de login em tempo de execução.
+### SecurityHub — request collection
+### Compatible with the VS Code REST Client and with the IntelliJ HTTP client.
+### No secrets here: the token is captured from the login response at run time.
 ###
-### O arquivo é um fluxo: executado de cima para baixo contra uma pilha com o perfil `demo`
-### (docker compose up), cada bloco alimenta o seguinte através das variáveis capturadas.
-### A seção 12 reúne os casos negativos e a 13 desfaz o que foi criado.
-### Resposta detalhada de cada endpoint: docs/api-examples.md
+### The file is a flow: run top to bottom against a stack with the `demo` profile
+### (docker compose up), each block feeds the next through the captured variables.
+### Section 12 gathers the negative cases and section 13 undoes what was created.
+### Detailed response for each endpoint: docs/api-examples.md
 
 @baseUrl = http://localhost:8080/api/v1
 @demoEmail = admin@demo.test
 @demoPassword = Demo@SecurityHub2026
 
 ############################################################
-### 1. Autenticação
+### 1. Authentication
 ############################################################
 
-### 1.1 Cadastro de uma nova empresa com o primeiro administrador
+### 1.1 Registration of a new company with its first administrator
 # @name register
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
@@ -27,7 +27,7 @@ Content-Type: application/json
   "password": "uma-senha-suficientemente-longa"
 }
 
-### 1.2 Login — guarda o access token para as chamadas seguintes
+### 1.2 Login — stores the access token for the following calls
 # @name login
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
@@ -40,11 +40,11 @@ Content-Type: application/json
 @token = {{login.response.body.accessToken}}
 @userId = {{login.response.body.user.id}}
 
-### 1.3 Usuário autenticado
+### 1.3 Authenticated user
 GET {{baseUrl}}/auth/me
 Authorization: Bearer {{token}}
 
-### 1.4 Login como DEVELOPER — usado nos casos de 403 da seção 11
+### 1.4 Login as DEVELOPER — used in the 403 cases of section 11
 # @name loginDeveloper
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
@@ -56,7 +56,7 @@ Content-Type: application/json
 
 @devToken = {{loginDeveloper.response.body.accessToken}}
 
-### 1.5 Login como VIEWER — papel estritamente somente leitura
+### 1.5 Login as VIEWER — a strictly read-only role
 # @name loginViewer
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
@@ -68,7 +68,7 @@ Content-Type: application/json
 
 @viewerToken = {{loginViewer.response.body.accessToken}}
 
-### 1.6 Login no segundo tenant — usado nos casos de 404 por isolamento
+### 1.6 Login into the second tenant — used in the 404 isolation cases
 # @name loginOtherCompany
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
@@ -81,14 +81,14 @@ Content-Type: application/json
 @otherToken = {{loginOtherCompany.response.body.accessToken}}
 
 ############################################################
-### 2. Projetos
+### 2. Projects
 ############################################################
 
-### 2.1 Listagem paginada, filtrada e ordenada
+### 2.1 Paginated, filtered and sorted listing
 GET {{baseUrl}}/projects?page=0&size=20&sort=createdAt,desc&search=portal&status=ACTIVE
 Authorization: Bearer {{token}}
 
-### 2.2 Criar projeto (somente ADMIN)
+### 2.2 Create a project (ADMIN only)
 # @name createProject
 POST {{baseUrl}}/projects
 Content-Type: application/json
@@ -102,11 +102,11 @@ Authorization: Bearer {{token}}
 
 @projectId = {{createProject.response.body.id}}
 
-### 2.3 Detalhe do projeto
+### 2.3 Project detail
 GET {{baseUrl}}/projects/{{projectId}}
 Authorization: Bearer {{token}}
 
-### 2.4 Atualizar projeto
+### 2.4 Update a project
 PUT {{baseUrl}}/projects/{{projectId}}
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -118,14 +118,14 @@ Authorization: Bearer {{token}}
 }
 
 ############################################################
-### 3. Ativos
+### 3. Assets
 ############################################################
 
-### 3.1 Listagem com todos os filtros do módulo
+### 3.1 Listing with every filter of the module
 GET {{baseUrl}}/assets?page=0&size=20&sort=criticality,desc&search=api&projectId={{projectId}}&type=API&environment=PRODUCTION&criticality=CRITICAL
 Authorization: Bearer {{token}}
 
-### 3.2 Criar ativo (somente ADMIN)
+### 3.2 Create an asset (ADMIN only)
 # @name createAsset
 POST {{baseUrl}}/assets
 Content-Type: application/json
@@ -143,11 +143,11 @@ Authorization: Bearer {{token}}
 
 @assetId = {{createAsset.response.body.id}}
 
-### 3.3 Detalhe do ativo
+### 3.3 Asset detail
 GET {{baseUrl}}/assets/{{assetId}}
 Authorization: Bearer {{token}}
 
-### 3.4 Atualizar ativo — identifier em branco significa "sem identificador"
+### 3.4 Update an asset — a blank identifier means "no identifier"
 PUT {{baseUrl}}/assets/{{assetId}}
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -163,14 +163,14 @@ Authorization: Bearer {{token}}
 }
 
 ############################################################
-### 4. Vulnerabilidades
+### 4. Vulnerabilities
 ############################################################
 
-### 4.1 Listagem com todos os filtros do módulo
+### 4.1 Listing with every filter of the module
 GET {{baseUrl}}/vulnerabilities?page=0&size=20&sort=cvssScore,desc&search=injection&projectId={{projectId}}&assetId={{assetId}}&severity=CRITICAL&status=OPEN&overdue=false
 Authorization: Bearer {{token}}
 
-### 4.2 Criar vulnerabilidade (ADMIN ou ANALYST) — nasce sempre OPEN, sem status no corpo
+### 4.2 Create a vulnerability (ADMIN or ANALYST) — always born OPEN, no status in the body
 # @name createVulnerability
 POST {{baseUrl}}/vulnerabilities
 Content-Type: application/json
@@ -189,11 +189,11 @@ Authorization: Bearer {{token}}
 
 @vulnerabilityId = {{createVulnerability.response.body.id}}
 
-### 4.3 Detalhe da vulnerabilidade
+### 4.3 Vulnerability detail
 GET {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}
 Authorization: Bearer {{token}}
 
-### 4.4 Atribuir a um usuário ativo da própria empresa (ADMIN ou ANALYST)
+### 4.4 Assign to an active user of the same company (ADMIN or ANALYST)
 PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/assignee
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -202,7 +202,7 @@ Authorization: Bearer {{token}}
   "userId": {{userId}}
 }
 
-### 4.5 Alterar status para IN_PROGRESS
+### 4.5 Change the status to IN_PROGRESS
 PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/status
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -211,7 +211,7 @@ Authorization: Bearer {{token}}
   "status": "IN_PROGRESS"
 }
 
-### 4.6 Atualizar a vulnerabilidade — PUT nunca altera status nem resolvedAt
+### 4.6 Update the vulnerability — PUT never changes status or resolvedAt
 PUT {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -228,19 +228,19 @@ Authorization: Bearer {{token}}
   "assignedToId": {{userId}}
 }
 
-### 4.7 Itens atrasados — overdue=true usa o mesmo predicado do card do dashboard
+### 4.7 Overdue items — overdue=true uses the same predicate as the dashboard card
 GET {{baseUrl}}/vulnerabilities?overdue=true&sort=dueDate,asc&size=20
 Authorization: Bearer {{token}}
 
-### 4.8 Painel "itens recentes" do dashboard — é esta listagem, não um quinto endpoint
+### 4.8 The dashboard's "recent items" panel — it is this listing, not a fifth endpoint
 GET {{baseUrl}}/vulnerabilities?page=0&size=5&sort=createdAt,desc
 Authorization: Bearer {{token}}
 
 ############################################################
-### 5. Comentários
+### 5. Comments
 ############################################################
 
-### 5.1 Comentar (ADMIN, ANALYST ou DEVELOPER)
+### 5.1 Comment (ADMIN, ANALYST or DEVELOPER)
 # @name createComment
 POST {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/comments
 Content-Type: application/json
@@ -252,11 +252,11 @@ Authorization: Bearer {{token}}
 
 @commentId = {{createComment.response.body.id}}
 
-### 5.2 Listar comentários — ordem ascendente por createdAt, ao contrário do resto da API
+### 5.2 List comments — ascending order by createdAt, unlike the rest of the API
 GET {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/comments?page=0&size=20
 Authorization: Bearer {{token}}
 
-### 5.3 Editar o próprio comentário (autor ou ADMIN)
+### 5.3 Edit your own comment (author or ADMIN)
 PUT {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/comments/{{commentId}}
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -266,10 +266,10 @@ Authorization: Bearer {{token}}
 }
 
 ############################################################
-### 6. Resolver
+### 6. Resolving
 ############################################################
 
-### 6.1 Entrar em RESOLVED carimba resolvedAt; sair de RESOLVED limparia o carimbo
+### 6.1 Entering RESOLVED stamps resolvedAt; leaving RESOLVED would clear the stamp
 PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/status
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -278,7 +278,7 @@ Authorization: Bearer {{token}}
   "status": "RESOLVED"
 }
 
-### 6.2 Desatribuir — userId nulo é uma requisição válida
+### 6.2 Unassign — a null userId is a valid request
 PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/assignee
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -288,26 +288,26 @@ Authorization: Bearer {{token}}
 }
 
 ############################################################
-### 7. Usuários
+### 7. Users
 ############################################################
 
-### 7.1 Usuários da empresa (ADMIN e ANALYST) — array puro, sem paginação
+### 7.1 Users of the company (ADMIN and ANALYST) — plain array, no pagination
 GET {{baseUrl}}/users?active=true
 Authorization: Bearer {{token}}
 
-### 7.2 Filtrado por papel e texto
+### 7.2 Filtered by role and text
 GET {{baseUrl}}/users?role=DEVELOPER&active=true&search=mendes
 Authorization: Bearer {{token}}
 
 ############################################################
-### 8. Auditoria
+### 8. Audit trail
 ############################################################
 
-### 8.1 Trilha de auditoria (somente ADMIN)
+### 8.1 Audit trail (ADMIN only)
 GET {{baseUrl}}/audit-logs?page=0&size=20&entityType=Project
 Authorization: Bearer {{token}}
 
-### 8.2 Filtrada por ação, ator e janela de tempo
+### 8.2 Filtered by action, actor and time window
 GET {{baseUrl}}/audit-logs?page=0&size=50&entityType=Vulnerability&action=STATUS_CHANGE&actorId={{userId}}&from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z&sort=createdAt,desc
 Authorization: Bearer {{token}}
 
@@ -315,36 +315,36 @@ Authorization: Bearer {{token}}
 ### 9. Dashboard
 ############################################################
 
-### 9.1 Cards — openVulnerabilities é OPEN + IN_PROGRESS, não uma contagem de status
+### 9.1 Cards — openVulnerabilities is OPEN + IN_PROGRESS, not a status count
 GET {{baseUrl}}/dashboard/summary
 Authorization: Bearer {{token}}
 
-### 9.2 Distribuição por severidade — array com as quatro severidades, inclusive as zeradas
+### 9.2 Distribution by severity — array with all four severities, including the empty ones
 GET {{baseUrl}}/dashboard/severity-distribution
 Authorization: Bearer {{token}}
 
-### 9.3 Distribuição por status — array com os quatro status, inclusive os zerados
+### 9.3 Distribution by status — array with all four statuses, including the empty ones
 GET {{baseUrl}}/dashboard/status-distribution
 Authorization: Bearer {{token}}
 
-### 9.4 Série diária de abertas e resolvidas
+### 9.4 Daily series of opened and resolved
 GET {{baseUrl}}/dashboard/trend?days=30
 Authorization: Bearer {{token}}
 
-### 9.5 days é limitado em silêncio a [1, 90] — responde 200 com "days": 90
+### 9.5 days is silently clamped to [1, 90] — answers 200 with "days": 90
 GET {{baseUrl}}/dashboard/trend?days=365
 Authorization: Bearer {{token}}
 
 ############################################################
-### 10. Importação de scans
+### 10. Scan import
 ############################################################
 
-### O arquivo enviado é o scan-nmap-exemplo.xml ao lado deste. Ele aponta para
-### `api.pagamentos.acme.test` — o identificador do ativo criado em 3.2, que o achado encontra
-### sozinho — e para um endereço da faixa de documentação, que não existe no inventário e por
-### isso fica sem ativo. As portas abertas sem script não viram achado.
+### The file uploaded is the scan-nmap-exemplo.xml next to this one. It points at
+### `api.pagamentos.acme.test` — the identifier of the asset created in 3.2, which the finding
+### matches on its own — and at an address from the documentation range, which is not in the
+### inventory and therefore stays unmatched. Open ports with no script do not become findings.
 
-### 10.1 Enviar o relatório (ADMIN ou ANALYST) — nada é criado ainda, é só uma proposta
+### 10.1 Upload the report (ADMIN or ANALYST) — nothing is created yet, it is only a proposal
 # @name uploadScan
 POST {{baseUrl}}/scan-imports
 Authorization: Bearer {{token}}
@@ -366,17 +366,18 @@ Content-Type: application/xml
 --ScanBoundary--
 
 @scanImportId = {{uploadScan.response.body.id}}
-### Índice de array precisa de JSONPath (o `$.`), ao contrário das capturas escalares acima.
-### A ordem dos achados é a do relatório: primeiro o host que casou, depois o que não casou.
+### An array index needs JSONPath (the `$.`), unlike the scalar captures above.
+### The order of the findings is the report's: first the host that matched, then the one that
+### did not.
 @matchedFindingId = {{uploadScan.response.body.$.findings[0].id}}
 @unmatchedFindingId = {{uploadScan.response.body.$.findings[1].id}}
 
-### 10.2 Prévia — a importação com todos os achados; confira status PENDING e os contadores
+### 10.2 Preview — the import with all its findings; check status PENDING and the counters
 ### (totalFindings 2, matchedCount 1, unmatchedCount 1)
 GET {{baseUrl}}/scan-imports/{{scanImportId}}
 Authorization: Bearer {{token}}
 
-### 10.3 Vincular o achado sem ativo (ADMIN ou ANALYST) — o ativo só precisa ser da empresa
+### 10.3 Link the unmatched finding (ADMIN or ANALYST) — the asset only has to belong to the company
 PATCH {{baseUrl}}/scan-imports/{{scanImportId}}/findings/{{unmatchedFindingId}}
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -385,7 +386,7 @@ Authorization: Bearer {{token}}
   "assetId": {{assetId}}
 }
 
-### 10.4 Vincular um achado que já tem ativo — esperado 409, não há o que mudar
+### 10.4 Link a finding that already has an asset — 409 expected, there is nothing to change
 PATCH {{baseUrl}}/scan-imports/{{scanImportId}}/findings/{{matchedFindingId}}
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -394,8 +395,8 @@ Authorization: Bearer {{token}}
   "assetId": {{assetId}}
 }
 
-### 10.5 Confirmar — cria uma vulnerabilidade por achado com ativo, em um lote só,
-### e deixa **uma** linha SCAN_IMPORT na auditoria (não uma CREATE por achado)
+### 10.5 Confirm — creates one vulnerability per matched finding, in a single batch,
+### and leaves **one** SCAN_IMPORT row in the audit trail (not a CREATE per finding)
 # @name confirmScan
 POST {{baseUrl}}/scan-imports/{{scanImportId}}/confirm
 Authorization: Bearer {{token}}
@@ -403,19 +404,20 @@ Authorization: Bearer {{token}}
 @importedVulnerabilityA = {{confirmScan.response.body.$.findings[0].vulnerabilityId}}
 @importedVulnerabilityB = {{confirmScan.response.body.$.findings[1].vulnerabilityId}}
 
-### 10.6 Confirmar de novo — esperado 409: a primeira confirmação criou linhas, e um 200 aqui
-### diria a quem repetiu a chamada que ela também criou
+### 10.6 Confirm again — 409 expected: the first confirmation created rows, and a 200 here
+### would tell whoever repeated the call that it created rows too
 POST {{baseUrl}}/scan-imports/{{scanImportId}}/confirm
 Authorization: Bearer {{token}}
 
-### 10.7 Descartar uma importação já confirmada — esperado 409; o arquivo dela sustenta
-### vulnerabilidades que existem
+### 10.7 Discard an already confirmed import — 409 expected; its file backs vulnerabilities
+### that exist
 DELETE {{baseUrl}}/scan-imports/{{scanImportId}}
 Authorization: Bearer {{token}}
 
-### 10.8 Reenviar o mesmo arquivo — duplicateCount igual a totalFindings e matchedCount zero.
-### Reimportar nunca mescla nem reabre: a vulnerabilidade da primeira importação pode já ter
-### status, responsável e discussão, e nada disso pode ser desfeito por um arquivo.
+### 10.8 Upload the same file again — duplicateCount equal to totalFindings and matchedCount
+### zero. Re-importing never merges and never reopens: the vulnerability from the first import
+### may already have a status, an assignee and a discussion, and none of that can be undone by
+### a file.
 # @name uploadScanAgain
 POST {{baseUrl}}/scan-imports
 Authorization: Bearer {{token}}
@@ -438,20 +440,20 @@ Content-Type: application/xml
 
 @scanImportAgainId = {{uploadScanAgain.response.body.id}}
 
-### 10.9 Descartar a reimportação — 204. O arquivo em disco some; as linhas de achado ficam,
-### e é assim que alguém responde depois "varremos, e escolhemos não importar"
+### 10.9 Discard the re-import — 204. The file on disk goes; the finding rows stay, and that
+### is how someone answers later "we scanned, and we chose not to import"
 DELETE {{baseUrl}}/scan-imports/{{scanImportAgainId}}
 Authorization: Bearer {{token}}
 
-### 10.10 A descartada continua no histórico, agora com status DISCARDED
+### 10.10 The discarded one stays in the history, now with status DISCARDED
 GET {{baseUrl}}/scan-imports/{{scanImportAgainId}}
 Authorization: Bearer {{token}}
 
-### 10.11 Histórico paginado — os contadores de cada importação, sem os achados
+### 10.11 Paginated history — the counters of each import, without the findings
 GET {{baseUrl}}/scan-imports?page=0&size=20&sort=createdAt,desc
 Authorization: Bearer {{token}}
 
-### 10.12 Formato fora do enum — esperado 400 BAD_REQUEST, na conversão do parâmetro
+### 10.12 Format outside the enum — 400 BAD_REQUEST expected, at parameter conversion
 POST {{baseUrl}}/scan-imports?projectId={{projectId}}&format=NESSUS_XML
 Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=ScanBoundary
@@ -463,9 +465,9 @@ Content-Type: application/xml
 < ./scan-nmap-exemplo.xml
 --ScanBoundary--
 
-### 10.13 VIEWER enviando relatório — esperado 403. O multipart vai completo de propósito:
-### projectId e format são resolvidos antes do controle de papel, e um corpo incompleto
-### devolveria 400 sem que a regra de permissão chegasse a rodar.
+### 10.13 VIEWER uploading a report — 403 expected. The multipart goes complete on purpose:
+### projectId and format are resolved before the role check, and an incomplete body would
+### return 400 without the permission rule ever running.
 POST {{baseUrl}}/scan-imports
 Authorization: Bearer {{viewerToken}}
 Content-Type: multipart/form-data; boundary=ScanBoundary
@@ -485,34 +487,34 @@ Content-Type: application/xml
 < ./scan-nmap-exemplo.xml
 --ScanBoundary--
 
-### 10.14 Importação de outra empresa — esperado 404, nunca 403
+### 10.14 An import from another company — 404 expected, never 403
 GET {{baseUrl}}/scan-imports/{{scanImportId}}
 Authorization: Bearer {{otherToken}}
 
 ############################################################
-### 11. Comportamentos silenciosos que vale ver
+### 11. Silent behaviours worth seeing
 ############################################################
 
-### 11.1 sort fora da allowlist é descartado — confira "sort" na resposta: "createdAt,desc"
+### 11.1 A sort outside the allowlist is discarded — check "sort" in the response: "createdAt,desc"
 GET {{baseUrl}}/projects?sort=passwordHash,asc&size=5
 Authorization: Bearer {{token}}
 
-### 11.2 size acima do máximo é limitado a 100 — confira "size" na resposta
+### 11.2 A size above the maximum is capped at 100 — check "size" in the response
 GET {{baseUrl}}/vulnerabilities?size=500
 Authorization: Bearer {{token}}
 
 ############################################################
-### 12. Casos negativos
+### 12. Negative cases
 ############################################################
 
-### 12.1 Endpoint protegido sem token — esperado 401 UNAUTHORIZED
+### 12.1 Protected endpoint with no token — 401 UNAUTHORIZED expected
 GET {{baseUrl}}/projects
 
-### 12.2 Token inválido — esperado 401 UNAUTHORIZED (mesmo corpo do caso anterior)
+### 12.2 Invalid token — 401 UNAUTHORIZED expected (same body as the previous case)
 GET {{baseUrl}}/projects
 Authorization: Bearer token-invalido-qualquer
 
-### 12.3 Credenciais erradas — esperado 401 com "Credenciais inválidas"
+### 12.3 Wrong credentials — 401 expected with "Credenciais inválidas"
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
@@ -521,7 +523,7 @@ Content-Type: application/json
   "password": "senha-obviamente-errada"
 }
 
-### 12.4 DEVELOPER criando projeto — esperado 403 FORBIDDEN ("Acesso negado")
+### 12.4 DEVELOPER creating a project — 403 FORBIDDEN expected ("Acesso negado")
 POST {{baseUrl}}/projects
 Content-Type: application/json
 Authorization: Bearer {{devToken}}
@@ -530,9 +532,9 @@ Authorization: Bearer {{devToken}}
   "name": "Projeto que o developer não pode criar"
 }
 
-### 12.5 DEVELOPER alterando status de item atribuído a outra pessoa
-### Esperado 403 com "Você só pode alterar o status de vulnerabilidades atribuídas a você"
-### (execute 4.4 antes: o item precisa estar atribuído ao ADMIN)
+### 12.5 DEVELOPER changing the status of an item assigned to someone else
+### 403 expected with "Você só pode alterar o status de vulnerabilidades atribuídas a você"
+### (run 4.4 first: the item has to be assigned to the ADMIN)
 PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/status
 Content-Type: application/json
 Authorization: Bearer {{devToken}}
@@ -541,7 +543,7 @@ Authorization: Bearer {{devToken}}
   "status": "RESOLVED"
 }
 
-### 12.6 VIEWER comentando — esperado 403 FORBIDDEN, o papel é somente leitura
+### 12.6 VIEWER commenting — 403 FORBIDDEN expected, the role is read-only
 POST {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/comments
 Content-Type: application/json
 Authorization: Bearer {{viewerToken}}
@@ -550,20 +552,20 @@ Authorization: Bearer {{viewerToken}}
   "content": "Comentário que o viewer não pode escrever"
 }
 
-### 12.7 DEVELOPER consultando auditoria — esperado 403 FORBIDDEN (só ADMIN)
+### 12.7 DEVELOPER querying the audit trail — 403 FORBIDDEN expected (ADMIN only)
 GET {{baseUrl}}/audit-logs
 Authorization: Bearer {{devToken}}
 
-### 12.8 Projeto de outra empresa — esperado 404 NOT_FOUND, nunca 403
-### Um 403 confirmaria que a linha existe e transformaria a API em um oráculo de enumeração
+### 12.8 A project from another company — 404 NOT_FOUND expected, never 403
+### A 403 would confirm that the row exists and would turn the API into an enumeration oracle
 GET {{baseUrl}}/projects/{{projectId}}
 Authorization: Bearer {{otherToken}}
 
-### 12.9 Excluir recurso de outra empresa — esperado 404 NOT_FOUND
+### 12.9 Delete a resource from another company — 404 NOT_FOUND expected
 DELETE {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}
 Authorization: Bearer {{otherToken}}
 
-### 12.10 Referência a um projeto inexistente no corpo — esperado 404 ("Projeto ... não encontrado")
+### 12.10 Reference to a non-existent project in the body — 404 expected ("Projeto ... não encontrado")
 POST {{baseUrl}}/assets
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -576,7 +578,7 @@ Authorization: Bearer {{token}}
   "criticality": "LOW"
 }
 
-### 12.11 Responsável desconhecido, inativo ou de outra empresa — esperado 404 ("Usuário ... não encontrado")
+### 12.11 Unknown, inactive or foreign-company assignee — 404 expected ("Usuário ... não encontrado")
 PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/assignee
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -585,7 +587,7 @@ Authorization: Bearer {{token}}
   "userId": 999999
 }
 
-### 12.12 Nome de projeto duplicado — esperado 409 CONFLICT
+### 12.12 Duplicate project name — 409 CONFLICT expected
 POST {{baseUrl}}/projects
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -594,7 +596,7 @@ Authorization: Bearer {{token}}
   "name": "Portal do Cliente"
 }
 
-### 12.13 Identificador de ativo duplicado no mesmo projeto — esperado 409 CONFLICT
+### 12.13 Duplicate asset identifier in the same project — 409 CONFLICT expected
 POST {{baseUrl}}/assets
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -608,7 +610,7 @@ Authorization: Bearer {{token}}
   "criticality": "LOW"
 }
 
-### 12.14 E-mail já cadastrado — esperado 409 CONFLICT (unicidade é global, não por empresa)
+### 12.14 E-mail already registered — 409 CONFLICT expected (uniqueness is global, not per company)
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
@@ -619,15 +621,15 @@ Content-Type: application/json
   "password": "uma-senha-suficientemente-longa"
 }
 
-### 12.15 Excluir projeto que ainda tem ativos — esperado 409 CONFLICT com a contagem
+### 12.15 Delete a project that still has assets — 409 CONFLICT expected, with the count
 DELETE {{baseUrl}}/projects/{{projectId}}
 Authorization: Bearer {{token}}
 
-### 12.16 Excluir ativo que ainda tem vulnerabilidades — esperado 409 CONFLICT com a contagem
+### 12.16 Delete an asset that still has vulnerabilities — 409 CONFLICT expected, with the count
 DELETE {{baseUrl}}/assets/{{assetId}}
 Authorization: Bearer {{token}}
 
-### 12.17 Payload inválido — esperado 400 VALIDATION_ERROR com fieldErrors
+### 12.17 Invalid payload — 400 VALIDATION_ERROR expected, with fieldErrors
 POST {{baseUrl}}/projects
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -636,7 +638,7 @@ Authorization: Bearer {{token}}
   "name": ""
 }
 
-### 12.18 Vários campos inválidos de uma vez — esperado 400 com quatro fieldErrors
+### 12.18 Several invalid fields at once — 400 expected with four fieldErrors
 POST {{baseUrl}}/vulnerabilities
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -646,8 +648,8 @@ Authorization: Bearer {{token}}
   "cvssScore": 12.5
 }
 
-### 12.19 Valor de enum inexistente — esperado 400 BAD_REQUEST, sem fieldErrors
-### A falha é de desserialização e acontece antes da validação rodar
+### 12.19 Non-existent enum value — 400 BAD_REQUEST expected, with no fieldErrors
+### The failure is in deserialisation and happens before validation runs
 POST {{baseUrl}}/vulnerabilities
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -658,37 +660,37 @@ Authorization: Bearer {{token}}
   "severity": "URGENTE"
 }
 
-### 12.20 Tipo incompatível na query — esperado 400 BAD_REQUEST
+### 12.20 Incompatible type in the query string — 400 BAD_REQUEST expected
 GET {{baseUrl}}/vulnerabilities?projectId=abc
 Authorization: Bearer {{token}}
 
 ############################################################
-### 13. Limpeza — na ordem que respeita a regra de filhos
+### 13. Cleanup — in the order that respects the children rule
 ############################################################
 
-### 13.1 Excluir a vulnerabilidade (somente ADMIN); os comentários vão junto
+### 13.1 Delete the vulnerability (ADMIN only); the comments go with it
 DELETE {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}
 Authorization: Bearer {{token}}
 
-### 13.2 Excluir a primeira vulnerabilidade criada pela importação da seção 10.
-### Sem estas duas o ativo não sai: ele volta a ter filhos, e a exclusão responde 409 com a contagem.
-### Quem pulou a seção 10 pula 13.2 e 13.3.
+### 13.2 Delete the first vulnerability created by the section 10 import.
+### Without these two the asset does not go: it has children again, and the deletion answers 409
+### with the count. Whoever skipped section 10 skips 13.2 and 13.3.
 ###
-### Atenção: hoje as duas respondem 409 ("A operação conflita com dados existentes"), porque
-### scan_findings.vulnerability_id referencia a linha e VulnerabilityService.delete só trata
-### comentários e anexos. Enquanto for assim, uma vulnerabilidade importada não pode ser
-### excluída pela API, e 13.4 e 13.5 falham em seguida pela regra de filhos.
+### Note: today both answer 409 ("A operação conflita com dados existentes"), because
+### scan_findings.vulnerability_id references the row and VulnerabilityService.delete only
+### handles comments and attachments. While that is the case, an imported vulnerability cannot
+### be deleted through the API, and 13.4 and 13.5 fail next because of the children rule.
 DELETE {{baseUrl}}/vulnerabilities/{{importedVulnerabilityA}}
 Authorization: Bearer {{token}}
 
-### 13.3 Excluir a segunda vulnerabilidade criada pela importação
+### 13.3 Delete the second vulnerability created by the import
 DELETE {{baseUrl}}/vulnerabilities/{{importedVulnerabilityB}}
 Authorization: Bearer {{token}}
 
-### 13.4 Excluir o ativo, agora sem filhos
+### 13.4 Delete the asset, now with no children
 DELETE {{baseUrl}}/assets/{{assetId}}
 Authorization: Bearer {{token}}
 
-### 13.5 Excluir o projeto, agora sem filhos
+### 13.5 Delete the project, now with no children
 DELETE {{baseUrl}}/projects/{{projectId}}
 Authorization: Bearer {{token}}

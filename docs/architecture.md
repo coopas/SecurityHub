@@ -1,9 +1,9 @@
-# Arquitetura do SecurityHub
+# SecurityHub architecture
 
-Este documento descreve as decisões estruturais estáveis do sistema. Decisões pontuais de
-tecnologia ficam registradas em `docs/adr/`.
+This document describes the stable structural decisions of the system. Individual technology
+decisions are recorded in `docs/adr/`.
 
-## 1. Visão geral
+## 1. Overview
 
 ```text
 ┌──────────────┐      HTTPS/JSON      ┌──────────────────┐      JDBC       ┌──────────────┐
@@ -12,158 +12,157 @@ tecnologia ficam registradas em `docs/adr/`.
 └──────────────┘                       └──────────────────┘                 └──────────────┘
 ```
 
-O frontend é uma SPA servida por nginx, que também atua como proxy reverso de `/api` para o
-backend — assim o navegador enxerga uma única origem e não há CORS em produção. Em
-desenvolvimento, o `ng serve` cumpre o mesmo papel via `proxy.conf.json`.
+The frontend is an SPA served by nginx, which also acts as a reverse proxy for `/api` to the
+backend — so the browser sees a single origin and there is no CORS in production. In
+development, `ng serve` plays the same role through `proxy.conf.json`.
 
-O backend é um monólito modular sem estado: toda requisição carrega o próprio contexto de
-autenticação no token, o que permite escalar horizontalmente sem sessão compartilhada.
+The backend is a stateless modular monolith: every request carries its own authentication
+context in the token, which allows horizontal scaling without a shared session.
 
-## 2. Organização do backend
+## 2. Backend organisation
 
-O código é organizado **por funcionalidade**, não por camada técnica. Cada módulo agrupa o
-que muda junto:
+The code is organised **by feature**, not by technical layer. Each module groups what changes
+together:
 
 ```text
 com.securityhub
-├── config/          configuração transversal (JPA auditing, OpenAPI)
-├── security/        JWT, filtro de autenticação, principal, CORS, filter chain
+├── config/          cross-cutting configuration (JPA auditing, OpenAPI)
+├── security/        JWT, authentication filter, principal, CORS, filter chain
 ├── shared/
-│   ├── error/       envelope de erro, exceções de domínio, @RestControllerAdvice, traceId
-│   ├── model/       BaseEntity com timestamps auditados
-│   ├── repository/  Specs — construção de filtros por Criteria API
-│   └── web/         PageResponse e saneamento de Pageable
+│   ├── error/       error envelope, domain exceptions, @RestControllerAdvice, traceId
+│   ├── model/       BaseEntity with audited timestamps
+│   ├── repository/  Specs — filter construction through the Criteria API
+│   └── web/         PageResponse and Pageable sanitisation
 ├── company/  user/  auth/
 ├── project/  asset/  vulnerability/  comment/
 ├── audit/    dashboard/
 └── SecurityHubApplication
 ```
 
-Dentro de um módulo: `Controller` → `Service` → `Repository`, com `dto/` e um mapper
-estático. Regras de negócio moram no service; o controller apenas traduz HTTP.
+Inside a module: `Controller` → `Service` → `Repository`, with `dto/` and a static mapper.
+Business rules live in the service; the controller only translates HTTP.
 
-### Por que entidades JPA não saem pela API
+### Why JPA entities do not leave through the API
 
-`spring.jpa.open-in-view` está **desabilitado**. A sessão do Hibernate fecha ao final do
-método transacional, então o mapeamento para DTO acontece dentro do service. Isso evita
-`LazyInitializationException`, impede que o formato da tabela vaze para o contrato HTTP e
-elimina consultas disparadas acidentalmente durante a serialização.
+`spring.jpa.open-in-view` is **disabled**. The Hibernate session closes at the end of the
+transactional method, so mapping to a DTO happens inside the service. This avoids
+`LazyInitializationException`, prevents the table shape from leaking into the HTTP contract and
+eliminates queries fired accidentally during serialisation.
 
-## 3. Isolamento entre empresas
+## 3. Isolation between companies
 
-É a propriedade de segurança mais importante do sistema.
+This is the most important security property of the system.
 
-1. O `companyId` vive no token assinado e é revalidado contra a linha do usuário a **cada**
-   requisição pelo `JwtAuthenticationFilter`. Um token cujo `companyId` ou `role` não
-   confira com o banco é rejeitado, e não apenas ignorado.
-2. O `companyId` **nunca** é lido do corpo, da query string ou de um cabeçalho. Um
-   `companyId` enviado pelo cliente é simplesmente ignorado.
-3. Toda assinatura de repositório carrega o `companyId`: não existe `findById(id)` solto na
-   camada de serviço. Filtros são montados com `Specs.company(...)`/`Specs.companyColumn(...)`
-   como primeiro predicado.
-4. Recurso de outra empresa responde **404**, nunca 403. Um 403 confirmaria a existência do
-   recurso e transformaria a API em um oráculo de enumeração.
+1. The `companyId` lives in the signed token and is revalidated against the user's row on
+   **every** request by `JwtAuthenticationFilter`. A token whose `companyId` or `role` does not
+   match the database is rejected, not merely ignored.
+2. The `companyId` is **never** read from the body, the query string or a header. A `companyId`
+   sent by the client is simply ignored.
+3. Every repository signature carries the `companyId`: there is no loose `findById(id)` in the
+   service layer. Filters are built with `Specs.company(...)`/`Specs.companyColumn(...)` as the
+   first predicate.
+4. A resource belonging to another company answers **404**, never 403. A 403 would confirm that
+   the resource exists and turn the API into an enumeration oracle.
 
-## 4. Autenticação e autorização
+## 4. Authentication and authorisation
 
-- Senhas com BCrypt custo 12.
-- Access token JWT HS256 contendo `sub`, `companyId`, `role`, `iat` e `exp`. O segredo vem
-  de `SECURITYHUB_JWT_SECRET`; a aplicação recusa iniciar sem ele ou com menos de 32 bytes.
-- O login responde a mesma mensagem genérica para e-mail inexistente, senha errada e conta
-  inativa, e faz uma verificação BCrypt descartável no caso de e-mail desconhecido para
-  equalizar o tempo de resposta.
-- Autorização por papel é aplicada com `@PreAuthorize` **nos métodos de serviço**. A
-  interface Angular esconde botões por conveniência, mas nenhuma regra depende disso: os
-  testes de integração exercem cada papel contra cada endpoint.
+- Passwords with BCrypt cost 12.
+- HS256 JWT access token containing `sub`, `companyId`, `role`, `iat` and `exp`. The secret
+  comes from `SECURITYHUB_JWT_SECRET`; the application refuses to start without it or with
+  fewer than 32 bytes.
+- Login answers the same generic message for a non-existent e-mail, a wrong password and an
+  inactive account, and performs a throwaway BCrypt check for an unknown e-mail to equalise the
+  response time.
+- Role authorisation is applied with `@PreAuthorize` **on service methods**. The Angular
+  interface hides buttons for convenience, but no rule depends on that: the integration tests
+  exercise every role against every endpoint.
 
-Matriz de permissões: veja `docs/permissions.md`, que é a fonte de verdade.
+Permission matrix: see `docs/permissions.md`, which is the source of truth.
 
-## 5. Contrato HTTP
+## 5. HTTP contract
 
-Prefixo `/api/v1`, JSON camelCase, instantes ISO-8601 em UTC.
+Prefix `/api/v1`, camelCase JSON, ISO-8601 instants in UTC.
 
-Listagens usam sempre paginação server-side com o mesmo envelope:
+Listings always use server-side pagination with the same envelope:
 
 ```json
 { "content": [], "page": 0, "size": 20, "totalElements": 0, "totalPages": 0, "sort": "createdAt,desc" }
 ```
 
-O parâmetro `sort` passa por uma allowlist por módulo (`PageableSupport.sanitize`). Uma
-propriedade não prevista é descartada em vez de alcançar o Spring Data como caminho
-arbitrário — evita 500 e acesso a associações não pretendidas. O tamanho de página é
-limitado a 100.
+The `sort` parameter goes through a per-module allowlist (`PageableSupport.sanitize`). An
+unexpected property is discarded instead of reaching Spring Data as an arbitrary path — which
+avoids 500s and access to unintended associations. Page size is capped at 100.
 
-Erros seguem um envelope único produzido pelo `GlobalExceptionHandler`, sem stack trace,
-SQL ou detalhe interno, e com um `traceId` que também vai no cabeçalho `X-Request-Id` e em
-toda linha de log da requisição.
+Errors follow a single envelope produced by `GlobalExceptionHandler`, with no stack trace, SQL
+or internal detail, and with a `traceId` that also goes in the `X-Request-Id` header and in
+every log line of the request.
 
-## 6. Filtros com Criteria API
+## 6. Filters with the Criteria API
 
-Filtros opcionais **não** são escritos como `:param is null or coluna = :param`. O
-PostgreSQL não consegue inferir o tipo de um parâmetro nulo nessa posição e responde
-`could not determine data type of parameter`. Cada módulo monta um `Specification` com
-`shared/repository/Specs`, que simplesmente omite o predicado ausente — o que também
-permite ao planejador usar os índices parciais.
+Optional filters are **not** written as `:param is null or column = :param`. PostgreSQL cannot
+infer the type of a null parameter in that position and answers
+`could not determine data type of parameter`. Each module builds a `Specification` with
+`shared/repository/Specs`, which simply omits the missing predicate — which also lets the
+planner use the partial indexes.
 
-## 7. Auditoria
+## 7. Auditing
 
-`audit_logs` é append-only: a entidade não tem `updated_at`, nenhum endpoint escreve nela e
-o repositório não é exposto à camada de API.
+`audit_logs` is append-only: the entity has no `updated_at`, no endpoint writes to it and the
+repository is not exposed to the API layer.
 
-Há duas semânticas de gravação, e a escolha importa:
+There are two write semantics, and the choice matters:
 
-| Método | Propagação | Quando usar |
+| Method | Propagation | When to use |
 | --- | --- | --- |
-| `record` | `REQUIRED` | mutações de domínio — a mudança e seu registro entram juntos ou não entram |
-| `recordIndependently` | `REQUIRES_NEW` | eventos de autenticação — precisa sobreviver ao rollback de um login recusado |
+| `record` | `REQUIRED` | domain mutations — the change and its record go in together or not at all |
+| `recordIndependently` | `REQUIRES_NEW` | authentication events — has to survive the rollback of a refused login |
 
-Usar `REQUIRES_NEW` para linhas criadas na mesma transação quebra as chaves estrangeiras,
-porque a transação independente ainda não enxerga as linhas novas.
+Using `REQUIRES_NEW` for rows created in the same transaction breaks the foreign keys, because
+the independent transaction cannot yet see the new rows.
 
-Antes de serializar, `AuditSanitizer` substitui por `***` qualquer chave cujo nome contenha
-fragmentos sensíveis (`password`, `senha`, `hash`, `token`, `secret`, `credential`, …),
-recursivamente em mapas e listas.
+Before serialising, `AuditSanitizer` replaces with `***` any key whose name contains sensitive
+fragments (`password`, `senha`, `hash`, `token`, `secret`, `credential`, …), recursively in maps
+and lists.
 
-## 8. Banco de dados
+## 8. Database
 
-Migrations Flyway versionadas em `backend/src/main/resources/db/migration`, aplicadas na
-subida da aplicação. `ddl-auto` é `validate`: o Hibernate nunca altera o schema, apenas
-confere que o mapeamento corresponde ao que a migration criou.
+Flyway migrations versioned in `backend/src/main/resources/db/migration`, applied at
+application startup. `ddl-auto` is `validate`: Hibernate never changes the schema, it only
+checks that the mapping matches what the migration created.
 
-Enums são gravados como `VARCHAR` com `CHECK`, não como tipos enum do PostgreSQL: adicionar
-um valor passa a ser uma alteração de constraint, sem `ALTER TYPE` e sem travar a tabela.
+Enums are stored as `VARCHAR` with a `CHECK`, not as PostgreSQL enum types: adding a value
+becomes a constraint change, with no `ALTER TYPE` and without locking the table.
 
-Todas as chaves estrangeiras e colunas de filtro frequente têm índice, sempre com
-`company_id` como primeira coluna do índice composto, que é a forma como as consultas
-realmente chegam.
+Every foreign key and frequently filtered column has an index, always with `company_id` as the
+first column of the composite index, which is how the queries actually arrive.
 
 ## 9. Frontend
 
-Módulos Angular com carregamento lazy por feature. Estado em serviços com RxJS; não há
-NgRx no MVP porque não existe estado compartilhado entre features que justifique o custo.
+Angular modules lazily loaded per feature. State in services with RxJS; there is no NgRx in the
+MVP because there is no state shared between features that would justify the cost.
 
-- `core/` — sessão, interceptors, guards, modelos compartilhados. Importado uma única vez.
-- `shared/` — módulo de reexportação do Material e componentes reutilizáveis
-  (`confirm-dialog`, `state-message`).
-- `layout/` — o shell autenticado (toolbar, sidenav responsivo, skip link).
-- `features/` — uma pasta por domínio, cada uma um módulo lazy.
+- `core/` — session, interceptors, guards, shared models. Imported exactly once.
+- `shared/` — re-export module for Material and reusable components (`confirm-dialog`,
+  `state-message`).
+- `layout/` — the authenticated shell (toolbar, responsive sidenav, skip link).
+- `features/` — one folder per domain, each one a lazy module.
 
-O token é anexado apenas a chamadas da própria API. Um 401 fora das telas de autenticação
-encerra a sessão e redireciona para `/login` preservando `returnUrl`; um 403 leva à página
-`/403`. Toda tela assíncrona trata os estados de carregamento, vazio, erro e permissão.
+The token is attached only to calls to our own API. A 401 outside the authentication screens
+ends the session and redirects to `/login` preserving `returnUrl`; a 403 leads to the `/403`
+page. Every asynchronous screen handles the loading, empty, error and permission states.
 
-## 10. Testes
+## 10. Tests
 
-| Nível | Ferramenta | O que cobre |
+| Level | Tooling | What it covers |
 | --- | --- | --- |
-| Unitário backend | JUnit 5 + Mockito | regras de negócio isoladas, sem contexto Spring |
-| Integração backend | Spring Boot Test + Testcontainers | PostgreSQL 15 real, HTTP real via MockMvc, papéis e isolamento entre empresas |
-| Unitário frontend | Jasmine/Karma | serviços, guards, interceptors e componentes |
-| Ponta a ponta | `scripts/smoke-test.sh` | a pilha inteira em execução, com dados reais |
+| Backend unit | JUnit 5 + Mockito | isolated business rules, no Spring context |
+| Backend integration | Spring Boot Test + Testcontainers | real PostgreSQL 15, real HTTP through MockMvc, roles and isolation between companies |
+| Frontend unit | Jasmine/Karma | services, guards, interceptors and components |
+| End to end | `scripts/smoke-test.sh` | the whole stack running, with real data |
 
-Os testes de integração não usam H2. Um banco em memória com dialeto diferente não
-comprovaria índices parciais, `CHECK`, tipos `TIMESTAMPTZ` nem o comportamento de
-parâmetros nulos que motivou a seção 6.
+The integration tests do not use H2. An in-memory database with a different dialect would not
+prove partial indexes, `CHECK` constraints, `TIMESTAMPTZ` types or the null-parameter behaviour
+that motivated section 6.
 
-Cada teste roda contra um banco truncado, e não dentro de uma transação revertida, para
-exercitar de fato o caminho de commit.
+Each test runs against a truncated database, not inside a rolled-back transaction, so that the
+commit path is actually exercised.
