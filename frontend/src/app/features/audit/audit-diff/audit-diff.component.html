@@ -1,0 +1,104 @@
+<div class="audit-diff" [ngSwitch]="kind" data-testid="audit-diff">
+  <!-- LOGIN, LOGIN_FAILED, REGISTER: nulo dos dois lados é o registro correto. -->
+  <p class="audit-diff__note" *ngSwitchCase="'empty'" data-testid="audit-diff-empty">
+    <mat-icon aria-hidden="true">info_outline</mat-icon>
+    <span>{{ emptyExplanation }}</span>
+  </p>
+
+  <!-- JSON truncado (o servidor corta em 8000 caracteres) ou malformado. -->
+  <ng-container *ngSwitchCase="'raw'">
+    <p class="audit-diff__note audit-diff__note--warn" data-testid="audit-diff-raw-note">
+      <mat-icon aria-hidden="true">report_problem</mat-icon>
+      <span>
+        Não foi possível interpretar os valores desta linha como campos — provavelmente o
+        conteúdo foi truncado ao ser gravado. O texto registrado é exibido como veio.
+      </span>
+    </p>
+    <div class="audit-diff__raw-grid">
+      <section class="audit-diff__raw" *ngIf="rawOldText !== null">
+        <h4 class="audit-diff__raw-title">Valor anterior</h4>
+        <pre class="audit-diff__pre" data-testid="audit-diff-raw-old">{{ rawOldText }}</pre>
+      </section>
+      <section class="audit-diff__raw" *ngIf="rawNewText !== null">
+        <h4 class="audit-diff__raw-title">Valor novo</h4>
+        <pre class="audit-diff__pre" data-testid="audit-diff-raw-new">{{ rawNewText }}</pre>
+      </section>
+    </div>
+  </ng-container>
+
+  <!-- CREATE: não existe valor anterior, então não há painel "antes" para desenhar. -->
+  <ng-container *ngSwitchCase="'created'">
+    <p class="audit-diff__note">
+      <mat-icon aria-hidden="true">add_circle_outline</mat-icon>
+      <span>Registro criado com os valores abaixo; não há valor anterior.</span>
+    </p>
+    <dl class="audit-diff__single" data-testid="audit-diff-created">
+      <ng-container *ngFor="let row of fields; trackBy: trackByField">
+        <dt>{{ row.label }}</dt>
+        <dd>{{ text(row.newText) }}</dd>
+      </ng-container>
+    </dl>
+  </ng-container>
+
+  <!-- DELETE: não existe valor novo. -->
+  <ng-container *ngSwitchCase="'deleted'">
+    <p class="audit-diff__note">
+      <mat-icon aria-hidden="true">delete_outline</mat-icon>
+      <span>Registro excluído. Últimos valores conhecidos:</span>
+    </p>
+    <dl class="audit-diff__single" data-testid="audit-diff-deleted">
+      <ng-container *ngFor="let row of fields; trackBy: trackByField">
+        <dt>{{ row.label }}</dt>
+        <dd>{{ text(row.oldText) }}</dd>
+      </ng-container>
+    </dl>
+  </ng-container>
+
+  <!-- UPDATE, STATUS_CHANGE, ASSIGN: só o que mudou, lado a lado. -->
+  <ng-container *ngSwitchCase="'updated'">
+    <p class="audit-diff__note" *ngIf="changed.length === 0" data-testid="audit-diff-no-change">
+      <mat-icon aria-hidden="true">info_outline</mat-icon>
+      <span>Nenhum campo mudou de valor nesta operação.</span>
+    </p>
+
+    <ul class="audit-diff__changes" *ngIf="changed.length > 0" data-testid="audit-diff-changed">
+      <li class="audit-diff__change" *ngFor="let row of changed; trackBy: trackByField">
+        <span class="audit-diff__field">{{ row.label }}</span>
+        <span class="audit-diff__pair" [attr.aria-label]="changeLabel(row)">
+          <span class="audit-diff__value audit-diff__value--old">
+            <span class="sh-visually-hidden">Valor anterior:</span>
+            <span>{{ text(row.oldText) }}</span>
+          </span>
+          <mat-icon class="audit-diff__arrow" aria-hidden="true">arrow_forward</mat-icon>
+          <span class="audit-diff__value audit-diff__value--new">
+            <span class="sh-visually-hidden">Valor novo:</span>
+            <span>{{ text(row.newText) }}</span>
+          </span>
+        </span>
+      </li>
+    </ul>
+
+    <!-- Os campos que não mudaram ficam fora do caminho: um despejo dos 11 campos do
+         registro por causa de uma alteração é o que torna uma trilha ilegível. -->
+    <ng-container *ngIf="unchanged.length > 0">
+      <button
+        mat-button
+        type="button"
+        class="audit-diff__toggle"
+        [attr.aria-expanded]="showUnchanged"
+        (click)="toggleUnchanged()"
+        data-testid="audit-diff-unchanged-toggle"
+      >
+        <mat-icon aria-hidden="true">{{ showUnchanged ? 'expand_less' : 'expand_more' }}</mat-icon>
+        <span>{{ unchangedToggleLabel }}</span>
+      </button>
+
+      <dl class="audit-diff__single" *ngIf="showUnchanged" data-testid="audit-diff-unchanged">
+        <ng-container *ngFor="let row of unchanged; trackBy: trackByField">
+          <dt>{{ row.label }}</dt>
+          <dd>{{ text(row.newText) }}</dd>
+        </ng-container>
+      </dl>
+    </ng-container>
+  </ng-container>
+</div>

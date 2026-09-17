@@ -38,8 +38,14 @@ export const APP_ROUTES: Routes = [
             (m) => m.VulnerabilitiesModule,
           ),
       },
-      // Rotas das próximas entregas, filhas deste mesmo shell:
-      // 'users' e 'audit' somente para ADMIN, usando roleGuard com data.roles.
+      {
+        // O roleGuard com data.roles fica no roteador da própria funcionalidade, junto
+        // do componente que ele protege; aqui basta o carregamento sob demanda.
+        path: 'audit',
+        loadChildren: () => import('./features/audit/audit.module').then((m) => m.AuditModule),
+      },
+      // Rota da próxima entrega, filha deste mesmo shell:
+      // 'users' somente para ADMIN, usando roleGuard com data.roles.
     ],
   },
 

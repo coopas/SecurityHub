@@ -1,0 +1,224 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>Auditoria</h1>
+      <p class="audit-subtitle">
+        Trilha das ações registradas na sua empresa. O histórico é somente leitura: nada aqui
+        pode ser editado ou apagado.
+      </p>
+    </div>
+  </header>
+
+  <div class="sh-card">
+    <form class="sh-filters" (ngSubmit)="$event.preventDefault()" novalidate>
+      <mat-form-field appearance="outline">
+        <mat-label>Entidade</mat-label>
+        <mat-select
+          [formControl]="entityTypeControl"
+          (selectionChange)="onEntityTypeChange($event.value)"
+          data-testid="audit-entity-filter"
+        >
+          <mat-option value="">Todas</mat-option>
+          <mat-option *ngFor="let entityType of entityTypes" [value]="entityType">
+            {{ entityLabel(entityType) }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Ator</mat-label>
+        <mat-select
+          [formControl]="actorControl"
+          (selectionChange)="onActorChange($event.value)"
+          data-testid="audit-actor-filter"
+        >
+          <mat-option value="">Todos</mat-option>
+          <mat-option *ngFor="let actor of actors" [value]="actor.id">
+            {{ actor.name }} ({{ actor.email }})
+          </mat-option>
+        </mat-select>
+        <mat-hint>Usuários desativados continuam listados: a trilha é histórica.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Ação</mat-label>
+        <mat-select
+          [formControl]="actionControl"
+          (selectionChange)="onActionChange($event.value)"
+          data-testid="audit-action-filter"
+        >
+          <mat-option value="">Todas</mat-option>
+          <mat-option *ngFor="let action of actions" [value]="action">
+            {{ actionLabels[action] }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>De</mat-label>
+        <input
+          matInput
+          [matDatepicker]="fromPicker"
+          [formControl]="fromControl"
+          (dateChange)="onFromChange($event.value)"
+          data-testid="audit-from-filter"
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+        <mat-datepicker #fromPicker></mat-datepicker>
+        <mat-hint>A partir do início deste dia.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Até</mat-label>
+        <input
+          matInput
+          [matDatepicker]="toPicker"
+          [formControl]="toControl"
+          (dateChange)="onToChange($event.value)"
+          data-testid="audit-to-filter"
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+        <mat-datepicker #toPicker></mat-datepicker>
+        <mat-hint>Inclui o dia inteiro, até 23:59.</mat-hint>
+      </mat-form-field>
+
+      <button
+        mat-stroked-button
+        type="button"
+        class="audit-filters__clear"
+        [disabled]="!hasFilters"
+        (click)="clearFilters()"
+        data-testid="audit-clear-filters"
+      >
+        Limpar filtros
+      </button>
+    </form>
+
+    <p class="audit-alert" role="alert" *ngIf="invalidRange" data-testid="audit-invalid-range">
+      A data inicial é posterior à data final, então nenhum registro pode ser encontrado.
+    </p>
+
+    <app-state-message
+      *ngIf="state"
+      [state]="state"
+      [message]="state === 'empty' ? emptyMessage : loadError ?? undefined"
+      [showRetry]="true"
+      (retry)="load()"
+    ></app-state-message>
+
+    <ng-container *ngIf="!state">
+      <div class="sh-table-wrapper">
+        <table
+          mat-table
+          class="sh-table audit-table"
+          matSort
+          matSortDisableClear
+          multiTemplateDataRows
+          aria-label="Trilha de auditoria"
+          [dataSource]="logs"
+          [matSortActive]="sortActive"
+          [matSortDirection]="sortDirection"
+          (matSortChange)="onSort($event)"
+        >
+          <caption class="sh-visually-hidden">
+            Registros de auditoria da empresa, com data e hora, ator, ação, entidade afetada e
+            endereço de origem. Data, ação e entidade podem ser ordenadas. Cada linha tem um
+            botão que revela a comparação entre o valor anterior e o novo. A trilha é somente
+            leitura e não oferece edição nem exclusão.
+          </caption>
+
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Data e hora</th>
+            <td mat-cell *matCellDef="let log">{{ log.createdAt | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actor">
+            <th mat-header-cell *matHeaderCellDef scope="col">Ator</th>
+            <td mat-cell *matCellDef="let log">{{ actorLabel(log) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Ação</th>
+            <td mat-cell *matCellDef="let log">
+              <mat-chip
+                class="audit-chip"
+                [ngClass]="actionClass(log.action)"
+                [disableRipple]="true"
+              >
+                <mat-icon aria-hidden="true">{{ actionIcon(log.action) }}</mat-icon>
+                <span>{{ actionLabel(log.action) }}</span>
+              </mat-chip>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="entity">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header="entityType" scope="col">
+              Entidade
+            </th>
+            <td mat-cell *matCellDef="let log">
+              <span>{{ entityLabel(log.entityType) }}</span>
+              <span class="audit-table__id" *ngIf="log.entityId">#{{ log.entityId }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="ipAddress">
+            <th mat-header-cell *matHeaderCellDef scope="col">Origem</th>
+            <td mat-cell *matCellDef="let log">{{ log.ipAddress || '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="expand">
+            <th mat-header-cell *matHeaderCellDef scope="col">
+              <span class="sh-visually-hidden">Comparação de valores</span>
+            </th>
+            <td mat-cell *matCellDef="let log" class="audit-table__expand">
+              <button
+                mat-icon-button
+                type="button"
+                [attr.aria-expanded]="isExpanded(log)"
+                [attr.aria-controls]="detailId(log)"
+                [attr.aria-label]="detailToggleLabel(log)"
+                [matTooltip]="isExpanded(log) ? 'Ocultar comparação' : 'Ver comparação'"
+                (click)="toggleDetail(log)"
+                data-testid="audit-expand"
+              >
+                <mat-icon aria-hidden="true">
+                  {{ isExpanded(log) ? 'expand_less' : 'expand_more' }}
+                </mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="detail">
+            <td
+              mat-cell
+              *matCellDef="let log"
+              class="audit-table__detail-cell"
+              [attr.colspan]="displayedColumns.length"
+            >
+              <div class="audit-detail" *ngIf="isExpanded(log)" [id]="detailId(log)">
+                <app-audit-diff [log]="log"></app-audit-diff>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: detailColumns"
+            class="audit-table__detail-row"
+          ></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="totalElements"
+        [pageIndex]="query.page"
+        [pageSize]="query.size"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPage($event)"
+        aria-label="Paginação da trilha de auditoria"
+      ></mat-paginator>
+    </ng-container>
+  </div>
+</section>
