@@ -7,26 +7,24 @@ import com.securityhub.project.Project;
 /** Hand-written per ADR 0003; no MapStruct in this project. */
 public final class AssetMapper {
 
-    /**
-     * The vulnerabilities table does not exist yet (Fase 5). The field is part of the
-     * contract from the start so the Angular list does not have to change shape later; the
-     * vulnerabilities module replaces this constant with a real projection.
-     */
-    static final long VULNERABILITY_COUNT_PLACEHOLDER = 0L;
-
     private AssetMapper() {
     }
 
     /**
      * Touches {@code asset.project}, which is lazy: callers must run inside the service
      * transaction because {@code open-in-view} is disabled.
+     *
+     * The vulnerability count is passed in rather than read from the entity: a mapped
+     * collection would make every listed row initialize its vulnerabilities, so the service
+     * supplies the value from a single grouped count query, mirroring what
+     * {@code ProjectMapper} does with the asset count.
      */
-    public static AssetResponse toResponse(Asset asset) {
+    public static AssetResponse toResponse(Asset asset, long vulnerabilityCount) {
         Project project = asset.getProject();
         return new AssetResponse(asset.getId(), asset.getName(), asset.getDescription(), asset.getType(),
                 asset.getIdentifier(), asset.getEnvironment(), asset.getCriticality(),
                 project == null ? null : project.getId(), project == null ? null : project.getName(),
-                VULNERABILITY_COUNT_PLACEHOLDER, asset.getCreatedAt(), asset.getUpdatedAt());
+                vulnerabilityCount, asset.getCreatedAt(), asset.getUpdatedAt());
     }
 
     /**

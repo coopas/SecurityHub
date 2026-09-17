@@ -10,9 +10,12 @@ import com.securityhub.security.AuthenticatedUser;
 import com.securityhub.shared.error.ConflictException;
 import com.securityhub.shared.error.NotFoundException;
 import com.securityhub.shared.web.PageableSupport;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -57,15 +60,18 @@ public class AssetService {
     public Page<AssetResponse> search(AuthenticatedUser current, String search, Long projectId, AssetType type,
                                       Environment environment, Criticality criticality, Pageable pageable) {
         Pageable sanitized = PageableSupport.sanitize(pageable, SORTABLE_PROPERTIES, DEFAULT_SORT);
-        return assetRepository
+        Page<Asset> page = assetRepository
                 .findAll(AssetSpecifications.filter(current.getCompanyId(), search, projectId, type,
-                        environment, criticality), sanitized)
-                .map(AssetMapper::toResponse);
+                        environment, criticality), sanitized);
+        Map<Long, Long> vulnerabilityCounts = vulnerabilityCounts(current.getCompanyId(), page.getContent());
+        return page.map(asset -> AssetMapper.toResponse(asset,
+                vulnerabilityCounts.getOrDefault(asset.getId(), 0L)));
     }
 
     @Transactional(readOnly = true)
     public AssetResponse get(AuthenticatedUser current, Long id) {
-        return AssetMapper.toResponse(require(current, id));
+        Asset asset = require(current, id);
+        return AssetMapper.toResponse(asset, assetRepository.countVulnerabilitiesByAssetId(id));
     }
 
     @Transactional
@@ -85,7 +91,8 @@ public class AssetService {
         auditService.record(AuditEntry.created(current, ENTITY_TYPE, asset.getId(), snapshot(asset)));
         log.info("Ativo {} criado no projeto {} da empresa {}", asset.getId(), project.getId(),
                 current.getCompanyId());
-        return AssetMapper.toResponse(asset);
+        // A brand new asset cannot have vulnerabilities yet, so the count is known without a query.
+        return AssetMapper.toResponse(asset, 0L);
     }
 
     @Transactional
@@ -107,7 +114,7 @@ public class AssetService {
         assetRepository.save(asset);
 
         auditService.record(AuditEntry.updated(current, ENTITY_TYPE, asset.getId(), before, snapshot(asset)));
-        return AssetMapper.toResponse(asset);
+        return AssetMapper.toResponse(asset, assetRepository.countVulnerabilitiesByAssetId(id));
     }
 
     @Transactional
@@ -125,14 +132,15 @@ public class AssetService {
 
     /**
      * Single place where the "não apagar filhos em cascata silenciosamente" rule of
-     * docs/permissions.md will be enforced for assets. The vulnerabilities table does not exist yet,
-     * so there is nothing to count; Fase 5 fills this in with a ConflictException when the
-     * asset still has vulnerabilities. Kept as a named step so the rule is impossible to
-     * miss, exactly like ProjectService.ensureNoChildren does for assets.
+     * docs/permissions.md is enforced for assets. The foreign key has no ON DELETE CASCADE,
+     * so the alternative would be a raw integrity violation instead of a readable conflict.
      */
     private void ensureNoChildren(Asset asset) {
-        // Fase 5: reject the deletion with ConflictException when the vulnerabilities
-        // repository reports rows for this asset.
+        long vulnerabilities = assetRepository.countVulnerabilitiesByAssetId(asset.getId());
+        if (vulnerabilities > 0) {
+            throw new ConflictException(
+                    "O ativo possui " + vulnerabilities + " vulnerabilidade(s) e não pode ser excluído");
+        }
     }
 
     /**
@@ -170,6 +178,25 @@ public class AssetService {
     private Project requireProject(AuthenticatedUser current, Long projectId) {
         return projectRepository.findByIdAndCompanyId(projectId, current.getCompanyId())
                 .orElseThrow(() -> NotFoundException.of("Projeto", projectId));
+    }
+
+    /**
+     * One grouped query for the whole page: mapping the vulnerabilities as a collection
+     * would make every listed asset initialize it, and counting per row would be an N+1.
+     */
+    private Map<Long, Long> vulnerabilityCounts(Long companyId, List<Asset> assets) {
+        if (assets.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<Long> ids = new ArrayList<>(assets.size());
+        for (Asset asset : assets) {
+            ids.add(asset.getId());
+        }
+        Map<Long, Long> counts = new HashMap<>();
+        for (Object[] row : assetRepository.countVulnerabilitiesByAsset(companyId, ids)) {
+            counts.put(((Number) row[0]).longValue(), ((Number) row[1]).longValue());
+        }
+        return counts;
     }
 
     private Map<String, Object> snapshot(Asset asset) {

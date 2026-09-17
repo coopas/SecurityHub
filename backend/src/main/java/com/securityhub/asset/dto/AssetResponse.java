@@ -20,7 +20,7 @@ public class AssetResponse {
     private final Criticality criticality;
     private final Long projectId;
     private final String projectName;
-    /** Always 0 until the vulnerabilities module (Fase 5) supplies the real count. */
+    /** Supplied by the service from a grouped count query, never from a mapped collection. */
     private final long vulnerabilityCount;
     private final Instant createdAt;
     private final Instant updatedAt;
