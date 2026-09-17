@@ -68,8 +68,18 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     return this.roleLabels[role];
   }
 
+  /**
+   * O observable de logout precisa ser assinado: a limpeza local é síncrona, mas a revogação
+   * no servidor viaja nele, e um observable frio nunca dispara sem assinante. Sem isso a
+   * família de refresh token sobreviveria no servidor até expirar.
+   *
+   * A navegação acontece nos dois desfechos, porque a sessão local já foi encerrada de
+   * qualquer forma e prender o usuário na tela por um erro de rede não ajudaria ninguém.
+   */
   logout(): void {
-    this.authService.logout();
-    void this.router.navigate(['/login']);
+    this.authService.logout().subscribe({
+      next: () => void this.router.navigate(['/login']),
+      error: () => void this.router.navigate(['/login']),
+    });
   }
 }
