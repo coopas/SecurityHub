@@ -26,11 +26,11 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * Cobre a tabela de decisão do ADR 0006 de ponta a ponta, pelo HTTP.
+ * Covers the decision table of ADR 0006 end to end, over HTTP.
  *
- * As linhas são envelhecidas por SQL direto em vez de esperar o relógio: a janela de graça tem
- * 30 segundos e o vencimento tem 14 dias, então um teste que aguardasse seria lento no primeiro
- * caso e impossível no segundo.
+ * The rows are aged with direct SQL instead of waiting on the clock: the grace window is 30
+ * seconds and the expiry is 14 days, so a test that waited would be slow in the first case and
+ * impossible in the second.
  */
 class RefreshTokenIntegrationTest extends AbstractIntegrationTest {
 
@@ -48,7 +48,7 @@ class RefreshTokenIntegrationTest extends AbstractIntegrationTest {
                 String.class);
         assertThat(stored).hasSize(1);
         assertThat(stored.get(0)).isEqualTo(SecretTokens.hash(refreshToken)).matches("^[0-9a-f]{64}$");
-        // O valor em claro não existe em lugar nenhum do banco.
+        // The plaintext value exists nowhere in the database.
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM refresh_tokens WHERE token_hash = ?", Long.class, refreshToken))
                 .isZero();
@@ -78,7 +78,7 @@ class RefreshTokenIntegrationTest extends AbstractIntegrationTest {
 
         assertThat(second).isNotEqualTo(first);
         assertThat(refreshed.get("accessToken").asText()).isNotEmpty();
-        // A linha apresentada sobrevive como ROTATED: é ela que permite reconhecer o reuso.
+        // The presented row survives as ROTATED: it is what makes the reuse recognizable.
         assertThat(statusOf(first)).isEqualTo("ROTATED");
         assertThat(statusOf(second)).isEqualTo("ACTIVE");
         assertThat(familyOf(first)).isEqualTo(familyOf(second));
@@ -105,8 +105,8 @@ class RefreshTokenIntegrationTest extends AbstractIntegrationTest {
 
         refresh(first, status().isUnauthorized());
 
-        // O sucessor legítimo morre junto: em um roubo, ele é justamente o que o ladrão pode
-        // ter em mãos, e manter a família meio viva não protegeria ninguém.
+        // The legitimate successor dies with it: in a theft, it is precisely what the thief may
+        // have in hand, and keeping the family half alive would protect no one.
         assertThat(statusOf(first)).isEqualTo("REVOKED");
         assertThat(statusOf(second)).isEqualTo("REVOKED");
         assertThat(reasonOf(second)).isEqualTo("REUSE_DETECTED");
@@ -122,7 +122,7 @@ class RefreshTokenIntegrationTest extends AbstractIntegrationTest {
 
         refresh(first, status().isUnauthorized());
 
-        // A recusa é uma exceção; sem noRollbackFor ela desfaria a própria defesa.
+        // The rejection is an exception; without noRollbackFor it would undo its own defense.
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT count(*) FROM refresh_tokens WHERE status = 'REVOKED'", Long.class))
                 .isEqualTo(2L);
@@ -137,8 +137,8 @@ class RefreshTokenIntegrationTest extends AbstractIntegrationTest {
         String first = login("admin@acme.test").get("refreshToken").asText();
         String second = refresh(first, status().isOk()).get("refreshToken").asText();
 
-        // Segunda aba: o mesmo token chega de novo em segundos. A janela existe para que isso
-        // não seja tratado como roubo.
+        // A second tab: the same token arrives again within seconds. The window exists so that
+        // this is not treated as a theft.
         String third = refresh(first, status().isOk()).get("refreshToken").asText();
 
         assertThat(third).isNotEqualTo(first).isNotEqualTo(second);
@@ -169,8 +169,8 @@ class RefreshTokenIntegrationTest extends AbstractIntegrationTest {
     void logoutOfAnUnknownTokenStillAnswersNoContent() throws Exception {
         fixtures.tenant("acme");
 
-        // 204 também aqui: um 404 diria ao chamador que aquele token não existe, e transformaria
-        // o logout em um oráculo de existência de sessão.
+        // 204 here as well: a 404 would tell the caller that that token does not exist, and would
+        // turn the logout into an oracle for the existence of a session.
         mockMvc.perform(post("/api/v1/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON).content(refreshBody("token-inventado")))
                 .andExpect(status().isNoContent());
@@ -180,8 +180,8 @@ class RefreshTokenIntegrationTest extends AbstractIntegrationTest {
     void anAccessTokenPresentedAtRefreshIsRejected() throws Exception {
         TestDataFactory.Tenant tenant = fixtures.tenant("acme");
 
-        // O JWT hasheia para um digest que não existe na tabela: a confusão de tipos do ADR 0006
-        // é impossível por construção, não por uma claim extra.
+        // The JWT hashes to a digest that does not exist in the table: the type confusion of ADR
+        // 0006 is impossible by construction, not because of an extra claim.
         refresh(fixtures.token(tenant.admin), status().isUnauthorized());
     }
 
@@ -201,7 +201,8 @@ class RefreshTokenIntegrationTest extends AbstractIntegrationTest {
         expire(refreshToken);
 
         refresh(refreshToken, status().isUnauthorized());
-        // Vencido não vira revogado: nada a revogar, e a linha ainda descreve o que houve.
+        // Expired does not become revoked: there is nothing to revoke, and the row still
+        // describes what happened.
         assertThat(statusOf(refreshToken)).isEqualTo("ACTIVE");
     }
 
@@ -266,7 +267,7 @@ class RefreshTokenIntegrationTest extends AbstractIntegrationTest {
 
         refresh(refreshToken, status().isOk());
 
-        // Uma linha por hora por sessão de ruído sobre um fato que o LOGIN já registrou.
+        // One row per hour per session of noise about a fact the LOGIN already recorded.
         assertThat(auditCount()).isEqualTo(before);
     }
 
@@ -281,7 +282,7 @@ class RefreshTokenIntegrationTest extends AbstractIntegrationTest {
         login("admin@acme.test");
 
         assertThat(exists(stale)).isFalse();
-        // Dentro da folga de 7 dias a linha fica: ela ainda serve a uma investigação.
+        // Within the 7-day slack the row stays: it is still useful to an investigation.
         assertThat(exists(recentlyExpired)).isTrue();
     }
 
@@ -301,7 +302,8 @@ class RefreshTokenIntegrationTest extends AbstractIntegrationTest {
         var company = fixtures.company("Acme", "acme");
         User user = fixtures.user(company, "analista@acme.test", Role.ANALYST);
         String refreshToken = login("analista@acme.test").get("refreshToken").asText();
-        // Desativação por fora da API, que é o único jeito de a linha sobreviver ao evento.
+        // Deactivation from outside the API, which is the only way for the row to survive the
+        // event.
         jdbcTemplate.update("UPDATE users SET active = FALSE WHERE id = ?", user.getId());
 
         refresh(refreshToken, status().isUnauthorized());
@@ -341,7 +343,8 @@ class RefreshTokenIntegrationTest extends AbstractIntegrationTest {
     }
 
     private String body(JsonNode node) {
-        // O timestamp e o traceId variam entre respostas; o que precisa ser idêntico é o resto.
+        // The timestamp and the traceId vary between responses; what has to be identical is the
+        // rest.
         return node.get("status").asText() + "|" + node.get("code").asText() + "|"
                 + node.get("message").asText();
     }

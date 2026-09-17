@@ -72,8 +72,8 @@ CREATE INDEX idx_vulnerabilities_company_status_severity_due
 CREATE INDEX idx_vulnerabilities_company_asset_status_due
     ON vulnerabilities (company_id, asset_id, status, due_date);
 
--- Nothing is created for /severity-distribution or /status-distribution. "Índices comprovados
--- por plano de consulta QUANDO NECESSÁRIO" is explicit permission to conclude that an index is
+-- Nothing is created for /severity-distribution or /status-distribution. "Indexes proven by
+-- query plan WHEN NECESSARY" is explicit permission to conclude that an index is
 -- not needed, and shipping a fourth index that costs write amplification on the busiest table
 -- of the product while reading exactly the same 82 buffers as today would be a claimed
 -- improvement rather than a real one.

@@ -91,7 +91,8 @@ class InvitationIntegrationTest extends AbstractIntegrationTest {
 
         invite(acme.admin, "analyst@globex.test", Role.VIEWER)
                 .andExpect(status().isConflict())
-                // A mesma mensagem do cadastro: a resposta não diz em que empresa o endereço está.
+                // The same message as registration: the response does not say which company the
+                // address is in.
                 .andExpect(jsonPath("$.message").value("E-mail já cadastrado"));
     }
 
@@ -101,8 +102,8 @@ class InvitationIntegrationTest extends AbstractIntegrationTest {
         TestDataFactory.Tenant globex = fixtures.tenant("globex");
         invite(globex.admin, "disputado@exemplo.test", Role.ANALYST).andExpect(status().isCreated());
 
-        // Sem esta barreira, o perdedor da corrida descobriria o problema só no aceite, na
-        // forma de uma violação crua da unicidade global de users.email.
+        // Without this barrier, the loser of the race would discover the problem only at accept
+        // time, in the form of a raw violation of the global uniqueness of users.email.
         invite(acme.admin, "disputado@exemplo.test", Role.VIEWER)
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("E-mail já cadastrado"));
@@ -167,7 +168,7 @@ class InvitationIntegrationTest extends AbstractIntegrationTest {
         String token = replantToken(id, Instant.now().plus(7, ChronoUnit.DAYS));
         accept(token).andExpect(status().isCreated());
 
-        // Rebaixar ACCEPTED para REVOKED violaria a equivalência com accepted_at de V7.
+        // Demoting ACCEPTED to REVOKED would violate the equivalence with accepted_at of V7.
         mockMvc.perform(delete("/api/v1/invitations/" + id)
                         .header("Authorization", fixtures.bearer(tenant.admin)))
                 .andExpect(status().isConflict());
@@ -281,10 +282,10 @@ class InvitationIntegrationTest extends AbstractIntegrationTest {
     }
 
     /**
-     * O teste que justifica a tabela separada. Se o convite pendente fosse uma linha de users
-     * inativa — ou se contasse de qualquer outra forma — o único administrador de verdade
-     * conseguiria se rebaixar e a empresa ficaria sem ninguém capaz de administrá-la, esperando
-     * por um aceite que pode nunca acontecer.
+     * The test that justifies the separate table. If a pending invitation were an inactive row of
+     * users — or if it counted in any other way — the only real administrator could demote
+     * themselves and the company would be left with nobody able to administer it, waiting on an
+     * acceptance that may never happen.
      */
     @Test
     void aPendingAdminInvitationDoesNotCountAsAnActiveAdmin() throws Exception {
@@ -300,7 +301,7 @@ class InvitationIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.message")
                         .value("A empresa precisa de ao menos um administrador ativo"));
 
-        // E o convite continua pendente: a recusa não mexeu nele.
+        // And the invitation is still pending: the refusal did not touch it.
         assertThat(countByStatus("PENDING")).isEqualTo(1L);
         assertThat(userRepository.findById(admin.getId()).orElseThrow(AssertionError::new).getRole())
                 .isEqualTo(Role.ADMIN);
@@ -365,9 +366,9 @@ class InvitationIntegrationTest extends AbstractIntegrationTest {
     }
 
     /**
-     * O token em claro sai só pelo e-mail, e a suíte não espera pela thread assíncrona
-     * (ADR 0007). Trocar o hash da linha por um de token conhecido exercita exatamente a
-     * consulta que o aceite faz, e ainda permite escolher o vencimento.
+     * The plaintext token leaves only by e-mail, and the suite does not wait for the asynchronous
+     * thread (ADR 0007). Replacing the hash on the row with one of a known token exercises exactly
+     * the query the accept performs, and it also allows the expiry to be chosen.
      */
     private String replantToken(Long invitationId, Instant expiresAt) {
         String plaintext = SecretTokens.random();

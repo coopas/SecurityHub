@@ -12,11 +12,11 @@ import org.springframework.data.repository.query.Param;
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
 
     /**
-     * {@code SELECT ... FOR UPDATE}. É o que torna determinístico o caso das duas abas: sem o
-     * lock, duas requisições simultâneas com o mesmo token leriam a linha ainda ACTIVE e
-     * cada uma inseriria um sucessor, bifurcando a família. Com ele, a segunda transação
-     * espera, relê a linha já ROTATED e cai no ramo da janela de graça — que é uma decisão,
-     * não uma corrida.
+     * {@code SELECT ... FOR UPDATE}. It is what makes the two-tabs case deterministic: without
+     * the lock, two simultaneous requests with the same token would read the row while it is
+     * still ACTIVE and each one would insert a successor, forking the family. With it, the
+     * second transaction waits, re-reads the row already ROTATED and falls into the grace
+     * window branch — which is a decision, not a race.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select t from RefreshToken t where t.tokenHash = :tokenHash")
@@ -25,17 +25,18 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     Optional<RefreshToken> findByTokenHash(String tokenHash);
 
     /**
-     * Mata a família inteira, inclusive as linhas já ROTATED: em um roubo, as rotações
-     * anteriores são exatamente o que o ladrão pode ter em mãos.
+     * Kills the whole family, including the rows already ROTATED: in a theft, the earlier
+     * rotations are exactly what the thief may be holding.
      *
-     * Os enums entram como parâmetro e não como literal na JPQL. Um literal {@code 'REVOKED'}
-     * compila, mas é comparado como String contra uma coluna mapeada por ordinal ou por nome
-     * conforme a entidade, e um rename do enum passaria despercebido pelo compilador.
+     * The enums go in as a parameter and not as a literal in the JPQL. A literal
+     * {@code 'REVOKED'} compiles, but it is compared as a String against a column mapped by
+     * ordinal or by name depending on the entity, and a rename of the enum would go unnoticed
+     * by the compiler.
      *
-     * {@code updated_at} é atribuído à mão porque uma atualização em massa não passa pelo
-     * AuditingEntityListener do BaseEntity, e a coluna é NOT NULL. O contexto de persistência
-     * deliberadamente NÃO é limpo: quem chama costuma ter na mão a entidade que acabou de
-     * alterar (o usuário desativado, a senha nova) e precisa mapeá-la para a resposta depois.
+     * {@code updated_at} is assigned by hand because a bulk update does not go through the
+     * AuditingEntityListener of BaseEntity, and the column is NOT NULL. The persistence context
+     * is deliberately NOT cleared: the caller usually holds the entity it has just changed (the
+     * deactivated user, the new password) and needs to map it to the response afterwards.
      */
     @Modifying(flushAutomatically = true)
     @Query("update RefreshToken t set t.status = :revoked, t.revokedReason = :reason, "
@@ -56,8 +57,9 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
                          @Param("now") Instant now);
 
     /**
-     * Coleta preguiçosa: roda no login, onde uma linha a mais no plano não é percebida, em vez
-     * de em um agendador que subiria dentro de todo contexto de teste de integração (ADR 0006).
+     * Lazy collection: it runs on the login, where one extra row in the plan goes unnoticed,
+     * instead of in a scheduler that would start up inside every integration test context
+     * (ADR 0006).
      */
     @Modifying(flushAutomatically = true)
     @Query("delete from RefreshToken t where t.user.id = :userId and t.expiresAt < :cutoff")

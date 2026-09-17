@@ -14,9 +14,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Um link de redefinição vivo. Sem status: usar o token apaga a linha, e pedir outro apaga o
- * anterior, então "existe" já quer dizer "vale". A unicidade de {@code user_id} em V7 é o que
- * garante que só exista um por vez.
+ * A live reset link. No status: using the token deletes the row, and asking for another one
+ * deletes the previous one, so "it exists" already means "it is valid". The uniqueness of
+ * {@code user_id} in V7 is what guarantees there is only ever one at a time.
  */
 @Getter
 @Setter

@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Nested under the vulnerability because a comment has no meaning on its own; there is no
  * delete mapping because the MVP has no physical deletion of comments (docs/data-model.md).
  */
-@Tag(name = "Comentários")
+@Tag(name = "Comments")
 @RestController
 @RequestMapping("/api/v1/vulnerabilities/{vulnerabilityId}/comments")
 @RequiredArgsConstructor
@@ -35,7 +35,7 @@ public class CommentController {
     private final CommentService commentService;
 
     @GetMapping
-    @Operation(summary = "Lista os comentários de uma vulnerabilidade da própria empresa")
+    @Operation(summary = "Lists the comments of a vulnerability of the caller's own company")
     public PageResponse<CommentResponse> list(@AuthenticationPrincipal AuthenticatedUser current,
                                               @PathVariable Long vulnerabilityId,
                                               @PageableDefault(size = 20) Pageable pageable) {
@@ -44,7 +44,7 @@ public class CommentController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Comenta uma vulnerabilidade (ADMIN, ANALYST ou DEVELOPER)")
+    @Operation(summary = "Comments on a vulnerability (ADMIN, ANALYST or DEVELOPER)")
     public ResponseEntity<CommentResponse> create(@AuthenticationPrincipal AuthenticatedUser current,
                                                   @PathVariable Long vulnerabilityId,
                                                   @Valid @RequestBody CommentRequest request) {
@@ -53,7 +53,7 @@ public class CommentController {
     }
 
     @PutMapping("/{commentId}")
-    @Operation(summary = "Edita um comentário; apenas o autor ou um ADMIN")
+    @Operation(summary = "Edits a comment; only the author or an ADMIN")
     public CommentResponse update(@AuthenticationPrincipal AuthenticatedUser current,
                                   @PathVariable Long vulnerabilityId,
                                   @PathVariable Long commentId,

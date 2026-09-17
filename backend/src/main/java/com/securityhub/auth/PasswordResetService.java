@@ -25,11 +25,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Redefinição de senha por link de uso único.
+ * Password reset through a single-use link.
  *
- * As duas pontas são deliberadamente cegas: o pedido responde 202 para qualquer endereço e a
- * confirmação responde o mesmo 400 para token desconhecido, vencido ou de conta desativada.
- * Um visitante anônimo em uma página pública não pode descobrir quem tem conta aqui.
+ * Both ends are deliberately blind: the request answers 202 for any address and the confirmation
+ * answers the same 400 for a token that is unknown, expired or belongs to a deactivated account.
+ * An anonymous visitor on a public page cannot find out who has an account here.
  */
 @Slf4j
 @Service
@@ -39,10 +39,10 @@ public class PasswordResetService {
     static final Duration TOKEN_TTL = Duration.ofMinutes(30);
 
     /**
-     * 400 e não 401. O 401 é o sinal que o interceptor do frontend traduz como "sua sessão
-     * expirou": ele limparia o armazenamento local e redirecionaria para o login. Quem está
-     * nesta tela é anônimo em uma página pública, não tem sessão nenhuma para expirar, e
-     * receberia um redirecionamento no lugar da mensagem que explica o que aconteceu.
+     * 400 and not 401. The 401 is the signal the frontend interceptor translates as "sua sessão
+     * expirou": it would clear local storage and redirect to the login. Whoever is on this screen
+     * is anonymous on a public page, has no session at all to expire, and would get a redirect
+     * in place of the message that explains what happened.
      */
     static final String INVALID_LINK = "Link de redefinição inválido ou expirado";
 
@@ -57,21 +57,21 @@ public class PasswordResetService {
     private final MailerProperties mailerProperties;
 
     /**
-     * Sempre 202, byte a byte igual, conhecido ou não.
+     * Always 202, byte for byte the same, known address or not.
      *
-     * Não há BCrypt falso aqui, ao contrário de {@code AuthService.login}: naquele caminho a
-     * verificação da senha é o trabalho caro que precisa acontecer também no caso do e-mail
-     * desconhecido, senão o tempo de resposta entrega a diferença. Aqui não se verifica senha
-     * nenhuma — o trabalho caro seria a ida ao SMTP, e ela sai da thread da requisição
-     * (ADR 0007), de modo que os dois caminhos gastam uma consulta indexada e nada mais.
+     * There is no dummy BCrypt here, unlike {@code AuthService.login}: on that path the password
+     * verification is the expensive work that has to happen in the unknown e-mail case as well,
+     * or else the response time gives the difference away. Here no password is verified at all
+     * — the expensive work would be the trip to SMTP, and it leaves the request thread
+     * (ADR 0007), so that both paths spend one indexed query and nothing more.
      */
     @Transactional
     public void request(PasswordResetRequest request) {
         String email = User.normalizeEmail(request.getEmail());
         Optional<User> found = userRepository.findByEmailAndActiveTrue(email);
         if (!found.isPresent()) {
-            // Sem o endereço no log: a trilha de um sistema multi-tenant não é lugar para
-            // registrar quem tentou existir.
+            // Without the address in the log: the trail of a multi-tenant system is no place
+            // to record who tried to exist.
             log.info("Pedido de redefinição para endereço desconhecido ou inativo, ignorado");
             return;
         }
@@ -84,8 +84,9 @@ public class PasswordResetService {
         passwordResetTokenRepository.save(new PasswordResetToken(user, SecretTokens.hash(plaintext),
                 now.plus(TOKEN_TTL)));
 
-        // Independente porque a linha de users que ela referencia já está comitada e o fato
-        // "alguém pediu redefinição" tem valor mesmo que algo adiante desfaça a transação.
+        // Independent because the users row it references is already committed and the fact
+        // "somebody asked for a reset" has value even if something further ahead undoes the
+        // transaction.
         auditService.recordIndependently(AuditEntry.ofActor(user.getCompany().getId(), user.getId(),
                 user.getEmail(), AuditAction.PASSWORD_RESET, ENTITY_TYPE, user.getId()));
 
@@ -96,11 +97,11 @@ public class PasswordResetService {
     }
 
     /**
-     * Devolve 204 e não uma sessão, ao contrário do aceite de convite. A assimetria é
-     * proposital: quem aceita um convite provou a posse do e-mail para criar a conta e não tem
-     * outra credencial para usar, enquanto quem redefine a senha acabou de escolher uma e o
-     * caminho honesto é ir ao login com ela. Emitir sessão aqui faria de um link de e-mail
-     * interceptado uma sessão pronta, sem nenhum passo a mais.
+     * Returns 204 and not a session, unlike invitation acceptance. The asymmetry is deliberate:
+     * whoever accepts an invitation has proved possession of the e-mail in order to create the
+     * account and has no other credential to use, while whoever resets the password has just
+     * chosen one and the honest path is to go to the login with it. Issuing a session here would
+     * turn an intercepted e-mail link into a ready-made session, without a single extra step.
      */
     @Transactional
     public void confirm(PasswordResetConfirmRequest request) {
@@ -118,8 +119,8 @@ public class PasswordResetService {
 
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
-        // Uso único: a linha some em vez de ganhar um estado. lastLoginAt fica intocado —
-        // redefinir senha não é entrar.
+        // Single use: the row disappears instead of gaining a state. lastLoginAt is left
+        // untouched — resetting a password is not signing in.
         passwordResetTokenRepository.delete(token);
         refreshTokenService.revokeAllForUser(user.getId(), RevocationReason.PASSWORD_RESET);
 
@@ -129,8 +130,8 @@ public class PasswordResetService {
     }
 
     /**
-     * O link aponta para o frontend, não para a API: o destinatário precisa de uma tela onde
-     * digitar a senha nova.
+     * The link points at the frontend, not at the API: the recipient needs a screen on which to
+     * type the new password.
      */
     private String resetLink(String plaintext) {
         return mailerProperties.getAppBaseUrl() + "/reset-password?token=" + encode(plaintext);

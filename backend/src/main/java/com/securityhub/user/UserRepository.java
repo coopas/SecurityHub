@@ -10,9 +10,9 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     Optional<User> findByEmail(String email);
 
     /**
-     * Usado pelo pedido de redefinição de senha: uma conta desativada não deve receber link,
-     * e o serviço não pode distinguir os dois casos na resposta, então a distinção fica na
-     * consulta.
+     * Used by the password reset request: a deactivated account must not receive a link, and
+     * the service cannot tell the two cases apart in the response, so the distinction lives in
+     * the query.
      */
     Optional<User> findByEmailAndActiveTrue(String email);
 
@@ -25,8 +25,9 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     long countByCompanyIdAndRoleAndActiveTrue(Long companyId, Role role);
 
     /**
-     * A empresa vem junto porque quem chama monta o DTO fora da transação que carregou a
-     * linha — {@code AuthService.refresh} é o caso — e o proxy lazy já estaria desanexado.
+     * The company comes along because the caller builds the DTO outside the transaction that
+     * loaded the row — {@code AuthService.refresh} is the case — and the lazy proxy would
+     * already be detached.
      */
     @EntityGraph(attributePaths = "company")
     Optional<User> findWithCompanyById(Long id);

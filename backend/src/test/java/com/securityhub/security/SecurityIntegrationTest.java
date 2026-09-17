@@ -217,8 +217,8 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void publicEndpointsStayReachableWithoutToken() throws Exception {
-        // /actuator/health saiu daqui: os endpoints de gestão passaram a viver na porta própria
-        // de management.server.port. O que sobrou desta porta é coberto por
+        // /actuator/health left this list: the management endpoints now live on their own port,
+        // the one from management.server.port. What is left of this port is covered by
         // ObservabilityIntegrationTest.
         mockMvc.perform(get("/v3/api-docs")).andExpect(status().isOk());
     }

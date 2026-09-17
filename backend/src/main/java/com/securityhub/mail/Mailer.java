@@ -10,7 +10,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
- * Entrega que nunca derruba a requisição (ADR 0007).
+ * Delivery that never brings the request down (ADR 0007).
  */
 @Slf4j
 @Component
@@ -21,22 +21,22 @@ public class Mailer {
     private final MailerProperties properties;
 
     /**
-     * Enfileira a mensagem para depois do commit, por duas razões independentes:
+     * Queues the message for after the commit, for two independent reasons:
      *
      * <ul>
-     *   <li><b>Depois do commit</b> porque o link aponta para uma linha que ainda não está
-     *       comitada. Enviar antes abriria a janela em que o destinatário clica em um token
-     *       que a transação ainda pode desfazer — e um rollback deixaria no mundo um e-mail
-     *       sobre um convite que nunca existiu.</li>
-     *   <li><b>Fora da thread da requisição</b> porque a ida ao SMTP é a única diferença de
-     *       tempo entre um endereço conhecido e um desconhecido em
-     *       {@code POST /auth/password-reset/request}. Mantê-la no caminho síncrono
-     *       transformaria a resposta 202 — deliberadamente idêntica nos dois casos — em um
-     *       oráculo de enumeração de contas medível com um cronômetro.</li>
+     *   <li><b>After the commit</b> because the link points at a row that is not committed
+     *       yet. Sending it earlier would open the window in which the recipient clicks a
+     *       token the transaction can still undo — and a rollback would leave an e-mail out
+     *       in the world about an invitation that never existed.</li>
+     *   <li><b>Off the request thread</b> because the round trip to SMTP is the only timing
+     *       difference between a known address and an unknown one in
+     *       {@code POST /auth/password-reset/request}. Keeping it on the synchronous path
+     *       would turn the 202 response — deliberately identical in both cases — into an
+     *       account enumeration oracle measurable with a stopwatch.</li>
      * </ul>
      *
-     * Sem transação ativa (um chamador fora de um serviço transacional) o envio acontece
-     * direto, que continua sendo assíncrono e continua sem propagar falha.
+     * With no active transaction (a caller outside a transactional service) the send happens
+     * directly, which is still asynchronous and still does not propagate failure.
      */
     public void sendAfterCommit(String to, String subject, String body) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -52,9 +52,9 @@ public class Mailer {
     }
 
     /**
-     * Falha de entrega vira log, nunca exceção: quem chamou já comitou e não tem mais o que
-     * desfazer. WARN e não ERROR porque um SMTP ausente é o estado normal de um ambiente de
-     * desenvolvimento sem o MailHog de pé.
+     * A delivery failure becomes a log line, never an exception: the caller has already
+     * committed and has nothing left to undo. WARN and not ERROR because a missing SMTP is the
+     * normal state of a development environment without MailHog up.
      */
     @Async(MailAsyncConfig.EXECUTOR)
     public void send(String to, String subject, String body) {
@@ -73,8 +73,8 @@ public class Mailer {
     }
 
     /**
-     * A rejeição do executor limitado chega aqui, na thread de quem comitou, como
-     * TaskRejectedException; por isso a chamada assíncrona também é protegida.
+     * The rejection from the bounded executor arrives here, on the thread of whoever committed,
+     * as a TaskRejectedException; that is why the asynchronous call is guarded as well.
      */
     private void dispatch(String to, String subject, String body) {
         try {

@@ -24,18 +24,18 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * Varredura: a trilha de auditoria é legível por qualquer ADMIN da empresa, então um segredo que
- * caia nela deixa de ser segredo para todos eles ao mesmo tempo.
+ * A sweep: the audit trail is readable by any ADMIN of the company, so a secret that lands in it
+ * stops being a secret for all of them at once.
  *
- * O teste exercita todos os fluxos que manipulam material sensível, guarda cada valor em claro
- * que passou pelas suas mãos e depois varre as colunas de valor das linhas de auditoria. Além
- * dos valores exatos, procura pelas formas: o prefixo de um hash BCrypt, o cabeçalho de um JWT,
- * o digest hexadecimal guardado no banco e qualquer sequência longa de Base64-URL, que é como
- * um token opaco se pareceria mesmo que este teste não conhecesse o seu valor.
+ * The test exercises every flow that handles sensitive material, keeps each plaintext value that
+ * passed through its hands and then sweeps the value columns of the audit rows. Beyond the exact
+ * values, it looks for the shapes: the prefix of a BCrypt hash, the header of a JWT, the
+ * hexadecimal digest stored in the database and any long Base64-URL sequence, which is what an
+ * opaque token would look like even if this test did not know its value.
  */
 class TokenMaterialNeverLeaksIntegrationTest extends AbstractIntegrationTest {
 
-    /** Um token opaco tem 43 caracteres; nomes, e-mails e datas não formam sequências assim. */
+    /** An opaque token has 43 characters; names, e-mails and dates form no such sequences. */
     private static final Pattern OPAQUE_TOKEN_SHAPE = Pattern.compile("[A-Za-z0-9_-]{40,}");
 
     private static final String PASSWORD = "senha-de-teste-123";
@@ -50,7 +50,7 @@ class TokenMaterialNeverLeaksIntegrationTest extends AbstractIntegrationTest {
         secrets.add(PASSWORD);
         secrets.add(NEW_PASSWORD);
 
-        // 1. Cadastro: cria empresa, administrador e a primeira sessão.
+        // 1. Registration: creates the company, the administrator and the first session.
         JsonNode registered = json(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload("companyName", "Acme", "name", "Administrador",
@@ -59,7 +59,7 @@ class TokenMaterialNeverLeaksIntegrationTest extends AbstractIntegrationTest {
         Long adminId = registered.get("user").get("id").asLong();
         String adminBearer = "Bearer " + registered.get("accessToken").asText();
 
-        // 2. Login e rotação.
+        // 2. Login and rotation.
         JsonNode loggedIn = json(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload("email", "admin@acme.test", "password", PASSWORD)), status().isOk());
@@ -70,14 +70,14 @@ class TokenMaterialNeverLeaksIntegrationTest extends AbstractIntegrationTest {
                 status().isOk());
         collectSession(secrets, rotated);
 
-        // 3. Reuso do token já rotacionado, que é o caminho que audita TOKEN_REUSE_DETECTED.
+        // 3. Reusing the already rotated token, which is the path that audits TOKEN_REUSE_DETECTED.
         ageUsedAt(loggedIn.get("refreshToken").asText());
         mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload("refreshToken", loggedIn.get("refreshToken").asText())))
                 .andExpect(status().isUnauthorized());
 
-        // 4. Logout de uma sessão nova.
+        // 4. Logout of a fresh session.
         JsonNode toLogout = json(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload("email", "admin@acme.test", "password", PASSWORD)), status().isOk());
@@ -87,7 +87,7 @@ class TokenMaterialNeverLeaksIntegrationTest extends AbstractIntegrationTest {
                         .content(payload("refreshToken", toLogout.get("refreshToken").asText())))
                 .andExpect(status().isNoContent());
 
-        // 5. Redefinição de senha, pedido e confirmação.
+        // 5. Password reset, request and confirmation.
         mockMvc.perform(post("/api/v1/auth/password-reset/request")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(payload("email", "admin@acme.test")))
@@ -99,7 +99,7 @@ class TokenMaterialNeverLeaksIntegrationTest extends AbstractIntegrationTest {
                         .content(payload("token", resetToken, "password", NEW_PASSWORD)))
                 .andExpect(status().isNoContent());
 
-        // 6. Convite emitido, revogado, reemitido e aceito.
+        // 6. Invitation issued, revoked, reissued and accepted.
         JsonNode firstInvite = json(post("/api/v1/invitations").header("Authorization", adminBearer)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(payload("name", "Bruno", "email", "bruno@acme.test", "role", "ANALYST")),
@@ -117,7 +117,7 @@ class TokenMaterialNeverLeaksIntegrationTest extends AbstractIntegrationTest {
                 .content(payload("token", inviteToken, "password", PASSWORD)), status().isCreated());
         collectSession(secrets, accepted);
 
-        // 7. Gestão do usuário recém-criado: nome, papel e desativação.
+        // 7. Management of the newly created user: name, role and deactivation.
         Long brunoId = accepted.get("user").get("id").asLong();
         mockMvc.perform(patch("/api/v1/users/" + brunoId).header("Authorization", adminBearer)
                 .contentType(MediaType.APPLICATION_JSON).content(payload("name", "Bruno Souza")))
@@ -129,7 +129,7 @@ class TokenMaterialNeverLeaksIntegrationTest extends AbstractIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON).content("{\"active\":false}"))
                 .andExpect(status().isOk());
 
-        // Sanidade: a varredura só vale se houve algo para varrer.
+        // Sanity: the sweep is only worth anything if there was something to sweep.
         List<String> values = auditValues();
         assertThat(values).isNotEmpty();
         assertThat(secrets).hasSizeGreaterThan(8);
@@ -155,8 +155,8 @@ class TokenMaterialNeverLeaksIntegrationTest extends AbstractIntegrationTest {
     void theSweepWouldCatchALeak() throws Exception {
         TestDataFactory.Tenant tenant = fixtures.tenant("acme");
         String token = SecretTokens.random();
-        // Prova de que as três formas procuradas acima realmente disparam; sem isto a varredura
-        // poderia estar passando por não encontrar nada em lugar nenhum.
+        // Proof that the three shapes looked for above really do fire; without this the sweep
+        // could be passing because it finds nothing anywhere at all.
         jdbcTemplate.update("INSERT INTO audit_logs (company_id, actor_id, actor_email, action, "
                         + "entity_type, entity_id, new_value_json, created_at) "
                         + "VALUES (?, ?, ?, 'UPDATE', 'User', ?, ?, now())",

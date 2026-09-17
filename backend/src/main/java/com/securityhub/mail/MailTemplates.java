@@ -13,7 +13,7 @@ public final class MailTemplates {
     private MailTemplates() {
     }
 
-    /** {@code link} já vem montado com o token; esta classe nunca o concatena sozinha. */
+    /** {@code link} already arrives with the token; this class never concatenates it itself. */
     public static String passwordReset(String name, String link, long ttlMinutes) {
         return "Olá, " + name + ".\n\n"
                 + "Recebemos um pedido para redefinir a senha da sua conta no SecurityHub.\n"

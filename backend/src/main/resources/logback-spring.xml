@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  O nome do arquivo é parte da configuração: precisa ser `logback-spring.xml`, e não
-  `logback.xml`. O Logback lê `logback.xml` sozinho, antes de o contexto do Spring existir —
-  e nesse momento `<springProfile>` e `<springProperty>` são tags desconhecidas, inertes.
-  Só o sufixo `-spring` faz o Boot assumir a leitura e resolver os perfis; com o outro nome
-  todo mundo cairia no mesmo appender, em silêncio.
+  The file name is part of the configuration: it has to be `logback-spring.xml`, not
+  `logback.xml`. Logback reads `logback.xml` on its own, before the Spring context exists —
+  and at that moment `<springProfile>` and `<springProperty>` are unknown tags, inert. Only the
+  `-spring` suffix makes Boot take over the reading and resolve the profiles; under the other
+  name everyone would land on the same appender, silently.
 
-  Saída apenas em stdout, sem appender de arquivo: dentro de um contêiner quem coleta o log é
-  o runtime, e um arquivo dentro da imagem é um disco enchendo que ninguém está olhando.
+  Output to stdout only, with no file appender: inside a container the runtime is what collects
+  the log, and a file inside the image is a disk filling up that nobody is watching.
 -->
 <configuration>
 
   <!--
-    Traz CONSOLE_LOG_PATTERN, os conversores de cor e os níveis padrão do Boot. É o que mantém
-    o padrão humano alimentado por `logging.pattern.console` no application.yml: o formato
-    legível continua definido em um lugar só, e não duplicado aqui.
+    Brings in CONSOLE_LOG_PATTERN, the colour converters and Boot's default levels. It is what
+    keeps the human-readable pattern fed by `logging.pattern.console` in application.yml: the
+    readable format stays defined in one place instead of being duplicated here.
   -->
   <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
@@ -30,22 +30,22 @@
 
   <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
     <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-      <!-- UTC em todo lugar, como o resto da aplicação (Jackson, Hibernate e o CSV). -->
+      <!-- UTC everywhere, like the rest of the application (Jackson, Hibernate and the CSV). -->
       <timeZone>UTC</timeZone>
 
       <!--
         Sem as propriedades do contexto do Logback. O <springProperty> acima grava `serviceName`
-        ali, e com includeContext ligado (o padrão) o mesmo valor sairia duas vezes em toda
+        there, and with includeContext on (the default) the same value would be emitted twice on
         linha — uma como `serviceName`, outra como o `service` declarado logo abaixo. O nome do
-        campo é contrato com o coletor; um só, e explícito.
+        every line. The field is a contract with the collector: one of them, and explicit.
       -->
       <includeContext>false</includeContext>
 
       <!--
-        O MDC entra por lista de permissão, e não inteiro. `traceId` sobe como campo de
-        primeiro nível, que é como um coletor correlaciona requisições; qualquer chave futura
-        precisa ser adicionada aqui de propósito. Sem isso, a primeira chave de MDC que
-        alguém colocar com um dado sensível seria serializada em toda linha, por acidente.
+        The MDC goes in by allowlist, not wholesale. `traceId` is promoted to a top-level field,
+        which is how a collector correlates requests; any future key has to be added here
+        deliberately. Without that, the first MDC key somebody sets holding sensitive data would
+        be serialised on every line, by accident.
       -->
       <includeMdc>true</includeMdc>
       <includeMdcKeyName>traceId</includeMdcKeyName>
@@ -61,9 +61,9 @@
   </appender>
 
   <!--
-    `demo` fica legível de propósito: quem sobe o compose e roda `docker compose logs backend`
-    para achar as credenciais semeadas precisa conseguir ler a saída. `test` pelo mesmo motivo
-    — um build que quebra com o log em JSON é um build que ninguém diagnostica.
+    `demo` stays readable on purpose: whoever brings compose up and runs `docker compose logs
+    backend` to find the seeded credentials has to be able to read the output. `test` for the
+    same reason — a build that breaks with the log in JSON is a build nobody diagnoses.
   -->
   <springProfile name="dev,test,demo">
     <root level="INFO">

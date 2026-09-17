@@ -18,12 +18,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Convite pendente para entrar em uma empresa.
+ * Pending invitation to join a company.
  *
- * A linha de {@code users} só nasce no aceite. É o motivo de existir esta tabela em vez de um
- * usuário inativo esperando: um convite de ADMIN pendente não é um administrador, e contá-lo
- * como tal deixaria a empresa sem nenhum administrador de verdade quando o último existente se
- * desativasse confiando na regra do "último administrador ativo".
+ * The {@code users} row is only born on acceptance. That is the reason this table exists
+ * instead of an inactive user waiting around: a pending ADMIN invitation is not an
+ * administrator, and counting it as one would leave the company with no real administrator at
+ * all the moment the last existing one deactivated itself trusting the "last active
+ * administrator" rule.
  */
 @Getter
 @Setter
@@ -80,8 +81,8 @@ public class Invitation extends BaseEntity {
     }
 
     /**
-     * Aceitar e carimbar o instante andam juntos porque V7 exige a equivalência entre os dois;
-     * separá-los em dois setters deixaria a violação da CHECK possível de escrever.
+     * Accepting and stamping the instant go together because V7 demands the equivalence between
+     * the two; splitting them into two setters would leave the CHECK violation writable.
      */
     public void accept(Instant when) {
         this.status = InvitationStatus.ACCEPTED;

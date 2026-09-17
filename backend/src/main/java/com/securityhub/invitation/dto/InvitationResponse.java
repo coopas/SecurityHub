@@ -7,9 +7,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * Nunca carrega o token, nem o seu hash. Quem administra a empresa não precisa do segredo para
- * gerenciar o convite, e devolvê-lo transformaria a listagem em uma forma de assumir a conta
- * de qualquer convidado.
+ * Never carries the token, nor its hash. Whoever administers the company does not need the
+ * secret to manage the invitation, and returning it would turn the listing into a way of taking
+ * over the account of any invitee.
  */
 @Getter
 @AllArgsConstructor

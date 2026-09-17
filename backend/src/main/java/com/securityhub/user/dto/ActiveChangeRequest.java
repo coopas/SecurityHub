@@ -5,8 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Objeto e não primitivo: com {@code boolean}, um corpo sem o campo viraria {@code false} em
- * silêncio e desativaria alguém sem que ninguém tivesse pedido.
+ * An object and not a primitive: with {@code boolean}, a body without the field would silently
+ * become {@code false} and deactivate somebody nobody had asked to deactivate.
  */
 @Getter
 @Setter

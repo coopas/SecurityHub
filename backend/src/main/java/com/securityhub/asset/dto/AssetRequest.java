@@ -31,7 +31,7 @@ public class AssetRequest {
     @NotNull(message = "é obrigatório")
     private AssetType type;
 
-    /** Opcional: em branco significa ausente, e vários ativos podem não ter identificador. */
+    /** Optional: blank means absent, and several assets may have no identifier. */
     @Size(max = 255, message = "deve ter no máximo 255 caracteres")
     private String identifier;
 

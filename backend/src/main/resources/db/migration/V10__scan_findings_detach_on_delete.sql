@@ -1,30 +1,30 @@
--- — deixa excluir uma vulnerabilidade que veio de importação.
+-- — lets a vulnerability that came from an import be deleted.
 --
--- Encontrado ao testar a pilha de verdade, depois que a V9 já estava aplicada: uma
--- vulnerabilidade criada por uma importação não podia mais ser excluída. A linha de
--- `scan_findings` que aponta para ela segurava a exclusão, o `DELETE /vulnerabilities/{id}`
--- respondia 409 e, pela regra de filhos, o ativo e o projeto dela também ficavam presos.
+-- Found while testing the real stack, after V9 had already been applied: a vulnerability
+-- created by an import could no longer be deleted. The `scan_findings` row pointing at it
+-- held the deletion back, `DELETE /vulnerabilities/{id}` answered 409 and, by the children
+-- rule, its asset and its project got stuck as well.
 --
--- Uma migration nova, e não uma correção na V9, porque a V9 já rodou: o Flyway valida o
--- checksum de toda migration aplicada, e editá-la no lugar transformaria `docker compose up`
--- num ciclo de falhas para qualquer banco que já a tivesse recebido. É a mesma razão escrita
--- na V6, e ela vale igual quando quem já aplicou foi só a máquina de quem desenvolve.
+-- A new migration, and not a fix to V9, because V9 has already run: Flyway validates the
+-- checksum of every applied migration, and editing it in place would turn `docker compose up`
+-- into a crash loop for any database that had already received it. It is the same reason V6
+-- gives, and it holds just as well when the only machine that applied it is the developer's.
 --
--- O `VulnerabilityService.delete` já documenta a regra que este arquivo estende: filho sem
--- endpoint próprio de exclusão acompanha o pai em vez de bloqueá-lo, senão basta um
--- comentário para tornar o registro indestrutível. O achado importado é exatamente esse caso.
+-- `VulnerabilityService.delete` already documents the rule this file extends: a child with no
+-- deletion endpoint of its own follows the parent instead of blocking it, otherwise a single
+-- comment is enough to make a record indestructible. The imported finding is exactly that case.
 
--- O achado continua IMPORTED depois que a vulnerabilidade some, e é de propósito.
+-- The finding stays IMPORTED after the vulnerability is gone, and that is on purpose.
 --
--- A tabela `scan_findings` é o histórico do que o relatório encontrou e do que foi feito com
--- aquilo. A importação de fato importou o achado, e o `imported_count` daquela importação
--- continua verdadeiro; o que mudou depois foi o destino da vulnerabilidade, não a decisão
--- tomada na revisão. Marcá-lo como SKIPPED faria o histórico mentir sobre uma importação que
--- não pulou nada.
+-- The `scan_findings` table is the history of what the report found and of what was done with
+-- it. The import did import the finding, and the `imported_count` of that import stays true;
+-- what changed afterwards was the fate of the vulnerability, not the decision taken in the
+-- review. Marking it SKIPPED would make the history lie about an import that skipped
+-- nothing.
 --
--- A equivalência anterior — IMPORTED se e somente se há vulnerabilidade — vira uma implicação
--- em um sentido só: continua impossível uma linha não importada carregar vulnerabilidade, e
--- passa a ser possível uma linha importada ter perdido a dela.
+-- The previous equivalence — IMPORTED if and only if there is a vulnerability — becomes an
+-- implication in one direction only: it stays impossible for a row that was not imported to
+-- carry a vulnerability, and it becomes possible for an imported row to have lost its own.
 ALTER TABLE scan_findings
     DROP CONSTRAINT ck_scan_findings_status_vulnerability;
 
@@ -32,12 +32,12 @@ ALTER TABLE scan_findings
     ADD CONSTRAINT ck_scan_findings_status_vulnerability
         CHECK (status = 'IMPORTED' OR vulnerability_id IS NULL);
 
--- Quem desfaz a ligação é o banco, não o serviço.
+-- The database is what undoes the link, not the service.
 --
--- A alternativa era o `VulnerabilityService` limpar as linhas de `scan_findings` antes de
--- excluir, como ele já faz com comentários e anexos. Aqui o banco resolve melhor: não existe
--- caminho de exclusão que possa esquecer de chamar a limpeza, e o módulo de vulnerabilidade
--- não precisa passar a conhecer o de importação só para isso.
+-- The alternative was for `VulnerabilityService` to clear the `scan_findings` rows before
+-- deleting, the way it already does with comments and attachments. The database solves it
+-- better here: there is no deletion path that can forget to call the cleanup, and the
+-- vulnerability module does not have to start knowing about the import one just for this.
 ALTER TABLE scan_findings
     DROP CONSTRAINT fk_scan_findings_vulnerability;
 

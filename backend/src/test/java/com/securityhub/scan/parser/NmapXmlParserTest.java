@@ -92,11 +92,11 @@ class NmapXmlParserTest {
     }
 
     /**
-     * A recusa é a asserção, e não a ausência do conteúdo: sem {@code SUPPORT_DTD} desligado
-     * o StAX resolve a entidade em silêncio e o documento parseia normalmente, então um teste
-     * que apenas procurasse por {@code root:} nos campos continuaria verde com a proteção
-     * removida. Verificado à mão: com as travas desligadas, um arquivo apontado por entidade
-     * externa num nó de texto é lido integralmente.
+     * The rejection is the assertion, and not the absence of the content: without {@code
+     * SUPPORT_DTD} turned off, StAX resolves the entity silently and the document parses
+     * normally, so a test that only looked for {@code root:} in the fields would stay green with
+     * the protection removed. Verified by hand: with the guards turned off, a file pointed at by
+     * an external entity in a text node is read in full.
      */
     @Test
     void rejectsADocumentThatDeclaresAnExternalEntity() {

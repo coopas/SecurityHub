@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Autenticação")
+@Tag(name = "Authentication")
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -34,21 +34,21 @@ public class AuthController {
 
     @SecurityRequirements
     @PostMapping("/register")
-    @Operation(summary = "Cria uma empresa e o seu primeiro usuário administrador")
+    @Operation(summary = "Creates a company and its first administrator user")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
     @SecurityRequirements
     @PostMapping("/login")
-    @Operation(summary = "Autentica e devolve o access token")
+    @Operation(summary = "Authenticates and returns the access token")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
 
     @SecurityRequirements
     @PostMapping("/refresh")
-    @Operation(summary = "Troca o refresh token por um novo par de tokens")
+    @Operation(summary = "Exchanges the refresh token for a new pair of tokens")
     public AuthResponse refresh(@Valid @RequestBody RefreshTokenRequest request) {
         return authService.refresh(request);
     }
@@ -56,7 +56,7 @@ public class AuthController {
     @SecurityRequirements
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Encerra a sessão do refresh token apresentado")
+    @Operation(summary = "Ends the session of the presented refresh token")
     public void logout(@Valid @RequestBody RefreshTokenRequest request) {
         authService.logout(request);
     }
@@ -64,7 +64,7 @@ public class AuthController {
     @SecurityRequirements
     @PostMapping("/password-reset/request")
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @Operation(summary = "Envia o link de redefinição; responde 202 mesmo para e-mail desconhecido")
+    @Operation(summary = "Sends the reset link; answers 202 even for an unknown e-mail")
     public void requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
         passwordResetService.request(request);
     }
@@ -72,13 +72,13 @@ public class AuthController {
     @SecurityRequirements
     @PostMapping("/password-reset/confirm")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Define a senha nova a partir do token do e-mail; não abre sessão")
+    @Operation(summary = "Sets the new password from the e-mail token; does not open a session")
     public void confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
         passwordResetService.confirm(request);
     }
 
     @GetMapping("/me")
-    @Operation(summary = "Dados do usuário autenticado")
+    @Operation(summary = "Data of the authenticated user")
     public UserResponse me(@AuthenticationPrincipal AuthenticatedUser current) {
         return authService.currentUser(current.getId());
     }

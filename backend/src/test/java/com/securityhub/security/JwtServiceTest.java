@@ -126,9 +126,8 @@ class JwtServiceTest {
         service.init();
 
         assertThat(service.refreshTokenTtl()).isEqualTo(Duration.ofDays(14));
-        // A vida do refresh é independente da do access token: é o que permite que um seja
-        // curto o bastante para não precisar de revogação e o outro longo o bastante para
-        // valer a pena revogar.
+        // The refresh lifetime is independent of the access token's: it is what lets one be
+        // short enough not to need revocation and the other long enough to be worth revoking.
         assertThat(service.accessTokenTtl()).isEqualTo(Duration.ofHours(1));
     }
 

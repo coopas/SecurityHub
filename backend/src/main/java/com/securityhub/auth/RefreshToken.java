@@ -16,11 +16,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Uma linha por token emitido. O valor em claro nunca chega aqui: o que é persistido é o
- * SHA-256 hex dele (ADR 0006), e a linha existe para que revogar seja possível.
+ * One row per issued token. The plaintext value never reaches here: what is persisted is its
+ * hex SHA-256 (ADR 0006), and the row exists so that revoking is possible.
  *
- * Não há {@code company}: a tabela nunca é consultada por tenant e a empresa vem da linha de
- * users apontada por {@link #user}. Ver o comentário de V7.
+ * There is no {@code company}: the table is never queried by tenant and the company comes from
+ * the users row pointed at by {@link #user}. See the comment of V7.
  */
 @Getter
 @Setter
@@ -34,9 +34,9 @@ public class RefreshToken extends BaseEntity {
     private User user;
 
     /**
-     * Identificador da sessão: o login abre uma família e cada rotação insere o sucessor
-     * dentro dela. É o que permite matar uma sessão inteira ao detectar reuso sem derrubar as
-     * outras sessões da mesma pessoa.
+     * Identifier of the session: the login opens a family and every rotation inserts the
+     * successor inside it. It is what makes it possible to kill an entire session on reuse
+     * detection without bringing down the other sessions of the same person.
      */
     @Column(name = "family_id", nullable = false, length = 36)
     private String familyId;
@@ -55,7 +55,7 @@ public class RefreshToken extends BaseEntity {
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 
-    /** Instante da rotação. É a referência da janela de graça de 30 segundos. */
+    /** Instant of the rotation. It is the reference for the 30-second grace window. */
     @Column(name = "used_at")
     private Instant usedAt;
 

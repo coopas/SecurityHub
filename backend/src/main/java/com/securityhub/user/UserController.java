@@ -19,8 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Sem {@code @PreAuthorize}: a matriz é aplicada por {@link UserService}. */
-@Tag(name = "Usuários")
+/** No {@code @PreAuthorize} here: the matrix is enforced by {@link UserService}. */
+@Tag(name = "Users")
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
@@ -29,7 +29,7 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    @Operation(summary = "Lista os usuários da empresa autenticada")
+    @Operation(summary = "Lists the users of the authenticated company")
     public List<UserResponse> list(@AuthenticationPrincipal AuthenticatedUser current,
                                    @RequestParam(required = false) Role role,
                                    @RequestParam(required = false) Boolean active,
@@ -38,13 +38,13 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Detalha um usuário da própria empresa (somente ADMIN)")
+    @Operation(summary = "Details a user of the caller's own company (ADMIN only)")
     public UserResponse get(@AuthenticationPrincipal AuthenticatedUser current, @PathVariable Long id) {
         return userService.get(current, id);
     }
 
     @PatchMapping("/{id}")
-    @Operation(summary = "Altera o nome de um usuário; o e-mail não é editável (somente ADMIN)")
+    @Operation(summary = "Changes a user's name; the e-mail is not editable (ADMIN only)")
     public UserResponse update(@AuthenticationPrincipal AuthenticatedUser current,
                                @PathVariable Long id,
                                @Valid @RequestBody UserUpdateRequest request) {
@@ -52,7 +52,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/role")
-    @Operation(summary = "Altera o papel; encerra as sessões do usuário (somente ADMIN)")
+    @Operation(summary = "Changes the role; ends the user's sessions (ADMIN only)")
     public UserResponse changeRole(@AuthenticationPrincipal AuthenticatedUser current,
                                    @PathVariable Long id,
                                    @Valid @RequestBody RoleChangeRequest request) {
@@ -60,7 +60,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/active")
-    @Operation(summary = "Ativa ou desativa; desativar encerra as sessões (somente ADMIN)")
+    @Operation(summary = "Activates or deactivates; deactivating ends the sessions (ADMIN only)")
     public UserResponse changeActive(@AuthenticationPrincipal AuthenticatedUser current,
                                      @PathVariable Long id,
                                      @Valid @RequestBody ActiveChangeRequest request) {

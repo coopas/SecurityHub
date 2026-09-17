@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 class SecretTokensTest {
 
-    /** O mesmo formato que as CHECKs de V7 exigem em toda coluna token_hash. */
+    /** The same format the CHECKs of V7 require on every token_hash column. */
     private static final String HASH_FORMAT = "^[0-9a-f]{64}$";
 
     @Test
@@ -43,7 +43,7 @@ class SecretTokensTest {
         assertThat(SecretTokens.hash(SecretTokens.random())).matches(HASH_FORMAT);
     }
 
-    /** Vetor público de SHA-256("abc"): prende o algoritmo, não só o formato. */
+    /** Public vector of SHA-256("abc"): it pins the algorithm down, not just the format. */
     @Test
     void hashIsPlainSha256InLowercaseHex() {
         assertThat(SecretTokens.hash("abc"))

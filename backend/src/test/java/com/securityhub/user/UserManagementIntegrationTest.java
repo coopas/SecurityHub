@@ -44,7 +44,7 @@ class UserManagementIntegrationTest extends AbstractIntegrationTest {
         TestDataFactory.Tenant acme = fixtures.tenant("acme");
         TestDataFactory.Tenant globex = fixtures.tenant("globex");
 
-        // 404 antes de qualquer regra de posse: um 403 confirmaria que o id existe.
+        // 404 before any ownership rule: a 403 would confirm that the id exists.
         mockMvc.perform(get("/api/v1/users/" + globex.analyst.getId())
                         .header("Authorization", fixtures.bearer(acme.admin)))
                 .andExpect(status().isNotFound())
@@ -84,8 +84,8 @@ class UserManagementIntegrationTest extends AbstractIntegrationTest {
     void thereIsNoWayToChangeAnEmail() throws Exception {
         TestDataFactory.Tenant tenant = fixtures.tenant("acme");
 
-        // Um campo extra no corpo é simplesmente ignorado: o DTO não o declara, e é essa
-        // ausência — não uma regra no serviço — que fecha a primitiva de tomada de conta.
+        // An extra field in the body is simply ignored: the DTO does not declare it, and it is
+        // that absence — not a rule in the service — that closes the account-takeover primitive.
         mockMvc.perform(patch("/api/v1/users/" + tenant.analyst.getId())
                         .header("Authorization", fixtures.bearer(tenant.admin))
                         .contentType(MediaType.APPLICATION_JSON)
@@ -102,7 +102,7 @@ class UserManagementIntegrationTest extends AbstractIntegrationTest {
     void aRoleChangeTakesEffectOnTheVeryNextRequest() throws Exception {
         TestDataFactory.Tenant tenant = fixtures.tenant("acme");
         String analystBearer = fixtures.bearer(tenant.analyst);
-        // Antes: ANALYST consegue listar usuários.
+        // Before: ANALYST can list users.
         mockMvc.perform(get("/api/v1/users").header("Authorization", analystBearer))
                 .andExpect(status().isOk());
 
@@ -112,8 +112,8 @@ class UserManagementIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.role").value("VIEWER"));
 
-        // O access token antigo carrega o papel antigo e o filtro o recusa contra a linha nova:
-        // a permissão não sobrevive até o vencimento do token.
+        // The old access token carries the old role and the filter refuses it against the new row:
+        // the permission does not survive until the token expires.
         mockMvc.perform(get("/api/v1/users").header("Authorization", analystBearer))
                 .andExpect(status().isUnauthorized());
     }
@@ -135,7 +135,7 @@ class UserManagementIntegrationTest extends AbstractIntegrationTest {
         Company company = fixtures.company("Acme", "acme");
         var admin = fixtures.user(company, "admin@acme.test", Role.ADMIN);
         var other = fixtures.user(company, "outro@acme.test", Role.ADMIN);
-        // Sobra um só administrador ativo.
+        // Only one active administrator is left.
         changeActive(other.getId(), admin, false).andExpect(status().isOk());
 
         changeActive(admin.getId(), admin, false)
@@ -195,8 +195,8 @@ class UserManagementIntegrationTest extends AbstractIntegrationTest {
         changeActive(tenant.analyst.getId(), tenant.admin, true).andExpect(status().isOk());
         String refreshToken = loginRefreshToken("analyst@acme.test");
 
-        // Reativar não encerra sessão nenhuma: as que existiam já morreram na desativação, e a
-        // que nasce depois é legítima.
+        // Reactivating ends no session: the ones that existed already died at deactivation, and
+        // the one born afterwards is legitimate.
         assertThat(jdbcTemplate.queryForObject(
                 "SELECT status FROM refresh_tokens WHERE token_hash = ?", String.class,
                 SecretTokens.hash(refreshToken))).isEqualTo("ACTIVE");
@@ -232,8 +232,8 @@ class UserManagementIntegrationTest extends AbstractIntegrationTest {
     void theListingStaysABareArray() throws Exception {
         TestDataFactory.Tenant tenant = fixtures.tenant("acme");
 
-        // Paginar quebraria dois serviços do frontend que fazem cast direto para User[], e só em
-        // tempo de execução.
+        // Paginating would break two frontend services that cast straight to User[], and only at
+        // runtime.
         mockMvc.perform(get("/api/v1/users").header("Authorization", fixtures.bearer(tenant.admin)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -245,7 +245,7 @@ class UserManagementIntegrationTest extends AbstractIntegrationTest {
     void theActiveFlagIsRequiredInThePayload() throws Exception {
         TestDataFactory.Tenant tenant = fixtures.tenant("acme");
 
-        // Com um boolean primitivo, um corpo vazio desativaria alguém em silêncio.
+        // With a primitive boolean, an empty body would deactivate somebody silently.
         mockMvc.perform(patch("/api/v1/users/" + tenant.analyst.getId() + "/active")
                         .header("Authorization", fixtures.bearer(tenant.admin))
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))

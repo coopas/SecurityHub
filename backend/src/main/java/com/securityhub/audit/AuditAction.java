@@ -5,9 +5,9 @@ public enum AuditAction {
     LOGIN_FAILED,
     LOGOUT,
     /**
-     * Um refresh token já rotacionado foi reapresentado fora da janela de graça e a família
-     * inteira foi revogada. A coluna audit_logs.action é VARCHAR(32) sem CHECK, então novos
-     * valores não pedem migração.
+     * An already rotated refresh token was presented again outside the grace window and the
+     * whole family was revoked. The audit_logs.action column is VARCHAR(32) with no CHECK, so
+     * new values do not require a migration.
      */
     TOKEN_REUSE_DETECTED,
     REGISTER,

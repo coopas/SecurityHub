@@ -34,27 +34,27 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     @GetMapping("/summary")
-    @Operation(summary = "Cards do dashboard da empresa do usuário autenticado")
+    @Operation(summary = "Dashboard cards for the authenticated user's company")
     public DashboardSummaryResponse summary(@AuthenticationPrincipal AuthenticatedUser current) {
         return dashboardService.summary(current);
     }
 
     @GetMapping("/severity-distribution")
-    @Operation(summary = "Contagem por severidade, com todas as severidades presentes")
+    @Operation(summary = "Count by severity, with every severity present")
     public List<SeverityDistributionResponse> severityDistribution(
             @AuthenticationPrincipal AuthenticatedUser current) {
         return dashboardService.severityDistribution(current);
     }
 
     @GetMapping("/status-distribution")
-    @Operation(summary = "Contagem por status, com todos os status presentes")
+    @Operation(summary = "Count by status, with every status present")
     public List<StatusDistributionResponse> statusDistribution(
             @AuthenticationPrincipal AuthenticatedUser current) {
         return dashboardService.statusDistribution(current);
     }
 
     @GetMapping("/trend")
-    @Operation(summary = "Série diária de abertas e resolvidas; days é limitado a [1, 90]")
+    @Operation(summary = "Daily series of opened and resolved; days is clamped to [1, 90]")
     public TrendResponse trend(@AuthenticationPrincipal AuthenticatedUser current,
                                @RequestParam(defaultValue = "30") int days) {
         return dashboardService.trend(current, days);

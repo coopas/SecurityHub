@@ -7,10 +7,10 @@ import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
 
 /**
- * Espelha o teste de porta dos fundos de {@code VulnerabilityRequest}: a regra não é "o serviço
- * ignora o e-mail", é "o DTO não tem por onde recebê-lo". O e-mail é o identificador de login e
- * o canal de recuperação, então repontá-lo é uma primitiva de tomada de conta; a ausência do
- * campo é o que impede que um mapeamento distraído a reintroduza.
+ * Mirrors the back-door test of {@code VulnerabilityRequest}: the rule is not "the service ignores
+ * the e-mail", it is "the DTO has no way to receive it". The e-mail is the login identifier and the
+ * recovery channel, so repointing it is an account-takeover primitive; the absence of the field is
+ * what stops a careless mapping from reintroducing it.
  */
 class UserUpdateRequestTest {
 

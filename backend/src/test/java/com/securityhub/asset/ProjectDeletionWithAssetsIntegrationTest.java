@@ -19,9 +19,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 
 /**
- * "exclusões de projetos e ativos com filhos devem retornar conflito, não apagar em
- * cascata silenciosamente" (docs/permissions.md). Lives in the assets test package because the rule
- * only becomes observable once assets exist.
+ * "deleting projects and assets that have children must return a conflict, not cascade
+ * silently" (docs/permissions.md). Lives in the assets test package because the rule only
+ * becomes observable once assets exist.
  */
 class ProjectDeletionWithAssetsIntegrationTest extends AbstractIntegrationTest {
 

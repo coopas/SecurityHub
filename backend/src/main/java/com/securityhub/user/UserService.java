@@ -39,9 +39,9 @@ public class UserService {
      * ANALYST is included because assigning a vulnerability (docs/permissions.md) requires choosing a
      * user; the endpoint is read-only and never leaves the caller's company.
      *
-     * Devolve um array puro e não uma página. Não é esquecimento: dois serviços do frontend
-     * consomem a resposta com um cast direto para {@code User[]}, e envelopá-la em
-     * {@code PageResponse} quebraria os dois em tempo de execução, sem erro de compilação.
+     * Returns a plain array and not a page. That is not an oversight: two frontend services
+     * consume the response with a direct cast to {@code User[]}, and wrapping it in a
+     * {@code PageResponse} would break both at runtime, with no compilation error.
      */
     @Transactional(readOnly = true)
     @PreAuthorize("hasAnyRole('ADMIN','ANALYST')")
@@ -75,19 +75,19 @@ public class UserService {
     }
 
     /**
-     * Ordem das guardas, e ela importa:
+     * The order of the guards, and it matters:
      *
      * <ol>
-     *   <li>{@code require} — um usuário de outra empresa é 404 antes de qualquer regra de
-     *       posse, senão o 403 confirmaria que o id existe em algum lugar;</li>
-     *   <li>último administrador ativo — rebaixar o único ADMIN ativo deixaria a empresa sem
-     *       ninguém capaz de administrá-la, inclusive de promover um substituto;</li>
-     *   <li>auto-rebaixamento é permitido quando existe outro ADMIN ativo, e a guarda acima
-     *       já cobre o caso em que não existe.</li>
+     *   <li>{@code require} — a user from another company is a 404 before any ownership rule,
+     *       otherwise the 403 would confirm that the id exists somewhere;</li>
+     *   <li>last active administrator — demoting the only active ADMIN would leave the company
+     *       with nobody able to administer it, including to promote a replacement;</li>
+     *   <li>self-demotion is allowed when another active ADMIN exists, and the guard above
+     *       already covers the case where none does.</li>
      * </ol>
      *
-     * Um convite de ADMIN pendente não conta: a contagem é de linhas de {@code users} ativas,
-     * e um convite ainda não é ninguém.
+     * A pending ADMIN invitation does not count: the count is of active {@code users} rows, and
+     * an invitation is not yet anybody.
      */
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
@@ -101,9 +101,10 @@ public class UserService {
         Map<String, Object> before = snapshot(user);
         user.setRole(request.getRole());
         userRepository.save(user);
-        // O papel viaja dentro do access token; mantê-lo válido deixaria a permissão antiga de
-        // pé até o vencimento. O filtro já recusa o access token cujo papel divergiu da linha,
-        // e revogar o refresh fecha o outro lado: renovar a sessão exige logar de novo.
+        // The role travels inside the access token; keeping it valid would leave the old
+        // permission standing until it expires. The filter already refuses an access token
+        // whose role diverged from the row, and revoking the refresh closes the other side:
+        // renewing the session requires logging in again.
         refreshTokenService.revokeAllForUser(user.getId(), RevocationReason.ROLE_CHANGED);
 
         UserResponse response = UserMapper.toResponse(user);
@@ -124,9 +125,9 @@ public class UserService {
         }
         if (!active) {
             ensureNotLastActiveAdmin(current, user);
-            // Proibido sempre, mesmo havendo outros administradores. Desativar a si mesmo é um
-            // tiro no pé irreversível pela própria API — a conta perde o acesso que precisaria
-            // para se reativar — e nunca é o que alguém quis fazer.
+            // Always forbidden, even when other administrators exist. Deactivating yourself is
+            // a shot in the foot the API itself cannot undo — the account loses the access it
+            // would need to reactivate itself — and it is never what anybody meant to do.
             if (user.getId().equals(current.getId())) {
                 throw new ConflictException(SELF_DEACTIVATION);
             }
@@ -138,8 +139,8 @@ public class UserService {
         if (!active) {
             refreshTokenService.revokeAllForUser(user.getId(), RevocationReason.USER_DEACTIVATED);
         }
-        // Reativar não revoga nada: não há sessão para encerrar, e as linhas que existiam já
-        // morreram na desativação.
+        // Reactivating revokes nothing: there is no session to end, and the rows that existed
+        // already died on the deactivation.
 
         UserResponse response = UserMapper.toResponse(user);
         auditService.record(AuditEntry.changed(current, AuditAction.USER_UPDATED, ENTITY_TYPE, id,
@@ -150,9 +151,9 @@ public class UserService {
     }
 
     /**
-     * Só dispara para um ADMIN ativo que está prestes a deixar de contar — rebaixado ou
-     * desativado. Promover, rebaixar quem já não é ADMIN ou desativar quem já está inativo
-     * não mexem na contagem.
+     * Only fires for an active ADMIN that is about to stop counting — demoted or deactivated.
+     * Promoting, demoting somebody who is no longer an ADMIN, or deactivating somebody who is
+     * already inactive do not move the count.
      */
     private void ensureNotLastActiveAdmin(AuthenticatedUser current, User user) {
         if (user.getRole() != Role.ADMIN || !user.isActive()) {
@@ -163,13 +164,13 @@ public class UserService {
         }
     }
 
-    /** Usuário de outra empresa é 404, nunca 403: a API não confirma que o id existe. */
+    /** A user of another company is a 404, never a 403: the API does not confirm the id exists. */
     private User require(AuthenticatedUser current, Long id) {
         return userRepository.findByIdAndCompanyId(id, current.getCompanyId())
                 .orElseThrow(() -> NotFoundException.of("Usuário", id));
     }
 
-    /** Sem o hash da senha: o sanitizador o mascararia, e ele não tem nada que fazer aqui. */
+    /** Without the password hash: the sanitizer would mask it, and it has no business here. */
     private Map<String, Object> snapshot(User user) {
         Map<String, Object> values = AuditEntry.values();
         values.put("name", user.getName());

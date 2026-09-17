@@ -6,11 +6,12 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Nome, e-mail, papel e empresa vêm do convite, não daqui: são exatamente o que quem convidou
- * decidiu, e aceitá-los é o que o clique no link significa. O convidado só escolhe a senha.
+ * Name, e-mail, role and company come from the invitation, not from here: they are exactly what
+ * whoever invited decided, and accepting them is what clicking the link means. The invitee only
+ * chooses the password.
  *
- * A restrição de senha é a de {@code RegisterRequest}, repetida literalmente pelo mesmo motivo
- * descrito em {@code PasswordResetConfirmRequest}.
+ * The password constraint is the one from {@code RegisterRequest}, repeated verbatim for the
+ * same reason described in {@code PasswordResetConfirmRequest}.
  */
 @Getter
 @Setter

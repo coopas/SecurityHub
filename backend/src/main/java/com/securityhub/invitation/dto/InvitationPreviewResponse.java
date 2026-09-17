@@ -5,8 +5,9 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * Prévia pública: o mínimo para que a tela de aceite diga a quem está sendo convidado, para
- * qual empresa e com qual papel. Quem a obtém já provou a posse do token do e-mail.
+ * Public preview: the minimum for the acceptance screen to say who is being invited, to which
+ * company and with which role. Whoever obtains it has already proved possession of the e-mail
+ * token.
  */
 @Getter
 @AllArgsConstructor

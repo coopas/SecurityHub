@@ -5,10 +5,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Corpo de {@code /auth/refresh} e de {@code /auth/logout}. Um DTO só para os dois: o logout
- * encerra a família do token apresentado, então recebe exatamente a mesma entrada.
+ * Body of {@code /auth/refresh} and of {@code /auth/logout}. A single DTO for both: the logout
+ * ends the family of the presented token, so it takes exactly the same input.
  *
- * Sem {@code @Size}: o token é opaco e o seu tamanho é detalhe da emissão, não do contrato.
+ * No {@code @Size}: the token is opaque and its length is a detail of the issuing, not of the
+ * contract.
  */
 @Getter
 @Setter

@@ -129,8 +129,8 @@ class ObservabilityIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/actuator/health")).andExpect(status().isNotFound());
         mockMvc.perform(get("/actuator/health/readiness")).andExpect(status().isNotFound());
 
-        // E o contraste que prova que o matcher é o que faz a diferença: /actuator/metrics não
-        // é público, então sem token a cadeia o recusa antes de qualquer handler.
+        // And the contrast that proves the matcher is what makes the difference: /actuator/metrics
+        // is not public, so without a token the chain rejects it before any handler.
         mockMvc.perform(get("/actuator/metrics")).andExpect(status().isUnauthorized());
     }
 

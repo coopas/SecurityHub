@@ -17,20 +17,20 @@ import net.logstash.logback.stacktrace.ShortenedThrowableConverter;
 import org.junit.jupiter.api.Test;
 
 /**
- * O appender JSON de {@code logback-spring.xml} só é usado pelo perfil {@code prod}, e é
- * justamente por isso que este teste existe.
+ * The JSON appender of {@code logback-spring.xml} is only used by the {@code prod} profile, and
+ * that is precisely why this test exists.
  *
- * <p>O defeito que ele guarda já aconteceu. Com o encoder na linha 7.3+ e o logback 1.2.12 que
- * o Boot 2.7 gerencia, a aplicação <em>compila</em>, <em>sobe</em> e configura o appender sem
- * uma única mensagem de erro — e morre com {@code NoSuchMethodError:
- * ILoggingEvent.getInstant()} ao formatar o primeiro evento. Ou seja: no primeiro log de
- * produção, e em nenhum momento antes. O perfil {@code demo} e o {@code test} usam o appender
- * de console e nunca tocam esse caminho, então a suíte inteira ficava verde sobre uma
- * aplicação que não conseguia registrar uma linha sequer em produção.
+ * <p>The defect it guards against has already happened. With the encoder on the 7.3+ line and
+ * the logback 1.2.12 that Boot 2.7 manages, the application <em>compiles</em>, <em>starts</em>
+ * and configures the appender without a single error message — and dies with {@code
+ * NoSuchMethodError: ILoggingEvent.getInstant()} while formatting the first event. That is: on
+ * the first production log line, and at no moment before it. The {@code demo} and the {@code
+ * test} profiles use the console appender and never touch that path, so the whole suite stayed
+ * green over an application that could not record a single line in production.
  *
- * <p>Este teste formata um evento de verdade, que é o único momento em que a incompatibilidade
- * aparece. Ele é rápido e não depende de Spring: se as duas linhas de versão divergirem de
- * novo, o {@code mvn test} quebra aqui, no lugar de quebrar no cliente.
+ * <p>This test formats a real event, which is the only moment the incompatibility shows up. It
+ * is fast and does not depend on Spring: if the two version lines diverge again, {@code mvn
+ * test} breaks here instead of breaking at the customer.
  */
 class JsonLoggingTest {
 
@@ -54,14 +54,14 @@ class JsonLoggingTest {
         assertThat(json).contains("\"level\":\"INFO\"");
         assertThat(json).contains("\"logger_name\":\"com.securityhub.auth.AuthService\"");
         assertThat(json).contains("\"message\":\"Empresa 7 criada com administrador 9\"");
-        // traceId como campo de primeiro nível é o que permite correlacionar uma requisição
-        // inteira no coletor; se ele voltar a ser um objeto aninhado, o filtro do coletor para
-        // de encontrá-lo.
+        // traceId as a top-level field is what makes it possible to correlate a whole request in
+        // the collector; if it goes back to being a nested object, the collector's filter stops
+        // finding it.
         assertThat(json).contains("\"traceId\":\"d7f1a0c2-trace\"");
         assertThat(json).contains("\"service\":\"" + SERVICE + "\"");
-        // Uma vez só. O <springProperty> do XML grava o nome do serviço nas propriedades do
-        // contexto do Logback, e com includeContext ligado ele sairia de novo como
-        // `serviceName` em toda linha — o mesmo dado com dois nomes, para sempre.
+        // Once only. The <springProperty> of the XML writes the service name into the Logback
+        // context properties, and with includeContext turned on it would come out again as
+        // `serviceName` on every line — the same datum under two names, forever.
         assertThat(json).doesNotContain("serviceName");
     }
 
@@ -80,18 +80,18 @@ class JsonLoggingTest {
 
         assertThat(json).contains("\"stack_trace\"");
         assertThat(json).contains("SMTP indisponível");
-        // rootCauseFirst: a causa raiz é o que se lê primeiro, e é o que diz o que houve.
+        // rootCauseFirst: the root cause is what is read first, and it is what says what happened.
         assertThat(json).contains("ConnectException");
-        // Uma linha de log é uma linha: um stack trace com quebras literais partiria o JSON em
-        // várias entradas no coletor.
+        // A log line is one line: a stack trace with literal breaks would split the JSON into
+        // several entries in the collector.
         assertThat(json.trim()).doesNotContain("\n");
     }
 
     /**
-     * O único ponto fraco de um teste que monta o encoder na mão é a configuração divergir da
-     * que o XML declara. Esta verificação fecha isso: se alguém trocar o encoder, o fuso ou a
-     * chave de MDC permitida em {@code logback-spring.xml}, o teste acima passa a medir outra
-     * coisa — e este aqui avisa.
+     * The one weak point of a test that builds the encoder by hand is the configuration diverging
+     * from the one the XML declares. This check closes that: if someone changes the encoder, the
+     * time zone or the allowed MDC key in {@code logback-spring.xml}, the test above starts
+     * measuring something else — and this one says so.
      */
     @Test
     void theConfigurationHereMatchesLogbackSpringXml() {
@@ -105,13 +105,13 @@ class JsonLoggingTest {
         assertThat(xml).contains("<rootCauseFirst>true</rootCauseFirst>");
         assertThat(xml).contains("<includeContext>false</includeContext>");
 
-        // O nome do arquivo é parte da configuração: em `logback.xml` as tags <springProfile>
-        // seriam inertes e todo perfil cairia no mesmo appender, em silêncio.
+        // The file name is part of the configuration: in `logback.xml` the <springProfile> tags
+        // would be inert and every profile would fall into the same appender, silently.
         assertThat(getClass().getClassLoader().getResource("logback.xml"))
                 .as("a configuração precisa ser logback-spring.xml, nunca logback.xml")
                 .isNull();
 
-        // E nenhum appender de arquivo: dentro de um contêiner quem coleta o log é o runtime.
+        // And no file appender: inside a container it is the runtime that collects the log.
         assertThat(xml).doesNotContain("FileAppender");
     }
 

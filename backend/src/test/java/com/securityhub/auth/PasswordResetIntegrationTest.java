@@ -23,9 +23,9 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * O token em claro só existe dentro do e-mail, que a suíte nunca espera (ADR 0007). Os testes
- * que precisam confirmar o link plantam um hash conhecido na linha — é exatamente o que o
- * serviço procura — em vez de interceptar a thread assíncrona.
+ * The plaintext token only exists inside the e-mail, which the suite never waits for (ADR 0007).
+ * The tests that need to confirm the link plant a known hash in the row — which is exactly what
+ * the service looks for — instead of intercepting the asynchronous thread.
  */
 class PasswordResetIntegrationTest extends AbstractIntegrationTest {
 
@@ -58,12 +58,12 @@ class PasswordResetIntegrationTest extends AbstractIntegrationTest {
         String unknown = bodyOf(requestReset("ninguem@acme.test"));
         String inactive = bodyOf(requestReset("inativo@acme.test"));
 
-        // Byte a byte: o 202 vazio é a única resposta possível, ou o endpoint vira um
-        // enumerador de contas do produto inteiro.
+        // Byte for byte: the empty 202 is the only possible answer, or the endpoint becomes an
+        // account enumerator for the whole product.
         assertThat(known).isEmpty();
         assertThat(unknown).isEqualTo(known);
         assertThat(inactive).isEqualTo(known);
-        // E só o endereço conhecido e ativo deixou linha.
+        // And only the known, active address left a row behind.
         assertThat(tokenCount()).isEqualTo(1L);
     }
 
@@ -84,7 +84,8 @@ class PasswordResetIntegrationTest extends AbstractIntegrationTest {
 
         requestReset("admin@acme.test");
 
-        // A unicidade de user_id em V7 é o que garante isto; o serviço apaga antes de inserir.
+        // The uniqueness of user_id in V7 is what guarantees this; the service deletes before
+        // inserting.
         assertThat(tokenCount()).isEqualTo(1L);
         assertThat(singleHash()).isNotEqualTo(firstHash);
         assertThat(userIdOfSingleToken()).isEqualTo(tenant.admin.getId());
@@ -108,8 +109,8 @@ class PasswordResetIntegrationTest extends AbstractIntegrationTest {
 
         String response = bodyOf(confirm(token, NEW_PASSWORD).andExpect(status().isNoContent()));
 
-        // 204 e não uma AuthResponse: quem redefiniu a senha vai ao login com ela. Um link de
-        // e-mail interceptado não pode virar sessão pronta.
+        // 204 and not an AuthResponse: whoever reset the password goes to the login with it. An
+        // intercepted e-mail link must not turn into a ready-made session.
         assertThat(response).isEmpty();
         assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM refresh_tokens", Long.class))
                 .isZero();
@@ -141,8 +142,8 @@ class PasswordResetIntegrationTest extends AbstractIntegrationTest {
     void confirmAnswersBadRequestAndNeverUnauthorized() throws Exception {
         fixtures.tenant("acme");
 
-        // 401 faria o interceptor do frontend tratar como "sessão expirada" e redirecionar um
-        // visitante anônimo que nunca teve sessão.
+        // A 401 would make the frontend interceptor treat it as "session expired" and redirect an
+        // anonymous visitor who never had a session.
         confirm("token-que-nao-existe", NEW_PASSWORD)
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("BAD_REQUEST"));
@@ -191,7 +192,8 @@ class PasswordResetIntegrationTest extends AbstractIntegrationTest {
 
         confirm(token, NEW_PASSWORD).andExpect(status().isNoContent());
 
-        // Redefinir senha não é entrar: contaminar lastLoginAt mentiria sobre a última sessão.
+        // Resetting a password is not signing in: contaminating lastLoginAt would lie about the
+        // last session.
         assertThat(userRepository.findByEmail("admin@acme.test").orElseThrow(AssertionError::new)
                 .getLastLoginAt()).isNull();
     }
@@ -228,8 +230,8 @@ class PasswordResetIntegrationTest extends AbstractIntegrationTest {
     // --- helpers -------------------------------------------------------------
 
     /**
-     * Planta uma linha com o hash de um token escolhido pelo teste. É o mesmo caminho que o
-     * serviço percorre na confirmação — ele só conhece o digest — sem depender do e-mail.
+     * Plants a row with the hash of a token chosen by the test. It is the same path the service
+     * walks on confirmation — it only ever knows the digest — without depending on the e-mail.
      */
     private String plantToken(String email, Instant expiresAt) {
         User user = userRepository.findByEmail(email).orElseThrow(AssertionError::new);

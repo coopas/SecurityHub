@@ -37,11 +37,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Convites para entrar em uma empresa. As duas pontas do aceite são públicas: quem clica no
- * link ainda não tem conta, então a posse do token é a única credencial possível.
+ * Invitations to join a company. Both ends of the acceptance are public: whoever clicks the
+ * link has no account yet, so possession of the token is the only credential possible.
  *
- * A autorização das operações administrativas fica aqui e não no controller, como no resto do
- * projeto (docs/permissions.md).
+ * The authorization of the administrative operations lives here and not in the controller, as
+ * in the rest of the project (docs/permissions.md).
  */
 @Slf4j
 @Service
@@ -52,14 +52,15 @@ public class InvitationService {
     static final String ENTITY_TYPE = "Invitation";
 
     /**
-     * A mesma mensagem de {@code AuthService.register}. Ela cobre três casos que o convidante
-     * não pode distinguir: o endereço já tem conta nesta empresa, tem conta em outra, ou tem
-     * um convite vivo em outra. Uma mensagem específica para cada um diria a um administrador
-     * curioso em que outra empresa do produto aquele e-mail aparece.
+     * The same message as {@code AuthService.register}. It covers three cases the inviter must
+     * not be able to tell apart: the address already has an account in this company, has an
+     * account in another one, or has a live invitation in another one. A specific message for
+     * each would tell a curious administrator in which other company of the product that
+     * e-mail shows up.
      */
     static final String EMAIL_TAKEN = "E-mail já cadastrado";
 
-    /** Desconhecido, vencido, revogado e já aceito são o mesmo 400 para quem apresenta. */
+    /** Unknown, expired, revoked and already accepted are the same 400 to whoever presents it. */
     static final String INVALID_INVITATION = "Convite inválido ou expirado";
 
     private final InvitationRepository invitationRepository;
@@ -93,13 +94,13 @@ public class InvitationService {
                         inviter.getName(), acceptLink(plaintext), TOKEN_TTL.toDays()));
         log.info("Convite {} emitido para o papel {} na empresa {}", invitation.getId(),
                 invitation.getRole(), current.getCompanyId());
-        // Mapeado aqui dentro: open-in-view está desligado e company/invitedBy são lazy.
+        // Mapped in here: open-in-view is off and company/invitedBy are lazy.
         return InvitationMapper.toResponse(invitation);
     }
 
     /**
-     * Array puro e sem paginação, como {@code GET /users}: são poucas linhas por empresa e a
-     * tela de administração as mostra de uma vez.
+     * A plain array and no pagination, like {@code GET /users}: there are few rows per company
+     * and the administration screen shows them all at once.
      */
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN')")
@@ -116,8 +117,8 @@ public class InvitationService {
         Invitation invitation = invitationRepository.findByIdAndCompanyId(id, current.getCompanyId())
                 .orElseThrow(() -> NotFoundException.of("Convite", id));
         if (!invitation.isPending()) {
-            // Além de não fazer sentido, revogar um convite aceito violaria a equivalência
-            // entre status ACCEPTED e accepted_at que V7 verifica.
+            // Besides making no sense, revoking an accepted invitation would violate the
+            // equivalence between the ACCEPTED status and accepted_at that V7 checks.
             throw new ConflictException("Convite já foi aceito ou revogado");
         }
 
@@ -129,22 +130,23 @@ public class InvitationService {
         log.info("Convite {} revogado na empresa {}", id, current.getCompanyId());
     }
 
-    /** Prévia pública: quem chega pelo link precisa saber para onde está sendo convidado. */
+    /** Public preview: whoever arrives by the link needs to know where they are being invited. */
     @Transactional(readOnly = true)
     public InvitationPreviewResponse preview(String token) {
         return InvitationMapper.toPreview(requirePending(token));
     }
 
     /**
-     * Cria a linha de {@code users} e já devolve uma sessão — ao contrário da redefinição de
-     * senha, que responde 204. Quem aceita um convite não tem outra credencial para usar em um
-     * login logo depois: a senha que acabou de escolher é a primeira que a conta teve.
+     * Creates the {@code users} row and already returns a session — unlike the password reset,
+     * which answers 204. Whoever accepts an invitation has no other credential to use in a
+     * login right afterwards: the password just chosen is the first one the account ever had.
      */
     @Transactional
     public AuthResponse accept(InvitationAcceptRequest request) {
         Invitation invitation = requirePending(request.getToken());
-        // Corrida com um cadastro direto no mesmo endereço entre o convite e o aceite. A
-        // unicidade global de users.email recusaria de qualquer forma, com uma violação crua.
+        // Race with a direct sign-up on the same address between the invitation and the
+        // acceptance. The global uniqueness of users.email would refuse it either way, with a
+        // raw violation.
         if (userRepository.existsByEmail(invitation.getEmail())) {
             throw new ConflictException(EMAIL_TAKEN);
         }
@@ -164,11 +166,11 @@ public class InvitationService {
     }
 
     /**
-     * Reconvidar o mesmo endereço substitui o convite vivo em vez de acumular: o índice único
-     * parcial de V7 aceita um só PENDING por e-mail.
+     * Re-inviting the same address replaces the live invitation instead of piling up: the
+     * partial unique index of V7 accepts a single PENDING per e-mail.
      *
-     * A revogação é descarregada na mão porque o flush do Hibernate executa inserts antes de
-     * updates — o convite novo chegaria ao índice antes de o antigo deixar de ser PENDING.
+     * The revocation is flushed by hand because Hibernate's flush runs inserts before updates —
+     * the new invitation would reach the index before the old one stopped being PENDING.
      */
     private void replacePendingInvitation(AuthenticatedUser current, String email) {
         Optional<Invitation> pending =

@@ -21,7 +21,7 @@ public class InvitationRequest {
     @Size(max = 180, message = "deve ter no máximo 180 caracteres")
     private String email;
 
-    /** A empresa nunca vem do corpo: ela é a do principal autenticado. */
+    /** The company never comes from the body: it is the one of the authenticated principal. */
     @NotNull(message = "é obrigatório")
     private Role role;
 }

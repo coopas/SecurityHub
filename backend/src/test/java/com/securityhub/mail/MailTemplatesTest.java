@@ -5,8 +5,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 
 /**
- * Puro: nenhum contexto Spring e nenhum SMTP. O conteúdo da mensagem é uma função dos
- * argumentos, então é aqui que ele é verificado — nunca esperando por uma caixa de entrada.
+ * Pure: no Spring context and no SMTP. The content of the message is a function of its
+ * arguments, so this is where it is checked — never by waiting on an inbox.
  */
 class MailTemplatesTest {
 
@@ -31,8 +31,8 @@ class MailTemplatesTest {
     void passwordResetShipsALinkAndNeverACredential() {
         String body = MailTemplates.passwordReset("Ana", RESET_LINK, 30);
 
-        // O e-mail carrega um link de uso único e nada mais. Uma senha provisória no corpo
-        // ficaria válida na caixa de entrada para sempre, e um hash ali seria pior ainda.
+        // The e-mail carries a single-use link and nothing else. A provisional password in the
+        // body would stay valid in the inbox forever, and a hash there would be worse still.
         assertThat(body).contains(RESET_LINK)
                 .doesNotContain("$2")
                 .doesNotContain("senha provisória")

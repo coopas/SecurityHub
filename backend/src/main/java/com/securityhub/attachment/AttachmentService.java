@@ -56,9 +56,9 @@ public class AttachmentService {
     static final int MAX_ATTACHMENTS = 20;
 
     /**
-     * O volume de anexos enchendo é uma indisponibilidade sem nenhum outro sinal: nada mais
-     * nesta aplicação sabe quanto disco os uploads consomem, e a falha aparece só quando o
-     * próximo upload quebra. Contador em bytes, sem tag de companyId nem de userId — ver
+     * The attachment volume filling up is an outage with no other signal: nothing else in this
+     * application knows how much disk the uploads consume, and the failure shows up only when the
+     * next upload breaks. A counter in bytes, with no companyId tag and no userId tag — see
      * {@code AuthService}.
      */
     private static final String BYTES_STORED_METER = "securityhub.attachments.bytes.stored";
@@ -156,7 +156,7 @@ public class AttachmentService {
         attachmentRepository.save(attachment);
 
         Counter.builder(BYTES_STORED_METER)
-                .description("Bytes de anexo gravados em disco")
+                .description("Attachment bytes written to disk")
                 .baseUnit("bytes")
                 .register(meterRegistry)
                 .increment(content.length);

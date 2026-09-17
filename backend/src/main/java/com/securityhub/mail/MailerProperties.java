@@ -14,12 +14,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "securityhub.mail")
 public class MailerProperties {
 
-    /** Remetente de todas as mensagens transacionais. */
+    /** Sender of every transactional message. */
     private String from = "nao-responda@securityhub.local";
 
     /**
-     * Base dos links enviados: aponta para o frontend, não para a API. Quem clica precisa de
-     * uma tela onde digitar a senha nova, não de um endpoint.
+     * Base of the links that are sent: it points at the frontend, not at the API. Whoever
+     * clicks needs a screen to type the new password into, not an endpoint.
      */
     private String appBaseUrl = "http://localhost:4200";
 }

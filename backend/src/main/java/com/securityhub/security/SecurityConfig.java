@@ -31,25 +31,26 @@ public class SecurityConfig {
             "/api/v1/auth/logout",
             "/api/v1/auth/password-reset/**",
             "/api/v1/invitations/accept",
-            // Só a saúde, e ela precisa continuar aqui.
+            // Health only, and it has to stay here.
             //
-            // Os endpoints de gestão mudaram para a porta própria de `management.server.port`,
-            // e é tentador concluir que estes matchers viraram letra morta — que o contexto
-            // filho da porta de gestão não passa por esta cadeia. Não é o que acontece no Boot
-            // 2.7: o contexto filho herda o `springSecurityFilterChain` do pai, e esta cadeia
-            // vale nas duas portas. Verificado na pilha do compose: sem esta entrada,
-            // /actuator/health/readiness na porta 9090 responde 401, o healthcheck do contêiner
-            // nunca fica saudável e o frontend, que depende dele, nunca sobe.
+            // The management endpoints moved to the dedicated port of `management.server.port`,
+            // and it is tempting to conclude that these matchers became a dead letter — that the
+            // child context of the management port does not go through this chain. That is not
+            // what happens on Boot 2.7: the child context inherits the parent's
+            // `springSecurityFilterChain`, and this chain applies on both ports. Verified on the
+            // compose stack: without this entry, /actuator/health/readiness on port 9090 answers
+            // 401, the container healthcheck never becomes healthy and the frontend, which
+            // depends on it, never comes up.
             //
-            // `/actuator/info` e `/actuator/metrics` ficam de fora: caem em
-            // `anyRequest().authenticated()`. Isso não é o controle — qualquer usuário de
-            // qualquer papel tem um token válido. O controle é o bind em loopback da porta de
-            // gestão no docker-compose.yml. O que esta cadeia garante é a outra metade, e a que
-            // fechou o vazamento: na porta do tenant não existe handler nenhum de /actuator, de
-            // modo que mesmo autenticado a resposta é 404.
+            // `/actuator/info` and `/actuator/metrics` are left out: they fall into
+            // `anyRequest().authenticated()`. That is not the control — any user of any role has
+            // a valid token. The control is the loopback bind of the management port in
+            // docker-compose.yml. What this chain guarantees is the other half, and the one that
+            // closed the leak: on the tenant port there is no /actuator handler at all, so that
+            // even when authenticated the answer is 404.
             //
-            // A saúde ser pública não reabre nada: `show-details: never` faz o corpo ser apenas
-            // UP ou DOWN, e na porta do tenant não há handler para servi-la.
+            // Health being public does not reopen anything: `show-details: never` makes the body
+            // just UP or DOWN, and on the tenant port there is no handler to serve it.
             "/actuator/health",
             "/actuator/health/**",
             "/v3/api-docs",

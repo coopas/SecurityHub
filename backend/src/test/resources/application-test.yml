@@ -21,9 +21,9 @@ spring:
 logging:
   level:
     com.securityhub: INFO
-    # Não há SMTP na suíte: toda entrega falha e seria um WARN por envio. O conteúdo das
-    # mensagens é coberto por MailTemplatesTest, e o efeito colateral que importa — a linha
-    # do token — é verificado no banco.
+    # There is no SMTP in the suite: every delivery fails and would be one WARN per send. The
+    # content of the messages is covered by MailTemplatesTest, and the side effect that matters
+    # — the token row — is verified in the database.
     com.securityhub.mail: ERROR
     org.testcontainers: WARN
     com.github.dockerjava: WARN

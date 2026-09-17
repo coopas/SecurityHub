@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Projetos")
+@Tag(name = "Projects")
 @RestController
 @RequestMapping("/api/v1/projects")
 @RequiredArgsConstructor
@@ -33,7 +33,7 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @GetMapping
-    @Operation(summary = "Lista projetos da empresa do usuário autenticado")
+    @Operation(summary = "Lists the projects of the authenticated user's company")
     public PageResponse<ProjectResponse> list(@AuthenticationPrincipal AuthenticatedUser current,
                                               @RequestParam(required = false) String search,
                                               @RequestParam(required = false) ProjectStatus status,
@@ -43,20 +43,20 @@ public class ProjectController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Cria um projeto (somente ADMIN)")
+    @Operation(summary = "Creates a project (ADMIN only)")
     public ResponseEntity<ProjectResponse> create(@AuthenticationPrincipal AuthenticatedUser current,
                                                   @Valid @RequestBody ProjectRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(projectService.create(current, request));
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Detalha um projeto da própria empresa")
+    @Operation(summary = "Returns the details of a project of the caller's own company")
     public ProjectResponse get(@AuthenticationPrincipal AuthenticatedUser current, @PathVariable Long id) {
         return projectService.get(current, id);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Atualiza um projeto (somente ADMIN)")
+    @Operation(summary = "Updates a project (ADMIN only)")
     public ProjectResponse update(@AuthenticationPrincipal AuthenticatedUser current,
                                   @PathVariable Long id,
                                   @Valid @RequestBody ProjectRequest request) {
@@ -65,7 +65,7 @@ public class ProjectController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Exclui um projeto sem filhos (somente ADMIN)")
+    @Operation(summary = "Deletes a project that has no children (ADMIN only)")
     public void delete(@AuthenticationPrincipal AuthenticatedUser current, @PathVariable Long id) {
         projectService.delete(current, id);
     }

@@ -2,12 +2,12 @@ package com.securityhub.auth;
 
 public enum RefreshTokenStatus {
 
-    /** Emitido e ainda não apresentado. No máximo um por família em operação normal. */
+    /** Issued and not presented yet. At most one per family under normal operation. */
     ACTIVE,
 
-    /** Já trocado por um sucessor. Reapresentá-lo fora da janela de graça é reuso. */
+    /** Already exchanged for a successor. Presenting it again outside the grace window is reuse. */
     ROTATED,
 
-    /** Morto por um evento explícito; sempre acompanhado de um {@link RevocationReason}. */
+    /** Killed by an explicit event; always accompanied by a {@link RevocationReason}. */
     REVOKED
 }

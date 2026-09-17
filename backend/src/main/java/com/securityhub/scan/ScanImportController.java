@@ -34,7 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
  * it also applies to callers that never go through HTTP. The tenant is never a request
  * parameter; it comes from the principal.
  */
-@Tag(name = "Importação de scans")
+@Tag(name = "Scan imports")
 @RestController
 @RequestMapping("/api/v1/scan-imports")
 @RequiredArgsConstructor
@@ -53,8 +53,8 @@ public class ScanImportController {
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Envia um relatório de scanner e prepara a importação (ADMIN ou ANALYST). "
-            + "Nada é criado até a confirmação")
+    @Operation(summary = "Uploads a scanner report and stages the import (ADMIN or ANALYST). "
+            + "Nothing is created until it is confirmed")
     public ResponseEntity<ScanImportResponse> upload(@AuthenticationPrincipal AuthenticatedUser current,
                                                      @RequestParam("projectId") Long projectId,
                                                      @RequestParam("format") ScanFormat format,
@@ -64,14 +64,14 @@ public class ScanImportController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Detalha uma importação da própria empresa com todos os seus achados")
+    @Operation(summary = "Details an import of the caller's own company with all of its findings")
     public ScanImportResponse get(@AuthenticationPrincipal AuthenticatedUser current,
                                   @PathVariable Long id) {
         return scanImportService.preview(current, id);
     }
 
     @PatchMapping("/{id}/findings/{findingId}")
-    @Operation(summary = "Associa um ativo a um achado sem correspondência (ADMIN ou ANALYST)")
+    @Operation(summary = "Maps an asset to an unmatched finding (ADMIN or ANALYST)")
     public ScanFindingResponse mapFinding(@AuthenticationPrincipal AuthenticatedUser current,
                                           @PathVariable Long id,
                                           @PathVariable Long findingId,
@@ -80,7 +80,8 @@ public class ScanImportController {
     }
 
     @PostMapping("/{id}/confirm")
-    @Operation(summary = "Cria as vulnerabilidades dos achados com ativo (ADMIN ou ANALYST)")
+    @Operation(summary = "Creates the vulnerabilities of the findings that have an asset "
+            + "(ADMIN or ANALYST)")
     public ScanImportResponse confirm(@AuthenticationPrincipal AuthenticatedUser current,
                                       @PathVariable Long id) {
         return scanImportService.confirm(current, id);
@@ -88,13 +89,13 @@ public class ScanImportController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Descarta uma importação pendente e remove o arquivo (ADMIN ou ANALYST)")
+    @Operation(summary = "Discards a pending import and removes the file (ADMIN or ANALYST)")
     public void discard(@AuthenticationPrincipal AuthenticatedUser current, @PathVariable Long id) {
         scanImportService.discard(current, id);
     }
 
     @GetMapping
-    @Operation(summary = "Histórico de importações da empresa do usuário autenticado")
+    @Operation(summary = "Import history of the authenticated user's company")
     public PageResponse<ScanImportSummaryResponse> history(
             @AuthenticationPrincipal AuthenticatedUser current,
             @PageableDefault(size = 20) Pageable pageable) {

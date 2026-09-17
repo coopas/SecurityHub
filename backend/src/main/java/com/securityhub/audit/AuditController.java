@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Auditoria")
+@Tag(name = "Audit")
 @RestController
 @RequestMapping("/api/v1/audit-logs")
 @RequiredArgsConstructor
@@ -25,7 +25,7 @@ public class AuditController {
     private final AuditQueryService auditQueryService;
 
     @GetMapping
-    @Operation(summary = "Consulta a trilha de auditoria da empresa (somente ADMIN)")
+    @Operation(summary = "Queries the audit trail of the company (ADMIN only)")
     public PageResponse<AuditLogResponse> list(
             @AuthenticationPrincipal AuthenticatedUser current,
             @RequestParam(required = false) String entityType,

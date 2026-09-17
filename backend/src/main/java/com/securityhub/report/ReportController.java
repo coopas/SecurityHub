@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
  * so it also applies to callers that never go through HTTP. The tenant is never a request
  * parameter; it comes from the principal.
  */
-@Tag(name = "Relatórios")
+@Tag(name = "Reports")
 @RestController
 @RequestMapping("/api/v1/reports")
 @RequiredArgsConstructor
@@ -33,9 +33,9 @@ public class ReportController {
      * with {@code open-in-view: false} is where lazy associations blow up mid-response.
      */
     @GetMapping(value = "/executive", produces = MediaType.APPLICATION_PDF_VALUE)
-    @Operation(summary = "Relatório executivo em PDF da empresa do usuário autenticado (ADMIN ou "
-            + "ANALYST). Não aceita intervalo de datas: todos os números são agregações do "
-            + "momento da geração, as mesmas que o dashboard exibe")
+    @Operation(summary = "Executive report as a PDF for the company of the authenticated user "
+            + "(ADMIN or ANALYST). Takes no date range: every figure is an aggregation as of the "
+            + "moment of generation, the same ones the dashboard shows")
     public ResponseEntity<byte[]> executive(@AuthenticationPrincipal AuthenticatedUser current) {
         ExecutiveReport report = reportService.generateExecutivePdf(current);
         return ResponseEntity.ok()

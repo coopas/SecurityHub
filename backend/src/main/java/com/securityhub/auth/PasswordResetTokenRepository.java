@@ -11,9 +11,9 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
     Optional<PasswordResetToken> findByTokenHash(String tokenHash);
 
     /**
-     * Apaga em massa para que o DELETE chegue ao banco antes do INSERT do pedido novo: a
-     * unicidade de user_id recusaria os dois convivendo, e o flush do Hibernate ordena
-     * inserts antes de deletes.
+     * A bulk delete so that the DELETE reaches the database before the INSERT of the new
+     * request: the uniqueness of user_id would refuse the two coexisting, and Hibernate's
+     * flush orders inserts before deletes.
      */
     @Modifying(flushAutomatically = true)
     @Query("delete from PasswordResetToken t where t.user.id = :userId")

@@ -65,9 +65,9 @@ public class JwtService {
     }
 
     /**
-     * Vida do refresh token. Mora aqui, e não em RefreshTokenService, porque a propriedade que
-     * a define — securityhub.jwt.refresh-expiration-days — já era desta classe; o token em si
-     * é opaco e não passa por nenhum outro método daqui (ADR 0006).
+     * Lifetime of the refresh token. It lives here, and not in RefreshTokenService, because the
+     * property that defines it — securityhub.jwt.refresh-expiration-days — already belonged to
+     * this class; the token itself is opaque and goes through no other method here (ADR 0006).
      */
     public Duration refreshTokenTtl() {
         return Duration.ofDays(properties.getRefreshExpirationDays());

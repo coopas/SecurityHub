@@ -21,16 +21,16 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("SecurityHub API")
                         .version("1.0.0")
-                        .description("Gestão de ativos e vulnerabilidades de segurança. "
-                                + "Todos os recursos de domínio são isolados por empresa: o "
-                                + "identificador da empresa vem sempre do token, nunca da requisição.")
+                        .description("Security asset and vulnerability management. "
+                                + "Every domain resource is isolated per company: the company "
+                                + "identifier always comes from the token, never from the request.")
                         .contact(new Contact().name("SecurityHub"))
                         .license(new License().name("MIT")))
                 .components(new Components().addSecuritySchemes(BEARER, new SecurityScheme()
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
                         .bearerFormat("JWT")
-                        .description("Informe o accessToken devolvido por POST /api/v1/auth/login")))
+                        .description("Provide the accessToken returned by POST /api/v1/auth/login")))
                 .addSecurityItem(new SecurityRequirement().addList(BEARER));
     }
 }

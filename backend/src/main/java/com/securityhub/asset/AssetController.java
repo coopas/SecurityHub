@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Ativos")
+@Tag(name = "Assets")
 @RestController
 @RequestMapping("/api/v1/assets")
 @RequiredArgsConstructor
@@ -33,7 +33,7 @@ public class AssetController {
     private final AssetService assetService;
 
     @GetMapping
-    @Operation(summary = "Lista ativos da empresa do usuário autenticado")
+    @Operation(summary = "Lists the assets of the authenticated user's company")
     public PageResponse<AssetResponse> list(@AuthenticationPrincipal AuthenticatedUser current,
                                             @RequestParam(required = false) String search,
                                             @RequestParam(required = false) Long projectId,
@@ -47,20 +47,20 @@ public class AssetController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Cria um ativo em um projeto da própria empresa (somente ADMIN)")
+    @Operation(summary = "Creates an asset in a project of the caller's own company (ADMIN only)")
     public ResponseEntity<AssetResponse> create(@AuthenticationPrincipal AuthenticatedUser current,
                                                 @Valid @RequestBody AssetRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(assetService.create(current, request));
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Detalha um ativo da própria empresa")
+    @Operation(summary = "Returns the details of an asset of the caller's own company")
     public AssetResponse get(@AuthenticationPrincipal AuthenticatedUser current, @PathVariable Long id) {
         return assetService.get(current, id);
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Atualiza um ativo (somente ADMIN)")
+    @Operation(summary = "Updates an asset (ADMIN only)")
     public AssetResponse update(@AuthenticationPrincipal AuthenticatedUser current,
                                 @PathVariable Long id,
                                 @Valid @RequestBody AssetRequest request) {
@@ -69,7 +69,7 @@ public class AssetController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Exclui um ativo sem vulnerabilidades (somente ADMIN)")
+    @Operation(summary = "Deletes an asset that has no vulnerabilities (ADMIN only)")
     public void delete(@AuthenticationPrincipal AuthenticatedUser current, @PathVariable Long id) {
         assetService.delete(current, id);
     }

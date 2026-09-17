@@ -8,13 +8,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface InvitationRepository extends JpaRepository<Invitation, Long> {
 
     /**
-     * Sem empresa na assinatura, de propósito e ao contrário de todo o resto do esquema: o
-     * índice único parcial de V7 é global, então a checagem que o antecede também precisa ser.
-     * Quem chama nunca revela ao usuário em que empresa o convite vivo estava.
+     * No company in the signature, on purpose and unlike all the rest of the schema: the
+     * partial unique index of V7 is global, so the check that precedes it has to be global too.
+     * The caller never reveals to the user which company the live invitation was in.
      */
     Optional<Invitation> findByEmailAndStatus(String email, InvitationStatus status);
 
-    /** A empresa vem junto porque a prévia pública do convite mostra o nome dela. */
+    /** The company comes along because the public preview of the invitation shows its name. */
     @EntityGraph(attributePaths = {"company", "invitedBy"})
     Optional<Invitation> findByTokenHash(String tokenHash);
 

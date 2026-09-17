@@ -36,15 +36,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     /**
-     * Uma alta de {@code outcome="failure"} é credential stuffing. É a métrica que um produto
-     * de segurança não pode não ter: o LOGIN_FAILED da auditoria prova o que houve depois,
-     * mas não dispara um alerta enquanto está acontecendo.
+     * A rise in {@code outcome="failure"} is credential stuffing. It is the metric a security
+     * product cannot do without: the LOGIN_FAILED of the audit trail proves what happened
+     * afterwards, but it does not raise an alert while it is happening.
      *
-     * <p>Regra que vale para os três medidores desta aplicação: <strong>nunca companyId nem
-     * userId como tag</strong>. A cardinalidade das tags multiplica a contagem de séries
-     * temporais, e uma tag de tenant sem limite superior é a forma clássica de derrubar um
-     * Prometheus — cada empresa nova cria uma série nova, para sempre. A atribuição por
-     * tenant é justamente o que a trilha de auditoria faz, com nome, ator e carimbo de tempo.
+     * <p>A rule that holds for all three meters of this application: <strong>never companyId
+     * nor userId as a tag</strong>. Tag cardinality multiplies the number of time series, and
+     * a tenant tag with no upper bound is the classic way to bring a Prometheus down — every
+     * new company creates a new series, forever. Per-tenant attribution is exactly what the
+     * audit trail does, with a name, an actor and a timestamp.
      */
     private static final String LOGIN_METER = "securityhub.auth.login";
 
@@ -109,9 +109,10 @@ public class AuthService {
         }
 
         user.setLastLoginAt(Instant.now());
-        // Coleta preguiçosa das sessões vencidas desta pessoa. O login é o único momento em
-        // que ela está garantidamente aqui e em que uma linha a mais no plano não é percebida;
-        // a alternativa seria um agendador subindo dentro de todo contexto de teste (ADR 0006).
+        // Lazy collection of this person's expired sessions. The login is the only moment at
+        // which they are guaranteed to be here and at which one extra row in the plan goes
+        // unnoticed; the alternative would be a scheduler starting up inside every test context
+        // (ADR 0006).
         refreshTokenService.purgeExpiredFor(user.getId());
         auditService.record(AuditEntry.ofActor(user.getCompany().getId(), user.getId(), user.getEmail(),
                 AuditAction.LOGIN, "User", user.getId()));
@@ -121,19 +122,19 @@ public class AuthService {
 
     private void countLogin(String outcome) {
         Counter.builder(LOGIN_METER)
-                .description("Tentativas de login por desfecho")
+                .description("Login attempts by outcome")
                 .tag("outcome", outcome)
                 .register(meterRegistry)
                 .increment();
     }
 
     /**
-     * Deliberadamente sem {@code @Transactional}. A rotação comita os próprios efeitos antes
-     * de recusar — a revogação da família em um reuso e a linha de auditoria dela — e uma
-     * transação externa arrastaria essa recusa para o rollback, desfazendo a defesa.
+     * Deliberately without {@code @Transactional}. The rotation commits its own effects before
+     * refusing — the revocation of the family on a reuse and the audit row for it — and an
+     * outer transaction would drag that refusal into the rollback, undoing the defence.
      *
-     * Não há auditoria no refresh bem-sucedido: seria uma linha por hora por sessão de ruído
-     * sobre um fato que o LOGIN correspondente já registrou.
+     * There is no audit entry on a successful refresh: it would be one row per hour per session
+     * of noise about a fact the corresponding LOGIN has already recorded.
      */
     public AuthResponse refresh(RefreshTokenRequest request) {
         RefreshTokenService.Rotation rotation = refreshTokenService.rotate(request.getRefreshToken());
@@ -142,15 +143,15 @@ public class AuthService {
         return buildResponse(user, rotation.getRefreshToken());
     }
 
-    /** 204 sempre, inclusive para um token que não existe: ver {@code RefreshTokenService}. */
+    /** Always 204, including for a token that does not exist: see {@code RefreshTokenService}. */
     public void logout(RefreshTokenRequest request) {
         refreshTokenService.logout(request.getRefreshToken());
     }
 
     /**
-     * Emite a primeira sessão de uma conta recém-criada. Pública para que o aceite de convite
-     * — que cria a linha de users em outro pacote — devolva exatamente a mesma AuthResponse do
-     * login, montada por um único lugar.
+     * Issues the first session of a freshly created account. Public so that invitation acceptance
+     * — which creates the users row in another package — returns exactly the same AuthResponse
+     * as the login, assembled by a single place.
      */
     public AuthResponse startSession(User user) {
         return buildResponse(user, refreshTokenService.issue(user));
@@ -168,8 +169,8 @@ public class AuthService {
     }
 
     /**
-     * {@code AuthResponse} não mudou de forma: o campo refreshToken já existia e vinha nulo,
-     * omitido da serialização pelo {@code non_null} global.
+     * {@code AuthResponse} did not change shape: the refreshToken field already existed and came
+     * back null, omitted from the serialization by the global {@code non_null}.
      */
     private AuthResponse buildResponse(User user, String refreshToken) {
         String token = jwtService.generateAccessToken(user);

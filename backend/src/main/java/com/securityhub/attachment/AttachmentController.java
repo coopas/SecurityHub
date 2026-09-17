@@ -32,7 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
  * so it also applies to callers that never go through HTTP. The tenant is never a request
  * parameter; it comes from the principal.
  */
-@Tag(name = "Anexos")
+@Tag(name = "Attachments")
 @RestController
 @RequestMapping("/api/v1/vulnerabilities/{vulnerabilityId}/attachments")
 @RequiredArgsConstructor
@@ -48,7 +48,7 @@ public class AttachmentController {
      * a page and a {@code page}/{@code size} the client could not act on.
      */
     @GetMapping
-    @Operation(summary = "Lista os anexos de uma vulnerabilidade da própria empresa")
+    @Operation(summary = "Lists the attachments of a vulnerability in the caller's own company")
     public List<AttachmentResponse> list(@AuthenticationPrincipal AuthenticatedUser current,
                                          @PathVariable Long vulnerabilityId) {
         return attachmentService.list(current, vulnerabilityId);
@@ -56,8 +56,8 @@ public class AttachmentController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Anexa um arquivo a uma vulnerabilidade (ADMIN, ANALYST ou DEVELOPER). "
-            + "O tipo é determinado pelo conteúdo, não pelo cabeçalho enviado")
+    @Operation(summary = "Attaches a file to a vulnerability (ADMIN, ANALYST or DEVELOPER). "
+            + "The type is determined by the content, not by the header that was sent")
     public ResponseEntity<AttachmentResponse> upload(@AuthenticationPrincipal AuthenticatedUser current,
                                                      @PathVariable Long vulnerabilityId,
                                                      @RequestPart("file") MultipartFile file) {
@@ -72,7 +72,7 @@ public class AttachmentController {
      * harmless. The name goes out in the RFC 5987 form so accents survive the trip.
      */
     @GetMapping("/{attachmentId}/download")
-    @Operation(summary = "Baixa o anexo; o nome devolvido é o nome sanitizado do envio")
+    @Operation(summary = "Downloads the attachment; the name returned is the sanitized upload name")
     public ResponseEntity<ByteArrayResource> download(@AuthenticationPrincipal AuthenticatedUser current,
                                                       @PathVariable Long vulnerabilityId,
                                                       @PathVariable Long attachmentId) {
@@ -90,7 +90,7 @@ public class AttachmentController {
 
     @DeleteMapping("/{attachmentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Remove um anexo; apenas quem enviou ou um ADMIN")
+    @Operation(summary = "Removes an attachment; only the uploader or an ADMIN")
     public void delete(@AuthenticationPrincipal AuthenticatedUser current,
                        @PathVariable Long vulnerabilityId,
                        @PathVariable Long attachmentId) {

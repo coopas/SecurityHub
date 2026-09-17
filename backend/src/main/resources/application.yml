@@ -56,35 +56,35 @@ server:
     enabled: true
 
 management:
-  # Tráfego de gestão não é tráfego de tenant.
+  # Management traffic is not tenant traffic.
   #
-  # Até aqui os endpoints do actuator viviam na porta da aplicação, e `/actuator/metrics` não
-  # está em SecurityConfig.PUBLIC_ENDPOINTS — caía em `anyRequest().authenticated()`. Qualquer
-  # usuário autenticado, de qualquer papel, inclusive VIEWER, lia dali todos os templates de
-  # URI do servidor, a contagem por endpoint, o estado do pool de conexões e a versão da JVM.
+  # Until now the actuator endpoints lived on the application port, and `/actuator/metrics` is
+  # not in SecurityConfig.PUBLIC_ENDPOINTS — it fell through to `anyRequest().authenticated()`.
+  # Any authenticated user, of any role, VIEWER included, read from there every URI template of
+  # the server, the per-endpoint counts, the state of the connection pool and the JVM version.
   #
-  # Restringir `/actuator/**` a hasRole('ADMIN') seria a correção errada: o ADMIN deste produto
-  # é o administrador de um cliente, não um operador — não existe papel de operador. As métricas
-  # da JVM não são dele. Por isso a gestão sai da porta do tenant e passa a ter porta própria.
+  # Restricting `/actuator/**` to hasRole('ADMIN') would be the wrong fix: the ADMIN of this
+  # product is the administrator of a customer, not an operator — there is no operator role. The
+  # JVM metrics are not theirs. So management leaves the tenant port and gets a port of its own.
   #
-  # ATENÇÃO: o que protege esta porta é ISOLAMENTO DE REDE, e não a autenticação.
+  # WARNING: what protects this port is NETWORK ISOLATION, and not authentication.
   #
-  # O contexto filho criado por `management.server.port` herda o springSecurityFilterChain do
-  # contexto pai no Boot 2.7 — verificado na pilha do compose —, então /actuator aqui até pede
-  # um token. Mas o token que ele aceita é o de qualquer usuário de qualquer papel, inclusive
-  # VIEWER: é a mesma cadeia da aplicação, com o mesmo `anyRequest().authenticated()`. Isso não
-  # é uma autorização de operador, é só uma tranca a mais.
+  # The child context created by `management.server.port` inherits the springSecurityFilterChain
+  # from the parent context on Boot 2.7 — verified on the compose stack — so /actuator here does
+  # ask for a token. But the token it accepts is that of any user of any role, VIEWER included:
+  # it is the same chain as the application's, with the same `anyRequest().authenticated()`.
+  # That is not an operator authorization, it is only one more lock.
   #
-  # O controle de verdade é o bind em loopback declarado no docker-compose.yml
-  # (`127.0.0.1:9090:9090`). É ele que precisa sobreviver a qualquer mudança nesta configuração.
+  # The real control is the loopback bind declared in docker-compose.yml
+  # (`127.0.0.1:9090:9090`). That is what has to survive any change to this configuration.
   server:
     port: ${SECURITYHUB_MANAGEMENT_PORT:9090}
   health:
-    # O envio de e-mail é deliberadamente tolerante a falha (docs/adr/0007): a entrega
-    # acontece fora da transação e fora da thread da requisição, e uma exceção é registrada
-    # em vez de propagada. Um indicador que derruba /actuator/health quando o SMTP está fora
-    # contradiz isso — tiraria a aplicação de rotação por uma dependência que ela foi escrita
-    # para sobreviver.
+    # E-mail delivery is deliberately failure-tolerant (docs/adr/0007): the delivery
+    # happens outside the transaction and outside the request thread, and an exception is
+    # logged instead of propagated. An indicator that brings /actuator/health down when SMTP
+    # is off contradicts that — it would take the application out of rotation over a
+    # dependency it was written to survive.
     mail:
       enabled: false
   endpoints:
@@ -117,7 +117,7 @@ securityhub:
     seed-enabled: false
   mail:
     from: ${SECURITYHUB_MAIL_FROM:nao-responda@securityhub.local}
-    # Base dos links enviados por e-mail. Aponta para o frontend, não para a API.
+    # Base of the links sent by e-mail. Points at the frontend, not at the API.
     app-base-url: ${SECURITYHUB_APP_BASE_URL:http://localhost:4200}
   attachments:
     directory: ${SECURITYHUB_ATTACHMENTS_DIR:./uploads}
@@ -125,9 +125,9 @@ securityhub:
   scan:
     directory: ${SECURITYHUB_SCAN_DIR:./uploads-scan}
     max-upload-bytes: 10485760
-    # Teto de achados por arquivo. Um relatório acima disso é recusado antes de
-    # qualquer gravação: importar milhares de linhas de uma vez enterraria o backlog
-    # sob ruído que ninguém revisa, e a revisão manual é o ponto do fluxo.
+    # Ceiling of findings per file. A report above it is refused before any write
+    # happens: importing thousands of rows at once would bury the backlog under
+    # noise nobody reviews, and the manual review is the point of the flow.
     max-findings: 2000
 
 logging:

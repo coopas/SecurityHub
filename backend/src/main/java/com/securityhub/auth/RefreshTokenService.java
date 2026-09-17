@@ -18,11 +18,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Emissão, rotação e revogação dos refresh tokens (ADR 0006).
+ * Issuing, rotation and revocation of the refresh tokens (ADR 0006).
  *
- * Sem {@code @PreAuthorize}: quem apresenta um refresh token ainda não está autenticado, e é
- * justamente a linha encontrada — com o usuário que ela aponta — que decide quem é o chamador.
- * A autorização aqui é a posse do segredo.
+ * No {@code @PreAuthorize}: whoever presents a refresh token is not authenticated yet, and it is
+ * precisely the row that is found — with the user it points at — that decides who the caller
+ * is. The authorization here is possession of the secret.
  */
 @Slf4j
 @Service
@@ -30,43 +30,43 @@ import org.springframework.transaction.annotation.Transactional;
 public class RefreshTokenService {
 
     /**
-     * Toda recusa devolve exatamente este 401. Desconhecido, expirado, revogado e reusado são
-     * indistinguíveis de fora: avisar um ladrão de que o roubo foi percebido só ajuda o ladrão.
-     * O fato fica na auditoria, que é onde ele pertence.
+     * Every refusal returns exactly this 401. Unknown, expired, revoked and reused are
+     * indistinguishable from the outside: warning a thief that the theft was noticed only helps
+     * the thief. The fact stays in the audit trail, which is where it belongs.
      */
     public static final String INVALID_SESSION = "Sessão inválida";
 
     /**
-     * Duas abas, um retry de rede ou um timeout fazem o mesmo token chegar duas vezes em
-     * segundos. Sem a janela, a detecção de reuso deslogaria o usuário legítimo em toda
-     * corrida benigna. Ela não ajuda um ladrão de forma relevante: o token roubado teria que
-     * ser usado dentro de 30s da rotação da própria vítima, e a família morre no primeiro
-     * reuso fora disso.
+     * Two tabs, a network retry or a timeout make the same token arrive twice within seconds.
+     * Without the window, reuse detection would log the legitimate user out on every benign
+     * race. It does not help a thief in any relevant way: the stolen token would have to be
+     * used within 30s of the victim's own rotation, and the family dies on the first reuse
+     * outside that.
      */
     static final Duration REUSE_GRACE = Duration.ofSeconds(30);
 
-    /** Folga antes de apagar uma linha vencida, para que ela ainda sirva a uma investigação. */
+    /** Slack before deleting an expired row, so that it can still serve an investigation. */
     static final Duration PURGE_GRACE = Duration.ofDays(7);
 
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
     private final AuditService auditService;
 
-    /** Abre uma sessão nova: família nova, primeira linha ACTIVE. Devolve o valor em claro. */
+    /** Opens a new session: new family, first row ACTIVE. Returns the plaintext value. */
     @Transactional
     public String issue(User user) {
         return issueInFamily(user, UUID.randomUUID().toString(), Instant.now());
     }
 
     /**
-     * Executa a tabela de decisão do ADR 0006 na ordem em que ela está escrita.
+     * Runs the decision table of ADR 0006 in the order in which it is written.
      *
-     * {@code noRollbackFor} não é um detalhe: nos ramos de reuso e de usuário desativado a
-     * recusa vem acompanhada de efeitos que precisam sobreviver a ela — a revogação da família
-     * e a linha de auditoria. Com a regra padrão de rollback, lançar a exceção desfaria
-     * exatamente a defesa que o ramo acabou de armar, e o ladrão poderia tentar de novo.
-     * Um {@code REQUIRES_NEW} resolveria o mesmo problema travando: a transação interna
-     * esperaria pelo lock de linha que esta aqui segura.
+     * {@code noRollbackFor} is not a detail: in the reuse and deactivated-user branches the
+     * refusal comes with effects that have to survive it — the revocation of the family and
+     * the audit row. Under the default rollback rule, throwing the exception would undo
+     * exactly the defence the branch has just set up, and the thief could try again.
+     * A {@code REQUIRES_NEW} would solve the same problem by deadlocking: the inner transaction
+     * would wait for the row lock this one is holding.
      */
     @Transactional(noRollbackFor = UnauthorizedException.class)
     public Rotation rotate(String presentedToken) {
@@ -79,8 +79,8 @@ public class RefreshTokenService {
 
         RefreshToken token = found.get();
         if (token.getStatus() == RefreshTokenStatus.REVOKED) {
-            // Nada de auditoria: um cliente em laço de retry com um token já revogado
-            // inundaria a trilha com linhas que não acrescentam nenhum fato novo.
+            // No audit entry: a client in a retry loop with an already revoked token would
+            // flood the trail with rows that add no new fact at all.
             throw invalidSession();
         }
         if (token.getExpiresAt().isBefore(now)) {
@@ -98,8 +98,9 @@ public class RefreshTokenService {
 
         User user = token.getUser();
         if (!user.isActive()) {
-            // Desativar já revoga tudo; chegar aqui significa que a linha de users mudou por
-            // fora. A sessão morre junto, em vez de sobreviver até o vencimento natural.
+            // Deactivating already revokes everything; getting here means the users row was
+            // changed from the outside. The session dies with it, instead of surviving until
+            // its natural expiry.
             refreshTokenRepository.revokeAllForUser(user.getId(), RefreshTokenStatus.REVOKED,
                     RevocationReason.USER_DEACTIVATED, now);
             throw invalidSession();
@@ -112,9 +113,9 @@ public class RefreshTokenService {
     }
 
     /**
-     * Encerra apenas a família apresentada, e devolve silêncio para um token desconhecido:
-     * {@code POST /auth/logout} responde 204 em qualquer caso para não virar um oráculo de
-     * existência de sessão.
+     * Ends only the family that was presented, and returns silence for an unknown token:
+     * {@code POST /auth/logout} answers 204 in every case so as not to become an oracle for
+     * the existence of a session.
      */
     @Transactional
     public void logout(String presentedToken) {
@@ -135,7 +136,7 @@ public class RefreshTokenService {
         log.info("Logout encerrou {} token(s) da sessão do usuário {}", revoked, userId);
     }
 
-    /** Usada pela troca de papel, pela desativação e pela redefinição de senha. */
+    /** Used by the role change, by the deactivation and by the password reset. */
     @Transactional
     public int revokeAllForUser(Long userId, RevocationReason reason) {
         return refreshTokenRepository.revokeAllForUser(userId, RefreshTokenStatus.REVOKED, reason,
@@ -155,8 +156,8 @@ public class RefreshTokenService {
     }
 
     private boolean withinGraceWindow(RefreshToken token, Instant now) {
-        // usedAt nulo em uma linha ROTATED só aconteceria por escrita direta no banco; tratar
-        // como fora da janela é o lado seguro.
+        // A null usedAt on a ROTATED row would only happen through a direct write to the
+        // database; treating it as outside the window is the safe side.
         return token.getUsedAt() != null && !now.isAfter(token.getUsedAt().plus(REUSE_GRACE));
     }
 
@@ -179,9 +180,9 @@ public class RefreshTokenService {
     }
 
     /**
-     * O resultado carrega o id do usuário, e não a entidade: a resposta é montada fora desta
-     * transação (ver {@code AuthService.refresh}) e um proxy lazy carregado aqui já estaria
-     * desanexado lá.
+     * The result carries the id of the user, and not the entity: the response is assembled
+     * outside this transaction (see {@code AuthService.refresh}) and a lazy proxy loaded here
+     * would already be detached there.
      */
     @Getter
     public static final class Rotation {

@@ -28,13 +28,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Sem {@code @PreAuthorize}: a matriz é aplicada por {@link InvitationService}.
+ * No {@code @PreAuthorize} here: the matrix is enforced by {@link InvitationService}.
  *
- * As duas rotas de {@code /accept} são públicas por {@code SecurityConfig.PUBLIC_ENDPOINTS},
- * que as libera sem citar método HTTP e portanto cobre o GET da prévia e o POST do aceite.
+ * The two {@code /accept} routes are public through {@code SecurityConfig.PUBLIC_ENDPOINTS},
+ * which opens them without naming an HTTP method and therefore covers both the GET of the
+ * preview and the POST of the acceptance.
  */
 @Validated
-@Tag(name = "Convites")
+@Tag(name = "Invitations")
 @RestController
 @RequestMapping("/api/v1/invitations")
 @RequiredArgsConstructor
@@ -43,35 +44,36 @@ public class InvitationController {
     private final InvitationService invitationService;
 
     @PostMapping
-    @Operation(summary = "Convida alguém para a empresa autenticada (somente ADMIN)")
+    @Operation(summary = "Invites someone into the authenticated company (ADMIN only)")
     public ResponseEntity<InvitationResponse> create(@AuthenticationPrincipal AuthenticatedUser current,
                                                      @Valid @RequestBody InvitationRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(invitationService.create(current, request));
     }
 
     @GetMapping
-    @Operation(summary = "Lista os convites da empresa autenticada (somente ADMIN)")
+    @Operation(summary = "Lists the invitations of the authenticated company (ADMIN only)")
     public List<InvitationResponse> list(@AuthenticationPrincipal AuthenticatedUser current) {
         return invitationService.list(current);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Revoga um convite pendente da própria empresa (somente ADMIN)")
+    @Operation(summary = "Revokes a pending invitation of the caller's own company (ADMIN only)")
     public void revoke(@AuthenticationPrincipal AuthenticatedUser current, @PathVariable Long id) {
         invitationService.revoke(current, id);
     }
 
     @SecurityRequirements
     @GetMapping("/accept")
-    @Operation(summary = "Prévia pública do convite a partir do token do e-mail")
+    @Operation(summary = "Public preview of the invitation from the e-mail token")
     public InvitationPreviewResponse preview(@RequestParam @NotBlank String token) {
         return invitationService.preview(token);
     }
 
     @SecurityRequirements
     @PostMapping("/accept")
-    @Operation(summary = "Aceita o convite, cria a conta e já devolve a sessão")
+    @Operation(summary = "Accepts the invitation, creates the account and already returns "
+            + "the session")
     public ResponseEntity<AuthResponse> accept(@Valid @RequestBody InvitationAcceptRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(invitationService.accept(request));
     }

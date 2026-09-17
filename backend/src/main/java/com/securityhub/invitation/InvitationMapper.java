@@ -3,7 +3,7 @@ package com.securityhub.invitation;
 import com.securityhub.invitation.dto.InvitationPreviewResponse;
 import com.securityhub.invitation.dto.InvitationResponse;
 
-/** Escrito à mão, como todo mapper do projeto (ADR 0003). */
+/** Hand-written, like every mapper in the project (ADR 0003). */
 public final class InvitationMapper {
 
     private InvitationMapper() {

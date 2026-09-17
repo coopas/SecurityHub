@@ -6,16 +6,16 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * Só o nome, e é uma decisão de segurança, não uma lacuna.
+ * The name only, and that is a security decision, not a gap.
  *
- * O e-mail é ao mesmo tempo o identificador de login e o canal de recuperação de senha. Um
- * ADMIN capaz de repontar o e-mail de outra pessoa poderia mandar o link de redefinição dela
- * para um endereço próprio e assumir a conta — e a trilha registraria apenas "usuário
- * atualizado". Trocar de e-mail, se um dia for preciso, é um fluxo com confirmação nos dois
- * endereços, não um campo neste DTO. {@code UserUpdateRequestTest} prende a ausência.
+ * The e-mail is at once the login identifier and the password recovery channel. An ADMIN able
+ * to repoint somebody else's e-mail could send that person's reset link to an address of their
+ * own and take over the account — and the trail would record only "user updated". Changing an
+ * e-mail, if it is ever needed, is a flow with confirmation on both addresses, not a field in
+ * this DTO. {@code UserUpdateRequestTest} pins the absence down.
  *
- * Papel e situação também não estão aqui: têm endpoint próprio porque cada um carrega guardas
- * que uma atualização genérica esconderia.
+ * Role and status are not here either: each has its own endpoint because each carries guards
+ * that a generic update would hide.
  */
 @Getter
 @Setter

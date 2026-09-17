@@ -6,10 +6,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * A restrição de senha é a de {@link RegisterRequest}, repetida literalmente. Uma anotação
- * compartilhada seria menos duplicação e mais acoplamento: a regra de senha do cadastro e a da
- * redefinição são a mesma hoje por coincidência de política, e a que mudar primeiro não deve
- * arrastar a outra sem que alguém decida isso.
+ * The password constraint is the one of {@link RegisterRequest}, repeated literally. A shared
+ * annotation would be less duplication and more coupling: the password rule of the registration
+ * and the one of the reset are the same today by a coincidence of policy, and whichever changes
+ * first must not drag the other along without somebody deciding so.
  */
 @Getter
 @Setter

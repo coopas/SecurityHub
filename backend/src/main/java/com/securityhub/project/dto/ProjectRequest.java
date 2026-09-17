@@ -17,6 +17,6 @@ public class ProjectRequest {
     @Size(max = 2000, message = "deve ter no máximo 2000 caracteres")
     private String description;
 
-    /** Opcional na criação: ausente significa {@code ACTIVE}. */
+    /** Optional on creation: absent means {@code ACTIVE}. */
     private ProjectStatus status;
 }

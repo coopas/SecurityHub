@@ -2,11 +2,11 @@ package com.securityhub.invitation;
 
 public enum InvitationStatus {
 
-    /** Vivo: ainda pode ser aceito. É o estado coberto pelo índice único parcial de V7. */
+    /** Live: can still be accepted. It is the state covered by the partial unique index of V7. */
     PENDING,
 
     ACCEPTED,
 
-    /** Cancelado por um administrador, ou substituído por um convite novo ao mesmo endereço. */
+    /** Cancelled by an administrator, or replaced by a new invitation to the same address. */
     REVOKED
 }
