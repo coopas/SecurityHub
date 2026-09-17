@@ -1,0 +1,120 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>{{ asset ? asset.name : 'Ativo' }}</h1>
+      <p class="assets-subtitle" *ngIf="asset">
+        {{ typeLabels[asset.type] }} · {{ environmentLabels[asset.environment] }} ·
+        {{ asset.vulnerabilityCount }}
+        {{ asset.vulnerabilityCount === 1 ? 'vulnerabilidade' : 'vulnerabilidades' }}
+      </p>
+    </div>
+
+    <div class="assets-detail__actions">
+      <a mat-stroked-button routerLink="/assets">
+        <mat-icon aria-hidden="true">arrow_back</mat-icon>
+        <span>Voltar</span>
+      </a>
+
+      <ng-container *ngIf="isAdmin && asset">
+        <a
+          mat-stroked-button
+          color="primary"
+          [routerLink]="['/assets', asset.id, 'editar']"
+          data-testid="asset-edit"
+        >
+          <mat-icon aria-hidden="true">edit</mat-icon>
+          <span>Editar</span>
+        </a>
+        <button
+          mat-raised-button
+          color="warn"
+          type="button"
+          [disabled]="deleting"
+          (click)="confirmDelete()"
+          data-testid="asset-delete"
+        >
+          <mat-icon aria-hidden="true">delete_outline</mat-icon>
+          <span>Excluir</span>
+        </button>
+      </ng-container>
+    </div>
+  </header>
+
+  <p class="assets-alert" role="alert" *ngIf="actionError">{{ actionError }}</p>
+
+  <div class="sh-card">
+    <app-state-message
+      *ngIf="state"
+      [state]="state"
+      [message]="state === 'error' ? (errorMessage ?? undefined) : undefined"
+      [showRetry]="!notFound"
+      (retry)="load()"
+    ></app-state-message>
+
+    <dl class="assets-detail" *ngIf="!state && asset">
+      <div class="assets-detail__item">
+        <dt>Projeto</dt>
+        <dd>
+          <a class="assets-table__link" [routerLink]="['/projects', asset.projectId]">
+            {{ asset.projectName }}
+          </a>
+        </dd>
+      </div>
+
+      <div class="assets-detail__item">
+        <dt>Tipo</dt>
+        <dd>
+          <span class="assets-tag">
+            <mat-icon aria-hidden="true">{{ typeIcons[asset.type] }}</mat-icon>
+            <span>{{ typeLabels[asset.type] }}</span>
+          </span>
+        </dd>
+      </div>
+
+      <div class="assets-detail__item">
+        <dt>Ambiente</dt>
+        <dd>
+          <span class="assets-tag">
+            <mat-icon aria-hidden="true">{{ environmentIcons[asset.environment] }}</mat-icon>
+            <span>{{ environmentLabels[asset.environment] }}</span>
+          </span>
+        </dd>
+      </div>
+
+      <div class="assets-detail__item">
+        <dt>Criticidade</dt>
+        <dd>
+          <span class="assets-tag assets-criticality" [ngClass]="criticalityClass" data-testid="asset-criticality-value">
+            <mat-icon aria-hidden="true">{{ criticalityIcons[asset.criticality] }}</mat-icon>
+            <span>{{ criticalityLabels[asset.criticality] }}</span>
+          </span>
+        </dd>
+      </div>
+
+      <div class="assets-detail__item">
+        <dt>Identificador</dt>
+        <dd>{{ asset.identifier ?? 'Não informado' }}</dd>
+      </div>
+
+      <div class="assets-detail__item">
+        <dt>Vulnerabilidades</dt>
+        <dd data-testid="asset-vulnerability-count">{{ asset.vulnerabilityCount }}</dd>
+      </div>
+
+      <div class="assets-detail__item">
+        <dt>Criado em</dt>
+        <dd>{{ asset.createdAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      </div>
+
+      <div class="assets-detail__item">
+        <dt>Atualizado em</dt>
+        <dd>{{ asset.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      </div>
+
+      <div class="assets-detail__item assets-detail__item--wide">
+        <dt>Descrição</dt>
+        <dd class="assets-detail__description">{{ asset.description ?? 'Sem descrição.' }}</dd>
+      </div>
+    </dl>
+  </div>
+</section>

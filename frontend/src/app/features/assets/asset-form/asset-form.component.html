@@ -1,0 +1,176 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>{{ title }}</h1>
+      <p class="assets-subtitle">
+        {{ isEdit ? 'Altere os dados do ativo e salve.' : 'Cadastre um ativo dentro de um projeto da sua empresa.' }}
+      </p>
+    </div>
+
+    <a mat-stroked-button [routerLink]="cancelLink">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      <span>Voltar</span>
+    </a>
+  </header>
+
+  <div class="sh-card">
+    <app-state-message
+      *ngIf="loadState"
+      [state]="loadState"
+      [message]="loadState === 'error' ? (loadErrorMessage ?? undefined) : undefined"
+      [showRetry]="!notFound"
+      (retry)="loadForm()"
+    ></app-state-message>
+
+    <div class="assets-empty-projects" *ngIf="hasNoProjects" data-testid="asset-no-projects">
+      <mat-icon aria-hidden="true">folder_off</mat-icon>
+      <div>
+        <h2>Nenhum projeto cadastrado</h2>
+        <p>
+          Todo ativo pertence a um projeto, então é preciso cadastrar um projeto antes de
+          registrar ativos.
+        </p>
+        <a mat-raised-button color="primary" routerLink="/projects/novo">
+          <mat-icon aria-hidden="true">add</mat-icon>
+          <span>Criar projeto</span>
+        </a>
+      </div>
+    </div>
+
+    <form *ngIf="!loadState && !hasNoProjects" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <p class="assets-alert" role="alert" *ngIf="generalError">{{ generalError }}</p>
+
+      <div class="sh-form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Projeto</mat-label>
+          <mat-select formControlName="projectId" data-testid="asset-project">
+            <mat-option *ngFor="let project of projects" [value]="project.id">
+              {{ project.name }}
+            </mat-option>
+          </mat-select>
+          <mat-hint>O ativo passa a pertencer a este projeto.</mat-hint>
+          <mat-error *ngIf="form.controls['projectId'].hasError('required')">
+            Selecione o projeto do ativo.
+          </mat-error>
+          <mat-error *ngIf="form.controls['projectId'].hasError('server')">
+            {{ form.controls['projectId'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Nome</mat-label>
+          <input matInput type="text" formControlName="name" maxlength="140" data-testid="asset-name" />
+          <mat-hint>De 2 a 140 caracteres.</mat-hint>
+          <mat-error *ngIf="form.controls['name'].hasError('required')">Informe o nome do ativo.</mat-error>
+          <mat-error *ngIf="form.controls['name'].hasError('minlength')">
+            O nome deve ter ao menos 2 caracteres.
+          </mat-error>
+          <mat-error *ngIf="form.controls['name'].hasError('maxlength')">
+            O nome deve ter no máximo 140 caracteres.
+          </mat-error>
+          <mat-error *ngIf="form.controls['name'].hasError('server')">
+            {{ form.controls['name'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Tipo</mat-label>
+          <mat-select formControlName="type" data-testid="asset-type">
+            <mat-option *ngFor="let type of types" [value]="type">
+              <mat-icon aria-hidden="true">{{ typeIcons[type] }}</mat-icon>
+              <span>{{ typeLabels[type] }}</span>
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.controls['type'].hasError('required')">Selecione o tipo.</mat-error>
+          <mat-error *ngIf="form.controls['type'].hasError('server')">
+            {{ form.controls['type'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Identificador</mat-label>
+          <input
+            matInput
+            type="text"
+            formControlName="identifier"
+            maxlength="255"
+            autocomplete="off"
+            data-testid="asset-identifier"
+          />
+          <mat-hint>Opcional: host, IP ou URL. Único dentro do projeto.</mat-hint>
+          <mat-error *ngIf="form.controls['identifier'].hasError('maxlength')">
+            O identificador deve ter no máximo 255 caracteres.
+          </mat-error>
+          <mat-error *ngIf="form.controls['identifier'].hasError('server')">
+            {{ form.controls['identifier'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Ambiente</mat-label>
+          <mat-select formControlName="environment" data-testid="asset-environment">
+            <mat-option *ngFor="let environment of environments" [value]="environment">
+              <mat-icon aria-hidden="true">{{ environmentIcons[environment] }}</mat-icon>
+              <span>{{ environmentLabels[environment] }}</span>
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.controls['environment'].hasError('required')">
+            Selecione o ambiente.
+          </mat-error>
+          <mat-error *ngIf="form.controls['environment'].hasError('server')">
+            {{ form.controls['environment'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Criticidade</mat-label>
+          <mat-select formControlName="criticality" data-testid="asset-criticality">
+            <mat-option *ngFor="let criticality of criticalities" [value]="criticality">
+              <mat-icon aria-hidden="true">{{ criticalityIcons[criticality] }}</mat-icon>
+              <span>{{ criticalityLabels[criticality] }}</span>
+            </mat-option>
+          </mat-select>
+          <mat-hint>Impacto para o negócio caso o ativo seja comprometido.</mat-hint>
+          <mat-error *ngIf="form.controls['criticality'].hasError('required')">
+            Selecione a criticidade.
+          </mat-error>
+          <mat-error *ngIf="form.controls['criticality'].hasError('server')">
+            {{ form.controls['criticality'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="assets-form__description">
+        <mat-label>Descrição</mat-label>
+        <textarea
+          matInput
+          formControlName="description"
+          rows="4"
+          maxlength="2000"
+          data-testid="asset-description"
+        ></textarea>
+        <mat-hint>Opcional, até 2000 caracteres.</mat-hint>
+        <mat-error *ngIf="form.controls['description'].hasError('maxlength')">
+          A descrição deve ter no máximo 2000 caracteres.
+        </mat-error>
+        <mat-error *ngIf="form.controls['description'].hasError('server')">
+          {{ form.controls['description'].getError('server') }}
+        </mat-error>
+      </mat-form-field>
+
+      <div class="sh-form-actions">
+        <a mat-button [routerLink]="cancelLink">Cancelar</a>
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="submitting"
+          data-testid="asset-submit"
+        >
+          <mat-spinner *ngIf="submitting" diameter="20" aria-hidden="true"></mat-spinner>
+          <span>{{ submitting ? 'Salvando...' : 'Salvar' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

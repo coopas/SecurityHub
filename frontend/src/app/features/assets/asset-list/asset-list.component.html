@@ -1,0 +1,230 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>Ativos</h1>
+      <p class="assets-subtitle">
+        Ativos da sua empresa, com o projeto, o ambiente e a criticidade de cada um.
+      </p>
+    </div>
+
+    <a
+      *ngIf="isAdmin"
+      mat-raised-button
+      color="primary"
+      routerLink="/assets/novo"
+      data-testid="asset-create"
+    >
+      <mat-icon aria-hidden="true">add</mat-icon>
+      <span>Novo ativo</span>
+    </a>
+  </header>
+
+  <p class="assets-alert" role="alert" *ngIf="actionError">{{ actionError }}</p>
+
+  <div class="sh-card">
+    <form class="sh-filters" (ngSubmit)="$event.preventDefault()" novalidate>
+      <mat-form-field appearance="outline">
+        <mat-label>Buscar por nome, descrição ou identificador</mat-label>
+        <input
+          matInput
+          type="search"
+          [formControl]="searchControl"
+          autocomplete="off"
+          data-testid="asset-search"
+        />
+        <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Projeto</mat-label>
+        <mat-select
+          [formControl]="projectControl"
+          (selectionChange)="onProjectChange($event.value)"
+          data-testid="asset-project-filter"
+        >
+          <mat-option value="">Todos</mat-option>
+          <mat-option *ngFor="let project of projects" [value]="project.id">
+            {{ project.name }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Tipo</mat-label>
+        <mat-select
+          [formControl]="typeControl"
+          (selectionChange)="onTypeChange($event.value)"
+          data-testid="asset-type-filter"
+        >
+          <mat-option value="">Todos</mat-option>
+          <mat-option *ngFor="let type of types" [value]="type">
+            {{ typeLabels[type] }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Ambiente</mat-label>
+        <mat-select
+          [formControl]="environmentControl"
+          (selectionChange)="onEnvironmentChange($event.value)"
+          data-testid="asset-environment-filter"
+        >
+          <mat-option value="">Todos</mat-option>
+          <mat-option *ngFor="let environment of environments" [value]="environment">
+            {{ environmentLabels[environment] }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Criticidade</mat-label>
+        <mat-select
+          [formControl]="criticalityControl"
+          (selectionChange)="onCriticalityChange($event.value)"
+          data-testid="asset-criticality-filter"
+        >
+          <mat-option value="">Todas</mat-option>
+          <mat-option *ngFor="let criticality of criticalities" [value]="criticality">
+            {{ criticalityLabels[criticality] }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button
+        mat-stroked-button
+        type="button"
+        class="assets-filters__clear"
+        [disabled]="!hasFilters"
+        (click)="clearFilters()"
+        data-testid="asset-clear-filters"
+      >
+        Limpar filtros
+      </button>
+    </form>
+
+    <app-state-message
+      *ngIf="state"
+      [state]="state"
+      [message]="state === 'empty' ? emptyMessage : undefined"
+      [showRetry]="true"
+      (retry)="load()"
+    ></app-state-message>
+
+    <ng-container *ngIf="!state">
+      <div class="sh-table-wrapper">
+        <table
+          mat-table
+          class="sh-table"
+          matSort
+          matSortDisableClear
+          aria-label="Lista de ativos"
+          [dataSource]="assets"
+          [trackBy]="trackById"
+          [matSortActive]="sortActive"
+          [matSortDirection]="sortDirection"
+          (matSortChange)="onSort($event)"
+        >
+          <caption class="sh-visually-hidden">
+            Ativos da empresa, com tipo, ambiente, criticidade, projeto, vulnerabilidades e data de criação.
+          </caption>
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Nome</th>
+            <td mat-cell *matCellDef="let asset">
+              <a class="assets-table__link" [routerLink]="['/assets', asset.id]">{{ asset.name }}</a>
+              <span class="assets-table__identifier" *ngIf="asset.identifier">{{ asset.identifier }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="type">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Tipo</th>
+            <td mat-cell *matCellDef="let asset">
+              <span class="assets-tag">
+                <mat-icon aria-hidden="true">{{ typeIcon(asset.type) }}</mat-icon>
+                <span>{{ typeLabel(asset.type) }}</span>
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="environment">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Ambiente</th>
+            <td mat-cell *matCellDef="let asset">
+              <span class="assets-tag">
+                <mat-icon aria-hidden="true">{{ environmentIcon(asset.environment) }}</mat-icon>
+                <span>{{ environmentLabel(asset.environment) }}</span>
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="criticality">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Criticidade</th>
+            <td mat-cell *matCellDef="let asset">
+              <span class="assets-tag assets-criticality" [ngClass]="criticalityClass(asset.criticality)">
+                <mat-icon aria-hidden="true">{{ criticalityIcon(asset.criticality) }}</mat-icon>
+                <span>{{ criticalityLabel(asset.criticality) }}</span>
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="project">
+            <th mat-header-cell *matHeaderCellDef scope="col">Projeto</th>
+            <td mat-cell *matCellDef="let asset">
+              <a class="assets-table__link" [routerLink]="['/projects', asset.projectId]">
+                {{ asset.projectName }}
+              </a>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="vulnerabilityCount">
+            <th mat-header-cell *matHeaderCellDef scope="col">Vulnerabilidades</th>
+            <td mat-cell *matCellDef="let asset">{{ asset.vulnerabilityCount }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Criado em</th>
+            <td mat-cell *matCellDef="let asset">{{ asset.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef scope="col">
+              <span class="sh-visually-hidden">Ações</span>
+            </th>
+            <td mat-cell *matCellDef="let asset" class="assets-table__actions">
+              <a
+                mat-icon-button
+                [routerLink]="['/assets', asset.id, 'editar']"
+                [attr.aria-label]="'Editar ativo ' + asset.name"
+                [matTooltip]="'Editar ativo'"
+              >
+                <mat-icon aria-hidden="true">edit</mat-icon>
+              </a>
+              <button
+                mat-icon-button
+                type="button"
+                color="warn"
+                [attr.aria-label]="'Excluir ativo ' + asset.name"
+                [matTooltip]="'Excluir ativo'"
+                (click)="confirmDelete(asset)"
+              >
+                <mat-icon aria-hidden="true">delete_outline</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="totalElements"
+        [pageIndex]="query.page"
+        [pageSize]="query.size"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPage($event)"
+        aria-label="Paginação dos ativos"
+      ></mat-paginator>
+    </ng-container>
+  </div>
+</section>
