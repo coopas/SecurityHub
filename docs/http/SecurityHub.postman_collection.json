@@ -1,0 +1,2458 @@
+{
+  "info": {
+    "name": "SecurityHub API",
+    "_postman_id": "9f2c41d6-7b3e-4a58-9d0c-5e6a1b8f4c37",
+    "description": "Coleção completa da API do SecurityHub (/api/v1), organizada por módulo.\n\nComo usar:\n1. Suba a pilha (docker compose up) — o perfil demo semeia dois tenants.\n2. Ajuste a variável baseUrl se o backend não estiver em localhost:8080.\n3. Rode \"Login (ADMIN)\" na pasta 1: o script de teste guarda accessToken e userId nas variáveis da coleção, e todo o resto herda o Bearer daí. Nenhuma cópia manual de token.\n4. Rode as pastas 2 a 5 na ordem: cada criação guarda o id que a próxima usa.\n\nNenhum segredo nesta coleção. demoPassword é a credencial pública da demonstração local (backend/src/main/resources/application-demo.yml), que só existe em um banco criado na própria máquina; qualquer implantação exposta deve sobrescrever SECURITYHUB_DEMO_PASSWORD. accessToken, devToken, viewerToken e otherToken nascem vazios e são preenchidos em tempo de execução.\n\nRespostas comentadas de cada endpoint: docs/api-examples.md. Contrato navegável: http://localhost:8080/swagger-ui.html",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1",
+      "type": "string",
+      "description": "Raiz da API. Troque aqui para apontar para outro ambiente."
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string",
+      "description": "Preenchido pelo script de teste do login. Nunca versionado com valor."
+    },
+    {
+      "key": "demoEmail",
+      "value": "admin@demo.test",
+      "type": "string",
+      "description": "ADMIN do tenant demo semeado pelo perfil demo."
+    },
+    {
+      "key": "demoPassword",
+      "value": "Demo@SecurityHub2026",
+      "type": "string",
+      "description": "Credencial pública da demonstração local (application-demo.yml), não um segredo. Sobrescreva SECURITYHUB_DEMO_PASSWORD em qualquer ambiente exposto."
+    },
+    {
+      "key": "devToken",
+      "value": "",
+      "type": "string",
+      "description": "Token do DEVELOPER, preenchido em tempo de execução."
+    },
+    {
+      "key": "viewerToken",
+      "value": "",
+      "type": "string",
+      "description": "Token do VIEWER, preenchido em tempo de execução."
+    },
+    {
+      "key": "otherToken",
+      "value": "",
+      "type": "string",
+      "description": "Token do ADMIN do segundo tenant, preenchido em tempo de execução."
+    },
+    {
+      "key": "tokenInvalido",
+      "value": "token-invalido-qualquer",
+      "type": "string",
+      "description": "Valor claramente inválido, usado apenas no caso de 401."
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string",
+      "description": "Id do usuário autenticado, guardado pelo script do login."
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "type": "string",
+      "description": "Guardado pela criação de projeto."
+    },
+    {
+      "key": "assetId",
+      "value": "",
+      "type": "string",
+      "description": "Guardado pela criação de ativo."
+    },
+    {
+      "key": "vulnerabilityId",
+      "value": "",
+      "type": "string",
+      "description": "Guardado pela criação de vulnerabilidade."
+    },
+    {
+      "key": "commentId",
+      "value": "",
+      "type": "string",
+      "description": "Guardado pela criação de comentário."
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Autenticação",
+      "description": "register e login são públicos; /auth/me exige o token. O login guarda o accessToken na variável de coleção, então todo o resto funciona sem cópia manual.",
+      "item": [
+        {
+          "name": "Register — cria empresa + primeiro ADMIN",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyName\": \"Acme Segurança\",\n  \"name\": \"Administrador\",\n  \"email\": \"admin@acme.test\",\n  \"password\": \"uma-senha-suficientemente-longa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Público. O primeiro usuário da empresa é sempre ADMIN. A senha tem de 10 a 100 caracteres. E-mail é único globalmente: repetir responde 409.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login (ADMIN) — guarda o accessToken",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{demoEmail}}\",\n  \"password\": \"{{demoPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Público. O script de teste grava accessToken e userId nas variáveis de coleção. Execute esta requisição primeiro.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guarda o access token na variável de coleção: nenhuma cópia manual é necessária.",
+                  "pm.test(\"login devolveu 200\", function () { pm.response.to.have.status(200); });",
+                  "var body = pm.response.json();",
+                  "pm.collectionVariables.set(\"accessToken\", body.accessToken);",
+                  "pm.collectionVariables.set(\"userId\", body.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /auth/me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Autenticado, qualquer papel."
+          },
+          "response": []
+        },
+        {
+          "name": "Login (DEVELOPER)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"developer@demo.test\",\n  \"password\": \"{{demoPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Perfil demo. Guarda devToken, usado nos casos de 403.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"login devolveu 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set(\"devToken\", pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (VIEWER)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"viewer@demo.test\",\n  \"password\": \"{{demoPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Perfil demo. Guarda viewerToken. VIEWER é estritamente somente leitura.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"login devolveu 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set(\"viewerToken\", pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (outra empresa)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@northwind.test\",\n  \"password\": \"{{demoPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Segundo tenant do seed demo. Guarda otherToken, usado nos casos de 404 por isolamento.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"login devolveu 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set(\"otherToken\", pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Projetos",
+      "description": "Leitura para qualquer papel; criar, editar e excluir é exclusivo de ADMIN. Ordenáveis: name, status, createdAt, updatedAt (padrão createdAt,desc).",
+      "item": [
+        {
+          "name": "Listar projetos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects?page=0&size=20&sort=createdAt,desc&search=portal&status=ACTIVE",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt,desc",
+                  "description": "Fora da allowlist (name, status, createdAt, updatedAt) o valor é descartado em silêncio"
+                },
+                {
+                  "key": "search",
+                  "value": "portal",
+                  "description": "contains sem distinguir maiúsculas em name ou description"
+                },
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "description": "ACTIVE | ARCHIVED"
+                }
+              ]
+            },
+            "description": "Envelope paginado. Confira a chave sort da resposta para saber a ordenação aplicada."
+          },
+          "response": []
+        },
+        {
+          "name": "Criar projeto (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Portal do Cliente\",\n  \"description\": \"Aplicação web voltada ao cliente final\",\n  \"status\": \"ACTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "status é opcional: ausente significa ACTIVE. Não existe companyId no corpo — o tenant vem do token. Guarda projectId."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"resposta 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"projectId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalhar projeto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar projeto (ADMIN)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Portal do Cliente\",\n  \"description\": \"Descrição revisada\",\n  \"status\": \"ACTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Substituição completa: description ausente apaga a descrição; status ausente preserva o status atual."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Ativos",
+      "description": "Leitura para qualquer papel; criar, editar e excluir é exclusivo de ADMIN. Ordenáveis: name, type, environment, criticality, createdAt, updatedAt.",
+      "item": [
+        {
+          "name": "Listar ativos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assets?page=0&size=20&sort=criticality,desc&search=api&projectId={{projectId}}&type=API&environment=PRODUCTION&criticality=CRITICAL",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assets"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "criticality,desc"
+                },
+                {
+                  "key": "search",
+                  "value": "api",
+                  "description": "contains em name, description ou identifier"
+                },
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}"
+                },
+                {
+                  "key": "type",
+                  "value": "API",
+                  "description": "API | SERVER | WEBSITE | DATABASE | WORKSTATION | OTHER"
+                },
+                {
+                  "key": "environment",
+                  "value": "PRODUCTION",
+                  "description": "PRODUCTION | STAGING | DEVELOPMENT | TEST"
+                },
+                {
+                  "key": "criticality",
+                  "value": "CRITICAL",
+                  "description": "LOW | MEDIUM | HIGH | CRITICAL"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar ativo (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assets"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": {{projectId}},\n  \"name\": \"API de pagamentos\",\n  \"description\": \"Processa cobranças e estornos\",\n  \"type\": \"API\",\n  \"identifier\": \"api.pagamentos.acme.test\",\n  \"environment\": \"PRODUCTION\",\n  \"criticality\": \"CRITICAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "identifier é opcional e único por projeto (sem distinguir maiúsculas); em branco vira ausente e nunca conflita. projectId de outra empresa responde 404. Guarda assetId."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"resposta 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"assetId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalhar ativo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assets/{{assetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assets",
+                "{{assetId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar ativo (ADMIN)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/assets/{{assetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assets",
+                "{{assetId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": {{projectId}},\n  \"name\": \"API de pagamentos\",\n  \"description\": \"Processa cobranças, estornos e conciliação\",\n  \"type\": \"API\",\n  \"identifier\": \"api.pagamentos.acme.test\",\n  \"environment\": \"PRODUCTION\",\n  \"criticality\": \"HIGH\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Enviar outro projectId move o ativo, desde que o destino seja da mesma empresa."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Vulnerabilidades",
+      "description": "Leitura para qualquer papel; criar e editar é de ADMIN e ANALYST; excluir é só ADMIN. Status muda exclusivamente por PATCH /status.",
+      "item": [
+        {
+          "name": "Listar vulnerabilidades",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities?page=0&size=20&sort=cvssScore,desc&search=injection&projectId={{projectId}}&assetId={{assetId}}&severity=CRITICAL&status=OPEN&assignedTo={{userId}}&overdue=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "cvssScore,desc"
+                },
+                {
+                  "key": "search",
+                  "value": "injection",
+                  "description": "contains em title, description ou cve"
+                },
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "description": "alcança o projeto através do ativo"
+                },
+                {
+                  "key": "assetId",
+                  "value": "{{assetId}}"
+                },
+                {
+                  "key": "severity",
+                  "value": "CRITICAL",
+                  "description": "LOW | MEDIUM | HIGH | CRITICAL"
+                },
+                {
+                  "key": "status",
+                  "value": "OPEN",
+                  "description": "OPEN | IN_PROGRESS | RESOLVED | ACCEPTED_RISK"
+                },
+                {
+                  "key": "assignedTo",
+                  "value": "{{userId}}"
+                },
+                {
+                  "key": "overdue",
+                  "value": "false",
+                  "description": "dueDate no passado E status OPEN ou IN_PROGRESS"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar vulnerabilidade (ADMIN/ANALYST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": {{assetId}},\n  \"title\": \"SQL injection no endpoint de busca\",\n  \"description\": \"Parâmetro concatenado diretamente na query\",\n  \"severity\": \"CRITICAL\",\n  \"cvssScore\": 9.1,\n  \"cve\": \"CVE-2024-12345\",\n  \"discoveredAt\": \"2026-09-17T12:02:00Z\",\n  \"dueDate\": \"2026-10-01T00:00:00Z\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Não existe status no corpo: toda vulnerabilidade nasce OPEN. cvssScore vai de 0.0 a 10.0 com uma casa decimal; cve aceita CVE-AAAA-NNNN ou string vazia; discoveredAt ausente significa agora. Guarda vulnerabilityId."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"resposta 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"vulnerabilityId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalhar vulnerabilidade",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Atribuir responsável (ADMIN/ANALYST)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/assignee",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}",
+                "assignee"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": {{userId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "O responsável precisa ser um usuário ATIVO da mesma empresa; qualquer outro caso é 404."
+          },
+          "response": []
+        },
+        {
+          "name": "Alterar status para IN_PROGRESS",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Não há máquina de estados: toda transição é aceita. Mudar para o status atual é um no-op que não grava auditoria."
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar vulnerabilidade (ADMIN/ANALYST)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": {{assetId}},\n  \"title\": \"SQL injection no endpoint de busca de pedidos\",\n  \"description\": \"Parâmetro concatenado diretamente na query; reproduzido em homologação\",\n  \"severity\": \"CRITICAL\",\n  \"cvssScore\": 9.4,\n  \"cve\": \"CVE-2024-12345\",\n  \"discoveredAt\": \"2026-09-17T12:02:00Z\",\n  \"dueDate\": \"2026-10-01T00:00:00Z\",\n  \"assignedToId\": {{userId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "PUT nunca toca em status nem em resolvedAt. assignedToId ausente desatribui."
+          },
+          "response": []
+        },
+        {
+          "name": "Resolver — carimba resolvedAt",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Entrar em RESOLVED preenche resolvedAt; sair de RESOLVED limpa o carimbo. A mesma equivalência é uma constraint CHECK na migração V5."
+          },
+          "response": []
+        },
+        {
+          "name": "Desatribuir — userId nulo",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/assignee",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}",
+                "assignee"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "userId não é @NotNull de propósito: enviar null é como se desatribui um item. Depois disso a chave assignedTo some da resposta."
+          },
+          "response": []
+        },
+        {
+          "name": "Itens atrasados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities?overdue=true&sort=dueDate,asc&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities"
+              ],
+              "query": [
+                {
+                  "key": "overdue",
+                  "value": "true"
+                },
+                {
+                  "key": "sort",
+                  "value": "dueDate,asc"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Mesmo predicado do card overdueVulnerabilities do dashboard. overdue=false inclui os itens sem dueDate."
+          },
+          "response": []
+        },
+        {
+          "name": "Itens recentes (painel do dashboard)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities?page=0&size=5&sort=createdAt,desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "5"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt,desc"
+                }
+              ]
+            },
+            "description": "O painel de itens recentes é esta listagem, não um quinto endpoint de dashboard."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Comentários",
+      "description": "Aninhados sob a vulnerabilidade. Leitura para qualquer papel; escrever é de ADMIN, ANALYST e DEVELOPER; editar é do autor ou de um ADMIN. Não existe exclusão de comentário no MVP.",
+      "item": [
+        {
+          "name": "Comentar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}",
+                "comments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Correção iniciada; o parâmetro passa a usar bind.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "O corpo carrega só o texto: a vulnerabilidade vem do caminho, o autor e a empresa do token. content vai até 2000 caracteres. Guarda commentId."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"resposta 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.collectionVariables.set(\"commentId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar comentários",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/comments?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}",
+                "comments"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Ordem ascendente por createdAt (desempate por id), ao contrário do resto da API: uma discussão se lê do mais antigo para o mais novo. editable espelha a regra do servidor para quem está lendo."
+          },
+          "response": []
+        },
+        {
+          "name": "Editar comentário (autor ou ADMIN)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/comments/{{commentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}",
+                "comments",
+                "{{commentId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Correção iniciada; o parâmetro passa a usar bind. PR aberto.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Quem não é autor nem ADMIN recebe 403 com mensagem específica. A trilha de auditoria guarda contentLength, nunca o texto."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Usuários",
+      "description": "ADMIN e ANALYST. ANALYST entra porque atribuir uma vulnerabilidade exige escolher um usuário. Array puro, sem paginação, sempre ordenado por name asc.",
+      "item": [
+        {
+          "name": "Listar usuários",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?active=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filtrar por papel e texto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?role=DEVELOPER&active=true&search=mendes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "role",
+                  "value": "DEVELOPER",
+                  "description": "ADMIN | ANALYST | DEVELOPER | VIEWER"
+                },
+                {
+                  "key": "active",
+                  "value": "true"
+                },
+                {
+                  "key": "search",
+                  "value": "mendes",
+                  "description": "contains em name ou email"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Auditoria",
+      "description": "Somente ADMIN. Somente leitura: nenhum endpoint altera ou apaga uma entrada. Ordenáveis: createdAt, action, entityType.",
+      "item": [
+        {
+          "name": "Trilha de auditoria",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit-logs?page=0&size=20&entityType=Project",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "entityType",
+                  "value": "Project",
+                  "description": "Company | User | Project | Asset | Vulnerability | Comment"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filtrada por ação, ator e janela",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit-logs?page=0&size=50&entityType=Vulnerability&action=STATUS_CHANGE&actorId={{userId}}&from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z&sort=createdAt,desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "50"
+                },
+                {
+                  "key": "entityType",
+                  "value": "Vulnerability"
+                },
+                {
+                  "key": "action",
+                  "value": "STATUS_CHANGE",
+                  "description": "LOGIN, LOGIN_FAILED, REGISTER, CREATE, UPDATE, DELETE, STATUS_CHANGE, ASSIGN, COMMENT, ..."
+                },
+                {
+                  "key": "actorId",
+                  "value": "{{userId}}"
+                },
+                {
+                  "key": "from",
+                  "value": "2026-01-01T00:00:00Z",
+                  "description": "createdAt >= from"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-12-31T23:59:59Z",
+                  "description": "createdAt <= to"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt,desc"
+                }
+              ]
+            },
+            "description": "Campos cujo nome sugira credencial (password, hash, token, secret, ...) chegam mascarados como \"***\"."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "8. Dashboard",
+      "description": "Quatro endpoints, todos apenas autenticados: docs/permissions.md dá \"ver dashboard\" aos quatro papéis. Tudo escopado pela empresa do token.",
+      "item": [
+        {
+          "name": "Cards (summary)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "summary"
+              ]
+            },
+            "description": "openVulnerabilities é OPEN + IN_PROGRESS, não uma contagem de status. topProjects traz no máximo dez linhas, ordenadas por total desc e projectName asc."
+          },
+          "response": []
+        },
+        {
+          "name": "Distribuição por severidade",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/severity-distribution",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "severity-distribution"
+              ]
+            },
+            "description": "Array puro de 4 elementos, com as severidades zeradas presentes. Não usa o envelope paginado: é um agregado de tamanho fixo, não uma listagem."
+          },
+          "response": []
+        },
+        {
+          "name": "Distribuição por status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/status-distribution",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "status-distribution"
+              ]
+            },
+            "description": "Gêmeo do anterior, com os quatro VulnerabilityStatus."
+          },
+          "response": []
+        },
+        {
+          "name": "Tendência diária",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/trend?days=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "trend"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30",
+                  "description": "limitado em silêncio a [1, 90]"
+                }
+              ]
+            },
+            "description": "Janela [hoje - (days - 1), hoje] em UTC, ambos inclusivos. opened vem de discoveredAt e resolved de resolvedAt; nenhuma série usa createdAt."
+          },
+          "response": []
+        },
+        {
+          "name": "Tendência com days acima do limite",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/trend?days=365",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "trend"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "365"
+                }
+              ]
+            },
+            "description": "Responde 200 com \"days\": 90. O clamp é silencioso porque um controle de gráfico não pode abrir uma caixa de erro; a resposta ecoa a janela efetiva."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"days foi limitado a 90\", function () {",
+                  "    pm.expect(pm.response.json().days).to.eql(90);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "9. Casos negativos",
+      "description": "Todos respondem o envelope ApiError. Execute as pastas 1 a 5 antes: estes casos dependem das variáveis capturadas.",
+      "item": [
+        {
+          "name": "401 — sem token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ]
+            },
+            "description": "Corpo do RestAuthenticationEntryPoint: code UNAUTHORIZED, message \"Autenticação necessária\".",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 401\", function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "401 — token inválido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ]
+            },
+            "description": "Token com outra assinatura, expirado ou de usuário inativo: mesmo corpo do caso anterior. A resposta não diz qual dos casos ocorreu.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenInvalido}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 401\", function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "401 — credenciais erradas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{demoEmail}}\",\n  \"password\": \"senha-obviamente-errada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "message \"Credenciais inválidas\". E-mail inexistente, senha errada e usuário desativado dão a mesma resposta, e o tempo de resposta é comparável nos três casos.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 401\", function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "403 — DEVELOPER criando projeto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Projeto que o developer não pode criar\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Projetos são exclusivos de ADMIN. Corpo genérico: code FORBIDDEN, message \"Acesso negado\". A checagem vive no serviço, não só no controller.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{devToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 403\", function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "403 — DEVELOPER mudando status de item de outra pessoa",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}",
+                "status"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "A regra de propriedade do DEVELOPER. Mensagem específica: \"Você só pode alterar o status de vulnerabilidades atribuídas a você\". Só pode ocorrer dentro da própria empresa — um id de outro tenant já teria saído como 404. Execute antes a requisição que atribui o item ao ADMIN. Um item não atribuído dá o mesmo 403.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{devToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 403\", function () { pm.response.to.have.status(403); });",
+                  "pm.test(\"mensagem é a da regra de propriedade\", function () {",
+                  "    pm.expect(pm.response.json().message).to.include(\"atribuídas a você\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "403 — VIEWER comentando",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}",
+                "comments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Comentário que o viewer não pode escrever\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "VIEWER é estritamente somente leitura.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{viewerToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 403\", function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "403 — DEVELOPER consultando auditoria",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit-logs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit-logs"
+              ]
+            },
+            "description": "A trilha é exclusiva de ADMIN.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{devToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 403\", function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 — projeto de outra empresa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}"
+              ]
+            },
+            "description": "404 e não 403 de propósito. Um 403 confirmaria que a linha existe: varrendo ids um atacante mapearia quais estão ocupados no banco inteiro sem ver um único dado, e a API viraria um oráculo de enumeração. Com 404, um recurso de outra empresa é indistinguível de um que não existe.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{otherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 — excluir recurso de outra empresa",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}"
+              ]
+            },
+            "description": "A mesma regra vale para GET, PUT, PATCH e DELETE.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{otherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 — projectId inexistente no corpo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assets"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": 999999,\n  \"name\": \"Ativo órfão\",\n  \"type\": \"SERVER\",\n  \"environment\": \"TEST\",\n  \"criticality\": \"LOW\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Referências no corpo seguem a mesma regra: \"Projeto 999999 não encontrado\"."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "404 — responsável inexistente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/assignee",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}",
+                "assignee"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Usuário desconhecido, de outra empresa ou desativado são o mesmo 404: o chamador não pode aprender qual dos três."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 404\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "409 — nome de projeto duplicado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Portal do Cliente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Comparação sem distinguir maiúsculas, dentro da empresa: \"Já existe um projeto com esse nome nesta empresa\"."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 409\", function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "409 — identificador de ativo duplicado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/assets",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assets"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": {{projectId}},\n  \"name\": \"Outro ativo, mesmo identificador\",\n  \"type\": \"API\",\n  \"identifier\": \"api.pagamentos.acme.test\",\n  \"environment\": \"PRODUCTION\",\n  \"criticality\": \"LOW\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Unicidade por projeto: \"Já existe um ativo com esse identificador neste projeto\"."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 409\", function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "409 — e-mail já cadastrado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"companyName\": \"Outra Empresa\",\n  \"name\": \"Outro Administrador\",\n  \"email\": \"{{demoEmail}}\",\n  \"password\": \"uma-senha-suficientemente-longa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "A unicidade de e-mail é global, não por empresa (ADR 0004).",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 409\", function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "409 — excluir projeto com ativos",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}"
+              ]
+            },
+            "description": "\"O projeto possui N ativo(s) e não pode ser excluído\". Filhos nunca são apagados em cascata silenciosamente (docs/permissions.md)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 409\", function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "409 — excluir ativo com vulnerabilidades",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assets/{{assetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assets",
+                "{{assetId}}"
+              ]
+            },
+            "description": "\"O ativo possui N vulnerabilidade(s) e não pode ser excluído\"."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 409\", function () { pm.response.to.have.status(409); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — validação com fieldErrors",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "code VALIDATION_ERROR, message \"Dados inválidos\", fieldErrors com campo e mensagem."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"tem fieldErrors\", function () {",
+                  "    pm.expect(pm.response.json().fieldErrors).to.be.an(\"array\").that.is.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — vários campos inválidos de uma vez",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"ab\",\n  \"cvssScore\": 12.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Espera quatro fieldErrors: assetId obrigatório, title fora do tamanho, severity obrigatória e cvssScore fora de 0.0–10.0. A ordem do array não é garantida."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — enum inexistente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assetId\": {{assetId}},\n  \"title\": \"Severidade que não existe\",\n  \"severity\": \"URGENTE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "code BAD_REQUEST, message \"Requisição malformada\", SEM fieldErrors: a falha é de desserialização e acontece antes da validação rodar."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "400 — tipo incompatível na query",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities?projectId=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities"
+              ],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "abc"
+                }
+              ]
+            },
+            "description": "Mesmo caso do anterior: BAD_REQUEST sem fieldErrors."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10. Comportamentos silenciosos",
+      "description": "Dois clamps que respondem 200 em vez de erro. Ambos ecoam na resposta o valor efetivamente usado, que é o que os mantém visíveis em vez de escondidos.",
+      "item": [
+        {
+          "name": "sort fora da allowlist cai no padrão",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects?sort=passwordHash,asc&size=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "passwordHash,asc"
+                },
+                {
+                  "key": "size",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "A propriedade enviada chega ao Spring Data como caminho de atributo de entidade, então tudo fora da allowlist do módulo é descartado. Confira a chave sort da resposta: vem \"createdAt,desc\", a ordenação padrão."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"caiu na ordenação padrão\", function () {",
+                  "    pm.expect(pm.response.json().sort).to.eql(\"createdAt,desc\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "size acima do máximo é limitado a 100",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities?size=500",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "500"
+                }
+              ]
+            },
+            "description": "PageableSupport.MAX_PAGE_SIZE. Confira a chave size da resposta."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"size limitado a 100\", function () {",
+                  "    pm.expect(pm.response.json().size).to.eql(100);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11. Limpeza",
+      "description": "Na ordem que respeita a regra de filhos: vulnerabilidade, ativo, projeto. Todos respondem 204 sem corpo.",
+      "item": [
+        {
+          "name": "Excluir vulnerabilidade (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vulnerabilities/{{vulnerabilityId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vulnerabilities",
+                "{{vulnerabilityId}}"
+              ]
+            },
+            "description": "Exceção deliberada à regra de filhos: os comentários são apagados junto, porque não há endpoint que apague um comentário isoladamente. Quantos foram removidos vai para a trilha (commentCount no oldValue)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Excluir ativo (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assets/{{assetId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "assets",
+                "{{assetId}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Excluir projeto (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "projects",
+                "{{projectId}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"esperado 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

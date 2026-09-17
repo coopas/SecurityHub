@@ -1,12 +1,21 @@
 ### SecurityHub — coleção de requisições
 ### Compatível com o REST Client do VS Code e com o cliente HTTP do IntelliJ.
 ### Nenhum segredo aqui: o token é capturado da resposta de login em tempo de execução.
+###
+### O arquivo é um fluxo: executado de cima para baixo contra uma pilha com o perfil `demo`
+### (docker compose up), cada bloco alimenta o seguinte através das variáveis capturadas.
+### A seção 11 reúne os casos negativos e a 12 desfaz o que foi criado.
+### Resposta detalhada de cada endpoint: docs/api-examples.md
 
 @baseUrl = http://localhost:8080/api/v1
 @demoEmail = admin@demo.test
 @demoPassword = Demo@SecurityHub2026
 
-### 1. Cadastro de uma nova empresa com o primeiro administrador
+############################################################
+### 1. Autenticação
+############################################################
+
+### 1.1 Cadastro de uma nova empresa com o primeiro administrador
 # @name register
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
@@ -18,7 +27,7 @@ Content-Type: application/json
   "password": "uma-senha-suficientemente-longa"
 }
 
-### 2. Login — guarda o access token para as chamadas seguintes
+### 1.2 Login — guarda o access token para as chamadas seguintes
 # @name login
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
@@ -29,19 +38,57 @@ Content-Type: application/json
 }
 
 @token = {{login.response.body.accessToken}}
+@userId = {{login.response.body.user.id}}
 
-### 3. Usuário autenticado
+### 1.3 Usuário autenticado
 GET {{baseUrl}}/auth/me
 Authorization: Bearer {{token}}
 
-### 4. Endpoint protegido sem token — deve responder 401
-GET {{baseUrl}}/projects
+### 1.4 Login como DEVELOPER — usado nos casos de 403 da seção 11
+# @name loginDeveloper
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
 
-### 5. Projetos — listagem paginada, filtrada e ordenada
+{
+  "email": "developer@demo.test",
+  "password": "{{demoPassword}}"
+}
+
+@devToken = {{loginDeveloper.response.body.accessToken}}
+
+### 1.5 Login como VIEWER — papel estritamente somente leitura
+# @name loginViewer
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "viewer@demo.test",
+  "password": "{{demoPassword}}"
+}
+
+@viewerToken = {{loginViewer.response.body.accessToken}}
+
+### 1.6 Login no segundo tenant — usado nos casos de 404 por isolamento
+# @name loginOtherCompany
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@northwind.test",
+  "password": "{{demoPassword}}"
+}
+
+@otherToken = {{loginOtherCompany.response.body.accessToken}}
+
+############################################################
+### 2. Projetos
+############################################################
+
+### 2.1 Listagem paginada, filtrada e ordenada
 GET {{baseUrl}}/projects?page=0&size=20&sort=createdAt,desc&search=portal&status=ACTIVE
 Authorization: Bearer {{token}}
 
-### 6. Criar projeto (somente ADMIN)
+### 2.2 Criar projeto (somente ADMIN)
 # @name createProject
 POST {{baseUrl}}/projects
 Content-Type: application/json
@@ -55,11 +102,11 @@ Authorization: Bearer {{token}}
 
 @projectId = {{createProject.response.body.id}}
 
-### 7. Detalhe do projeto
+### 2.3 Detalhe do projeto
 GET {{baseUrl}}/projects/{{projectId}}
 Authorization: Bearer {{token}}
 
-### 8. Atualizar projeto
+### 2.4 Atualizar projeto
 PUT {{baseUrl}}/projects/{{projectId}}
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -67,10 +114,324 @@ Authorization: Bearer {{token}}
 {
   "name": "Portal do Cliente",
   "description": "Descrição revisada",
-  "status": "ARCHIVED"
+  "status": "ACTIVE"
 }
 
-### 9. Nome duplicado — deve responder 409
+############################################################
+### 3. Ativos
+############################################################
+
+### 3.1 Listagem com todos os filtros do módulo
+GET {{baseUrl}}/assets?page=0&size=20&sort=criticality,desc&search=api&projectId={{projectId}}&type=API&environment=PRODUCTION&criticality=CRITICAL
+Authorization: Bearer {{token}}
+
+### 3.2 Criar ativo (somente ADMIN)
+# @name createAsset
+POST {{baseUrl}}/assets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "projectId": {{projectId}},
+  "name": "API de pagamentos",
+  "description": "Processa cobranças e estornos",
+  "type": "API",
+  "identifier": "api.pagamentos.acme.test",
+  "environment": "PRODUCTION",
+  "criticality": "CRITICAL"
+}
+
+@assetId = {{createAsset.response.body.id}}
+
+### 3.3 Detalhe do ativo
+GET {{baseUrl}}/assets/{{assetId}}
+Authorization: Bearer {{token}}
+
+### 3.4 Atualizar ativo — identifier em branco significa "sem identificador"
+PUT {{baseUrl}}/assets/{{assetId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "projectId": {{projectId}},
+  "name": "API de pagamentos",
+  "description": "Processa cobranças, estornos e conciliação",
+  "type": "API",
+  "identifier": "api.pagamentos.acme.test",
+  "environment": "PRODUCTION",
+  "criticality": "HIGH"
+}
+
+############################################################
+### 4. Vulnerabilidades
+############################################################
+
+### 4.1 Listagem com todos os filtros do módulo
+GET {{baseUrl}}/vulnerabilities?page=0&size=20&sort=cvssScore,desc&search=injection&projectId={{projectId}}&assetId={{assetId}}&severity=CRITICAL&status=OPEN&overdue=false
+Authorization: Bearer {{token}}
+
+### 4.2 Criar vulnerabilidade (ADMIN ou ANALYST) — nasce sempre OPEN, sem status no corpo
+# @name createVulnerability
+POST {{baseUrl}}/vulnerabilities
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "assetId": {{assetId}},
+  "title": "SQL injection no endpoint de busca",
+  "description": "Parâmetro concatenado diretamente na query",
+  "severity": "CRITICAL",
+  "cvssScore": 9.1,
+  "cve": "CVE-2024-12345",
+  "discoveredAt": "2026-09-17T12:02:00Z",
+  "dueDate": "2026-10-01T00:00:00Z"
+}
+
+@vulnerabilityId = {{createVulnerability.response.body.id}}
+
+### 4.3 Detalhe da vulnerabilidade
+GET {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}
+Authorization: Bearer {{token}}
+
+### 4.4 Atribuir a um usuário ativo da própria empresa (ADMIN ou ANALYST)
+PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/assignee
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "userId": {{userId}}
+}
+
+### 4.5 Alterar status para IN_PROGRESS
+PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "IN_PROGRESS"
+}
+
+### 4.6 Atualizar a vulnerabilidade — PUT nunca altera status nem resolvedAt
+PUT {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "assetId": {{assetId}},
+  "title": "SQL injection no endpoint de busca de pedidos",
+  "description": "Parâmetro concatenado diretamente na query; reproduzido em homologação",
+  "severity": "CRITICAL",
+  "cvssScore": 9.4,
+  "cve": "CVE-2024-12345",
+  "discoveredAt": "2026-09-17T12:02:00Z",
+  "dueDate": "2026-10-01T00:00:00Z",
+  "assignedToId": {{userId}}
+}
+
+### 4.7 Itens atrasados — overdue=true usa o mesmo predicado do card do dashboard
+GET {{baseUrl}}/vulnerabilities?overdue=true&sort=dueDate,asc&size=20
+Authorization: Bearer {{token}}
+
+### 4.8 Painel "itens recentes" do dashboard — é esta listagem, não um quinto endpoint
+GET {{baseUrl}}/vulnerabilities?page=0&size=5&sort=createdAt,desc
+Authorization: Bearer {{token}}
+
+############################################################
+### 5. Comentários
+############################################################
+
+### 5.1 Comentar (ADMIN, ANALYST ou DEVELOPER)
+# @name createComment
+POST {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/comments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "content": "Correção iniciada; o parâmetro passa a usar bind."
+}
+
+@commentId = {{createComment.response.body.id}}
+
+### 5.2 Listar comentários — ordem ascendente por createdAt, ao contrário do resto da API
+GET {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/comments?page=0&size=20
+Authorization: Bearer {{token}}
+
+### 5.3 Editar o próprio comentário (autor ou ADMIN)
+PUT {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/comments/{{commentId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "content": "Correção iniciada; o parâmetro passa a usar bind. PR aberto."
+}
+
+############################################################
+### 6. Resolver
+############################################################
+
+### 6.1 Entrar em RESOLVED carimba resolvedAt; sair de RESOLVED limparia o carimbo
+PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "RESOLVED"
+}
+
+### 6.2 Desatribuir — userId nulo é uma requisição válida
+PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/assignee
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "userId": null
+}
+
+############################################################
+### 7. Usuários
+############################################################
+
+### 7.1 Usuários da empresa (ADMIN e ANALYST) — array puro, sem paginação
+GET {{baseUrl}}/users?active=true
+Authorization: Bearer {{token}}
+
+### 7.2 Filtrado por papel e texto
+GET {{baseUrl}}/users?role=DEVELOPER&active=true&search=mendes
+Authorization: Bearer {{token}}
+
+############################################################
+### 8. Auditoria
+############################################################
+
+### 8.1 Trilha de auditoria (somente ADMIN)
+GET {{baseUrl}}/audit-logs?page=0&size=20&entityType=Project
+Authorization: Bearer {{token}}
+
+### 8.2 Filtrada por ação, ator e janela de tempo
+GET {{baseUrl}}/audit-logs?page=0&size=50&entityType=Vulnerability&action=STATUS_CHANGE&actorId={{userId}}&from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z&sort=createdAt,desc
+Authorization: Bearer {{token}}
+
+############################################################
+### 9. Dashboard
+############################################################
+
+### 9.1 Cards — openVulnerabilities é OPEN + IN_PROGRESS, não uma contagem de status
+GET {{baseUrl}}/dashboard/summary
+Authorization: Bearer {{token}}
+
+### 9.2 Distribuição por severidade — array com as quatro severidades, inclusive as zeradas
+GET {{baseUrl}}/dashboard/severity-distribution
+Authorization: Bearer {{token}}
+
+### 9.3 Distribuição por status — array com os quatro status, inclusive os zerados
+GET {{baseUrl}}/dashboard/status-distribution
+Authorization: Bearer {{token}}
+
+### 9.4 Série diária de abertas e resolvidas
+GET {{baseUrl}}/dashboard/trend?days=30
+Authorization: Bearer {{token}}
+
+### 9.5 days é limitado em silêncio a [1, 90] — responde 200 com "days": 90
+GET {{baseUrl}}/dashboard/trend?days=365
+Authorization: Bearer {{token}}
+
+############################################################
+### 10. Comportamentos silenciosos que vale ver
+############################################################
+
+### 10.1 sort fora da allowlist é descartado — confira "sort" na resposta: "createdAt,desc"
+GET {{baseUrl}}/projects?sort=passwordHash,asc&size=5
+Authorization: Bearer {{token}}
+
+### 10.2 size acima do máximo é limitado a 100 — confira "size" na resposta
+GET {{baseUrl}}/vulnerabilities?size=500
+Authorization: Bearer {{token}}
+
+############################################################
+### 11. Casos negativos
+############################################################
+
+### 11.1 Endpoint protegido sem token — esperado 401 UNAUTHORIZED
+GET {{baseUrl}}/projects
+
+### 11.2 Token inválido — esperado 401 UNAUTHORIZED (mesmo corpo do caso anterior)
+GET {{baseUrl}}/projects
+Authorization: Bearer token-invalido-qualquer
+
+### 11.3 Credenciais erradas — esperado 401 com "Credenciais inválidas"
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{demoEmail}}",
+  "password": "senha-obviamente-errada"
+}
+
+### 11.4 DEVELOPER criando projeto — esperado 403 FORBIDDEN ("Acesso negado")
+POST {{baseUrl}}/projects
+Content-Type: application/json
+Authorization: Bearer {{devToken}}
+
+{
+  "name": "Projeto que o developer não pode criar"
+}
+
+### 11.5 DEVELOPER alterando status de item atribuído a outra pessoa
+### Esperado 403 com "Você só pode alterar o status de vulnerabilidades atribuídas a você"
+### (execute 4.4 antes: o item precisa estar atribuído ao ADMIN)
+PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/status
+Content-Type: application/json
+Authorization: Bearer {{devToken}}
+
+{
+  "status": "RESOLVED"
+}
+
+### 11.6 VIEWER comentando — esperado 403 FORBIDDEN, o papel é somente leitura
+POST {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/comments
+Content-Type: application/json
+Authorization: Bearer {{viewerToken}}
+
+{
+  "content": "Comentário que o viewer não pode escrever"
+}
+
+### 11.7 DEVELOPER consultando auditoria — esperado 403 FORBIDDEN (só ADMIN)
+GET {{baseUrl}}/audit-logs
+Authorization: Bearer {{devToken}}
+
+### 11.8 Projeto de outra empresa — esperado 404 NOT_FOUND, nunca 403
+### Um 403 confirmaria que a linha existe e transformaria a API em um oráculo de enumeração
+GET {{baseUrl}}/projects/{{projectId}}
+Authorization: Bearer {{otherToken}}
+
+### 11.9 Excluir recurso de outra empresa — esperado 404 NOT_FOUND
+DELETE {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}
+Authorization: Bearer {{otherToken}}
+
+### 11.10 Referência a um projeto inexistente no corpo — esperado 404 ("Projeto ... não encontrado")
+POST {{baseUrl}}/assets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "projectId": 999999,
+  "name": "Ativo órfão",
+  "type": "SERVER",
+  "environment": "TEST",
+  "criticality": "LOW"
+}
+
+### 11.11 Responsável desconhecido, inativo ou de outra empresa — esperado 404 ("Usuário ... não encontrado")
+PATCH {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}/assignee
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "userId": 999999
+}
+
+### 11.12 Nome de projeto duplicado — esperado 409 CONFLICT
 POST {{baseUrl}}/projects
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -79,7 +440,40 @@ Authorization: Bearer {{token}}
   "name": "Portal do Cliente"
 }
 
-### 10. Payload inválido — deve responder 400 com fieldErrors
+### 11.13 Identificador de ativo duplicado no mesmo projeto — esperado 409 CONFLICT
+POST {{baseUrl}}/assets
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "projectId": {{projectId}},
+  "name": "Outro ativo, mesmo identificador",
+  "type": "API",
+  "identifier": "api.pagamentos.acme.test",
+  "environment": "PRODUCTION",
+  "criticality": "LOW"
+}
+
+### 11.14 E-mail já cadastrado — esperado 409 CONFLICT (unicidade é global, não por empresa)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "companyName": "Outra Empresa",
+  "name": "Outro Administrador",
+  "email": "{{demoEmail}}",
+  "password": "uma-senha-suficientemente-longa"
+}
+
+### 11.15 Excluir projeto que ainda tem ativos — esperado 409 CONFLICT com a contagem
+DELETE {{baseUrl}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+
+### 11.16 Excluir ativo que ainda tem vulnerabilidades — esperado 409 CONFLICT com a contagem
+DELETE {{baseUrl}}/assets/{{assetId}}
+Authorization: Bearer {{token}}
+
+### 11.17 Payload inválido — esperado 400 VALIDATION_ERROR com fieldErrors
 POST {{baseUrl}}/projects
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -88,14 +482,44 @@ Authorization: Bearer {{token}}
   "name": ""
 }
 
-### 11. Usuários da empresa (ADMIN e ANALYST)
-GET {{baseUrl}}/users?active=true
+### 11.18 Vários campos inválidos de uma vez — esperado 400 com quatro fieldErrors
+POST {{baseUrl}}/vulnerabilities
+Content-Type: application/json
 Authorization: Bearer {{token}}
 
-### 12. Trilha de auditoria (somente ADMIN)
-GET {{baseUrl}}/audit-logs?page=0&size=20&entityType=Project
+{
+  "title": "ab",
+  "cvssScore": 12.5
+}
+
+### 11.19 Valor de enum inexistente — esperado 400 BAD_REQUEST, sem fieldErrors
+### A falha é de desserialização e acontece antes da validação rodar
+POST {{baseUrl}}/vulnerabilities
+Content-Type: application/json
 Authorization: Bearer {{token}}
 
-### 13. Excluir projeto — 409 se ainda houver ativos
+{
+  "assetId": {{assetId}},
+  "title": "Severidade que não existe",
+  "severity": "URGENTE"
+}
+
+### 11.20 Tipo incompatível na query — esperado 400 BAD_REQUEST
+GET {{baseUrl}}/vulnerabilities?projectId=abc
+Authorization: Bearer {{token}}
+
+############################################################
+### 12. Limpeza — na ordem que respeita a regra de filhos
+############################################################
+
+### 12.1 Excluir a vulnerabilidade (somente ADMIN); os comentários vão junto
+DELETE {{baseUrl}}/vulnerabilities/{{vulnerabilityId}}
+Authorization: Bearer {{token}}
+
+### 12.2 Excluir o ativo, agora sem filhos
+DELETE {{baseUrl}}/assets/{{assetId}}
+Authorization: Bearer {{token}}
+
+### 12.3 Excluir o projeto, agora sem filhos
 DELETE {{baseUrl}}/projects/{{projectId}}
 Authorization: Bearer {{token}}
