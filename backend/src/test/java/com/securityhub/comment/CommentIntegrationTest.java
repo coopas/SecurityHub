@@ -27,7 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 
-/**  and comments, the author-or-ADMIN edit rule and the VIEWER lockout. */
+/** and comments, the author-or-ADMIN edit rule and the VIEWER lockout. */
 class CommentIntegrationTest extends AbstractIntegrationTest {
 
     private static final String VULNERABILITIES = "/api/v1/vulnerabilities";

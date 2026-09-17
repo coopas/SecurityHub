@@ -1,7 +1,7 @@
 # Matriz de permissões
 
-Fonte normativa: the project rules §5. Este documento registra **onde cada regra é aplicada no
-código**, que é o que importa em uma revisão de segurança.
+Este documento é a fonte normativa da matriz de permissões e registra **onde cada regra
+é aplicada no código**, que é o que importa em uma revisão de segurança.
 
 ## Princípio
 

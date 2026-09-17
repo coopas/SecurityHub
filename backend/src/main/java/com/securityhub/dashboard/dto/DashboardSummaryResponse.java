@@ -19,12 +19,12 @@ public class DashboardSummaryResponse {
 
     private final long totalVulnerabilities;
 
-    /** OPEN + IN_PROGRESS, the two statuses {@code VulnerabilityStatus.isActive()} covers. */
+    /** OPEN + IN_PROGRESS, the two statuses {@code VulnerabilityStatus.isActive} covers. */
     private final long openVulnerabilities;
 
     private final long criticalOpenVulnerabilities;
 
-    /** Same predicate as {@code GET /vulnerabilities?overdue=true} (the project rules). */
+    /** Same predicate as {@code GET /vulnerabilities?overdue=true} (docs/data-model.md). */
     private final long overdueVulnerabilities;
 
     private final long resolvedVulnerabilities;

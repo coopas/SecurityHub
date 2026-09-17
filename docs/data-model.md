@@ -127,7 +127,7 @@ versões, e o mapeamento do Hibernate fica mais frágil. `VARCHAR` com `CHECK` v
 é legível em qualquer cliente SQL e evolui com um `ALTER ... DROP/ADD CONSTRAINT`.
 
 ### Nenhuma FK usa `ON DELETE CASCADE`
-the project rules §5 exige conflito ao excluir um pai que ainda tem filhos, e não apagar em cascata
+A regra do produto exige conflito ao excluir um pai que ainda tem filhos, e não apagar em cascata
 silenciosamente. A regra vive no serviço (`ensureNoChildren` → 409) e a ausência de cascata
 no banco é a rede de segurança: um caminho esquecido vira erro de integridade, não perda
 silenciosa de dados.
@@ -138,7 +138,7 @@ permanentemente indeletável. Os comentários são removidos explicitamente em J
 quantidade é registrada no snapshot de auditoria.
 
 ### `resolved_at` é amarrado ao status pelo banco
-`CHECK ((status = 'RESOLVED') = (resolved_at IS NOT NULL))`. A regra do the project rules §6 é
+`CHECK ((status = 'RESOLVED') = (resolved_at IS NOT NULL))`. A regra é
 aplicada no serviço, mas um defeito futuro não consegue persistir uma linha inconsistente.
 
 ### Índices sempre começam por `company_id`
@@ -153,6 +153,6 @@ O índice parcial é o que permite vários ativos sem identificador no mesmo pro
 tratar todos os nulos como colisão.
 
 ### `users.email` é único globalmente
-Decisão registrada em `docs/adr/0004`: o the project rules §6 pede unicidade por empresa, mas §8
+Decisão registrada em `docs/adr/0004`: o modelo de domínio pede unicidade por empresa, mas o contrato de login
 define `POST /auth/login` sem discriminador de empresa. Unicidade global é estritamente mais
 forte e torna o login determinístico.

@@ -28,7 +28,7 @@
     <!--
       CVE-2024-1597 (CVSS 10.0): o Boot 2.7.18 gerencia o driver 42.3.8, que é afetado.
       Não é explorável aqui, porque a injeção exige preferQueryMode=simple e a aplicação usa
-      o modo extended padrão, mas the project rules proíbe crítico conhecido na entrega e a linha
+      o modo extended padrão, mas a política do projeto proíbe crítico conhecido na entrega e a linha
       42.7 continua compatível com Java 8+.
     -->
     <postgresql.version>42.7.7</postgresql.version>

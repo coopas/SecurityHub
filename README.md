@@ -220,8 +220,7 @@ scripts/    smoke test e utilitários de desenvolvimento
 
 ## Roadmap
 
-O escopo entregue é a **V1**. O plano completo, com o estado de cada tarefa, está em
-[the project rules](the project rules).
+O escopo entregue é a **V1**, descrito no [`CHANGELOG.md`](CHANGELOG.md).
 
 - **V2** — refresh token com rotação e revogação, recuperação de senha, convites e gestão
   de usuários, busca textual avançada, exportação CSV, anexos, testes E2E com Cypress e

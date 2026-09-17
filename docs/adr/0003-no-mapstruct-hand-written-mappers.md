@@ -5,7 +5,7 @@
 
 ## Context
 
-the project rules §7 asks for a `mapper` component inside each backend module so that JPA
+The layering calls for a `mapper` component inside each backend module so that JPA
 entities are never returned by the API. MapStruct is the usual choice, but it is an
 annotation processor that must be ordered relative to Lombok's processor through
 `annotationProcessorPaths` plus `lombok-mapstruct-binding`. That ordering breaks in

@@ -1,7 +1,7 @@
 # Exemplos da API
 
 Referência prática de toda a API do SecurityHub, derivada do código (`backend/src/main/java/com/securityhub`).
-Cada endpoint traz método, caminho, quem pode chamar (matriz de the project rules §5), corpo da requisição quando houver
+Cada endpoint traz método, caminho, quem pode chamar (matriz de `docs/permissions.md`), corpo da requisição quando houver
 e uma resposta realista.
 
 Para executar as chamadas: `docs/http/securityhub.http` (REST Client / IntelliJ) e
@@ -364,7 +364,7 @@ Content-Type: application/json
 `204 No Content`, sem corpo.
 
 Um projeto que ainda tem ativos responde `409 CONFLICT` com a contagem na mensagem: "O projeto possui 3
-ativo(s) e não pode ser excluído". A regra de the project rules §5 é não apagar filhos em cascata silenciosamente;
+ativo(s) e não pode ser excluído". A regra do produto é não apagar filhos em cascata silenciosamente;
 a chave estrangeira não tem `ON DELETE CASCADE`, então a alternativa seria uma violação de integridade crua
 em vez de um conflito legível.
 
@@ -707,7 +707,7 @@ comentada permanentemente indeletável. Quantos comentários foram removidos vai
 ## Comentários
 
 Aninhados sob a vulnerabilidade, porque um comentário não tem significado próprio. **Não há endpoint de
-exclusão** no MVP (the project rules §6).
+exclusão** no MVP.
 
 | Método | Endpoint | Acesso |
 | --- | --- | --- |
@@ -841,7 +841,7 @@ Um usuário que nunca entrou não traz a chave `lastLoginAt`.
 | --- | --- | --- |
 | GET | `/audit-logs` | `ADMIN` |
 
-A trilha é somente leitura pela API: não existe endpoint que altere ou apague uma entrada (the project rules §5).
+A trilha é somente leitura pela API: não existe endpoint que altere ou apague uma entrada.
 
 `GET /audit-logs?page=&size=&sort=&entityType=&actorId=&action=&from=&to=`
 
@@ -923,7 +923,7 @@ Detalhes que valem conhecer:
 
 ## Dashboard
 
-Quatro endpoints; todos exigem apenas autenticação, porque the project rules §5 dá "ver dashboard" aos quatro papéis.
+Quatro endpoints; todos exigem apenas autenticação, porque a matriz de permissões dá "ver dashboard" aos quatro papéis.
 Todos escopados pela empresa do token.
 
 | Método | Endpoint | Acesso |
@@ -1330,7 +1330,7 @@ na query (`?projectId=abc`) respondem `code: "BAD_REQUEST"`, `message: "Requisi�
 
 ## A regra de propriedade do DEVELOPER
 
-the project rules §5 dá ao `DEVELOPER` uma única permissão de escrita sobre vulnerabilidades: **alterar o status de um
+A matriz de permissões dá ao `DEVELOPER` uma única permissão de escrita sobre vulnerabilidades: **alterar o status de um
 item atribuído a ele próprio** (além de comentar). Ele não cria, não edita, não exclui e não atribui.
 
 A regra não cabe em uma anotação, porque depende da linha: `@PreAuthorize("hasAnyRole('ADMIN','ANALYST','DEVELOPER')")`

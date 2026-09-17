@@ -28,10 +28,10 @@ import org.springframework.transaction.annotation.Transactional;
  * There is intentionally no {@code @PreAuthorize} on this class. docs/permissions.md grants
  * "ver dashboard" to ADMIN, ANALYST, DEVELOPER and VIEWER — every role there is — so the
  * only requirement is authentication, which {@code SecurityConfig} already enforces with
- * {@code anyRequest().authenticated()}. An annotation listing all four roles would be a
+ * {@code anyRequest.authenticated}. An annotation listing all four roles would be a
  * no-op that adds nothing today and can only go stale the day a fifth role appears.
  *
- * Every query is scoped by {@code current.getCompanyId()}; {@code companyId} is never a
+ * Every query is scoped by {@code current.getCompanyId}; {@code companyId} is never a
  * request parameter. Mapping happens inside the transactional methods because
  * {@code open-in-view} is disabled.
  */
@@ -53,7 +53,7 @@ public class DashboardService {
     @Transactional(readOnly = true)
     public DashboardSummaryResponse summary(AuthenticatedUser current) {
         Long companyId = current.getCompanyId();
-        // One instant for the whole card set: two calls to Instant.now() could put the
+        // One instant for the whole card set: two calls to Instant.now could put the
         // overdue count and the per-project overdue counts on different sides of a due date.
         Instant now = Instant.now();
 
@@ -76,7 +76,7 @@ public class DashboardService {
     }
 
     /**
-     * Zero-filled in Java by walking {@code Severity.values()}. The database only returns the
+     * Zero-filled in Java by walking {@code Severity.values}. The database only returns the
      * severities that actually occur, and a chart whose legend gains and loses entries — and
      * reshuffles its colours — between two reloads is worse than one with visible zeros.
      * Iterating the enum also pins the order to the declaration order.

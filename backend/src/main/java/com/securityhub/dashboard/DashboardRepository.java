@@ -17,12 +17,12 @@ import org.springframework.data.repository.query.Param;
  *
  * Two conventions worth keeping in mind when touching this file:
  * <ul>
- *   <li>the native queries return {@code List<Object[]>} and not an interface projection,
- *       because a projection binds by result-set alias and would silently yield nulls for
- *       the snake_case aliases PostgreSQL reports here;</li>
- *   <li>with {@code nativeQuery = true} Hibernate 5 hands {@code count(*)} back as
- *       {@link java.math.BigInteger}, so every column must be read through
- *       {@code ((Number) row[i]).longValue()} rather than cast to {@code Long}.</li>
+ * <li>the native queries return {@code List<Object[]>} and not an interface projection,
+ * because a projection binds by result-set alias and would silently yield nulls for
+ * the snake_case aliases PostgreSQL reports here;</li>
+ * <li>with {@code nativeQuery = true} Hibernate 5 hands {@code count(*)} back as
+ * {@link java.math.BigInteger}, so every column must be read through
+ * {@code ((Number) row[i]).longValue} rather than cast to {@code Long}.</li>
  * </ul>
  */
 public interface DashboardRepository extends Repository<Vulnerability, Long> {
@@ -36,7 +36,7 @@ public interface DashboardRepository extends Repository<Vulnerability, Long> {
      * {@code VulnerabilitySpecifications.overdue} builds for {@code GET /vulnerabilities}:
      * {@code due_date IS NOT NULL AND due_date < now AND status IN ('OPEN','IN_PROGRESS')}.
      * A card that disagreed with its own drill-down would be the most visible possible bug.
-     * {@code now} is bound from Java instead of calling SQL {@code now()} so the value is
+     * {@code now} is bound from Java instead of calling SQL {@code now} so the value is
      * deterministic and a test can pin it.
      *
      * The counts are {@code count(*)} and not {@code count(id)} on purpose: without the id
@@ -98,17 +98,17 @@ public interface DashboardRepository extends Repository<Vulnerability, Long> {
      *
      * Three things here are load-bearing:
      * <ol>
-     *   <li>each series is its own pre-aggregated subquery. Joining {@code vulnerabilities}
-     *       twice directly would multiply rows — a day with 3 opened and 2 resolved would
-     *       report 6 for both;</li>
-     *   <li>the bucket is {@code cast(ts at time zone 'UTC' as date)}. Casting the
-     *       {@code timestamptz} straight to {@code date} would use the session TimeZone, so
-     *       the same row would land on different days depending on who connected. The
-     *       {@code cast(... as ...)} spelling is not cosmetic: PostgreSQL's {@code ::}
-     *       operator collides with the named-parameter syntax of the query parser, which
-     *       leaves a stray colon behind and fails with "syntax error at or near :";</li>
-     *   <li>the day is returned as {@code to_char(...)} text. Reading a {@code java.sql.Date}
-     *       converts through the JVM default zone and can hand back the previous day.</li>
+     * <li>each series is its own pre-aggregated subquery. Joining {@code vulnerabilities}
+     * twice directly would multiply rows — a day with 3 opened and 2 resolved would
+     * report 6 for both;</li>
+     * <li>the bucket is {@code cast(ts at time zone 'UTC' as date)}. Casting the
+     * {@code timestamptz} straight to {@code date} would use the session TimeZone, so
+     * the same row would land on different days depending on who connected. The
+     * {@code cast(... as ...)} spelling is not cosmetic: PostgreSQL's {@code ::}
+     * operator collides with the named-parameter syntax of the query parser, which
+     * leaves a stray colon behind and fails with "syntax error at or near :";</li>
+     * <li>the day is returned as {@code to_char(...)} text. Reading a {@code java.sql.Date}
+     * converts through the JVM default zone and can hand back the previous day.</li>
      * </ol>
      *
      * {@code generate_series} fills the empty days in SQL, so the response always has exactly

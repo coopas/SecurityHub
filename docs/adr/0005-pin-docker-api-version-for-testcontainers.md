@@ -47,7 +47,7 @@ measured and changed nothing here; bumping it would have been an unverified stac
 
 - **`~/.testcontainers.properties` with `api.version=1.44`** — works, but it is a per-machine
   file outside the repository. A fresh clone would fail again, which is exactly what
-  `` forbids.
+  a reproducible clean-clone install forbids.
 - **`DOCKER_API_VERSION` environment variable** — tried and **does not work**; `docker-java`
   does not read that name. Only the `api.version` system property took effect.
 - **Upgrading Testcontainers to 1.20.6 or 1.21.3** — tried, still negotiated 1.32.

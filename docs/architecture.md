@@ -76,7 +76,7 @@ elimina consultas disparadas acidentalmente durante a serialização.
   interface Angular esconde botões por conveniência, mas nenhuma regra depende disso: os
   testes de integração exercem cada papel contra cada endpoint.
 
-Matriz de permissões: veja the project rules §5, que é a fonte de verdade.
+Matriz de permissões: veja `docs/permissions.md`, que é a fonte de verdade.
 
 ## 5. Contrato HTTP
 

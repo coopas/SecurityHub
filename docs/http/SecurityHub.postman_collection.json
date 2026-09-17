@@ -1291,7 +1291,7 @@
     },
     {
       "name": "8. Dashboard",
-      "description": "Quatro endpoints, todos apenas autenticados: docs/permissions.md dá \"ver dashboard\" aos quatro papéis. Tudo escopado pela empresa do token.",
+      "description": "Quatro endpoints, todos apenas autenticados: a matriz de permissões dá \"ver dashboard\" aos quatro papéis. Tudo escopado pela empresa do token.",
       "item": [
         {
           "name": "Cards (summary)",
@@ -2060,7 +2060,7 @@
                 "{{projectId}}"
               ]
             },
-            "description": "\"O projeto possui N ativo(s) e não pode ser excluído\". Filhos nunca são apagados em cascata silenciosamente (docs/permissions.md)."
+            "description": "\"O projeto possui N ativo(s) e não pode ser excluído\". Filhos nunca são apagados em cascata silenciosamente a matriz de permissões."
           },
           "response": [],
           "event": [

@@ -99,7 +99,6 @@ jobs:
   dependency-scan:
     name: Dependency scan
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -110,6 +109,18 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: npm audit (production dependencies)
+      # Relatório completo das dependências que chegam ao navegador. Informativo: os achados
+      # remanescentes são do próprio Angular, não têm vetor alcançável nesta aplicação e
+      # estão analisados em docs/security-dependencies.md.
+      - name: npm audit report (production dependencies)
         working-directory: frontend
-        run: npm audit --omit=dev --audit-level=high
+        run: npm audit --omit=dev || true
+
+      # O portão real. Antes ele falhava em `high` com continue-on-error, o que deixava o job
+      # permanentemente vermelho por achados conhecidos e aceitos — um alarme que ninguém mais
+      # lê. O nível reflete a política do projeto: nenhuma vulnerabilidade
+      # crítica em dependência de produção. Assim o job passa hoje e quebra de verdade quando
+      # uma nova crítica aparecer.
+      - name: Fail on critical advisories
+        working-directory: frontend
+        run: npm audit --omit=dev --audit-level=critical

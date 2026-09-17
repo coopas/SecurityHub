@@ -54,7 +54,7 @@ CREATE INDEX idx_vulnerabilities_company_status ON vulnerabilities (company_id, 
 CREATE INDEX idx_vulnerabilities_company_severity ON vulnerabilities (company_id, severity);
 -- Matches the default ordering of the listing (createdAt,desc).
 CREATE INDEX idx_vulnerabilities_company_created_at ON vulnerabilities (company_id, created_at DESC);
--- Feeds the dashboard trend of Fase 7, which buckets findings by discovery date.
+-- Feeds the dashboard trend, which buckets findings by discovery date.
 CREATE INDEX idx_vulnerabilities_company_discovered_at ON vulnerabilities (company_id, discovered_at);
 
 -- Partial: "assigned to me" is a frequent filter and most rows of a healthy backlog have

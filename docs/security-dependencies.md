@@ -1,7 +1,8 @@
 # Análise de dependências
 
-the project rules §9 exige: *"Dependências sem vulnerabilidades críticas conhecidas no momento da
-entrega; registrar exceções justificadas."* Este documento é esse registro.
+A política de segurança do projeto exige dependências sem vulnerabilidades críticas
+conhecidas no momento da entrega, com exceções justificadas registradas. Este documento é
+esse registro.
 
 Data da análise: **2026-09-17**.
 
@@ -32,7 +33,7 @@ Os 10 achados de produção estão em `@angular/core`, `@angular/common` e `@ang
 e os demais pacotes Angular aparecem apenas como dependentes transitivos deles. O `npm audit`
 oferece uma única correção: `npm audit fix --force`, que instala **`@angular/core@22.1.7`**.
 
-Isso é recusado, e a justificativa é a própria restrição do projeto: the project rules §2 fixa
+Isso é recusado, e a justificativa é a própria restrição do projeto, que fixa
 **Angular 16** como parte imutável da stack. Trocar por Angular 22 seria um salto de seis
 majors, exigiria reescrever build, testes e templates, e contradiz a decisão registrada em
 `docs/adr/0001`. Não existe versão corrigida dentro da linha 16.
@@ -82,4 +83,4 @@ A escolha de manter **Spring Boot 2.7.18** também é uma exceção consciente, 
 `docs/adr/0001`: a linha 2.7 está fora de suporte aberto (OSS), então correções de segurança
 podem exigir fixar versões de dependências individualmente acima do que o BOM gerencia — foi
 exatamente o que já se fez com o Flyway (`docs/adr/0002`). Migrar para Spring Boot 3 exigiria
-Java 17 e `jakarta.*`, que o the project rules §2 proíbe.
+Java 17 e `jakarta.*`, que as restrições de stack do projeto proíbem.

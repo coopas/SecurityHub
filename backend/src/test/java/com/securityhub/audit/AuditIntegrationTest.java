@@ -30,7 +30,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- *  is implemented — every mutation of auth, project, asset, vulnerability and
+ * is implemented — every mutation of auth, project, asset, vulnerability and
  * comment calls {@code auditService.record} — and this class is what proves it, from the
  * outside, through the API and the repository.
  */
@@ -120,7 +120,7 @@ class AuditIntegrationTest extends AbstractIntegrationTest {
     // --- the Phase 6 acceptance criterion -----------------------------------
 
     /**
-     * the project rules, Fase 6: "uma mudança de status exibe ator, horário, entidade, valor anterior e
+     * The audit requirement: "uma mudança de status exibe ator, horário, entidade, valor anterior e
      * novo sem dados sensíveis".
      */
     @Test

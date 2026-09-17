@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * The dataset is built once per test from a single {@code now} captured in {@link #seed()},
+ * The dataset is built once per test from a single {@code now} captured in {@link #seed},
  * with every timestamp at noon UTC of a whole-day offset. Noon and not midnight: a row
  * written at the boundary would flip to the neighbouring bucket depending on the second the
  * suite happens to run.
@@ -70,7 +70,7 @@ class DashboardIntegrationTest extends AbstractIntegrationTest {
         // Due date in the future: active but not late.
         fixtures.vulnerability(portalApi, "CSRF no formulário", Severity.CRITICAL,
                 VulnerabilityStatus.OPEN, day(2), day(-10), null);
-        // Overdue date but already resolved: never late (the project rules).
+        // Overdue date but already resolved: never late (docs/data-model.md).
         fixtures.vulnerability(portalApi, "Cabeçalho ausente", Severity.MEDIUM,
                 VulnerabilityStatus.RESOLVED, day(5), day(4), day(3));
         // Overdue date but risk accepted: never late either.
@@ -146,7 +146,7 @@ class DashboardIntegrationTest extends AbstractIntegrationTest {
 
     /**
      * The card and its own drill-down must agree. This is the regression guard for the single
-     * definition of "overdue" of the project rules: if the dashboard predicate and
+     * definition of "overdue" of docs/data-model.md: if the dashboard predicate and
      * {@code VulnerabilitySpecifications.overdue} ever drift apart, this fails.
      */
     @Test

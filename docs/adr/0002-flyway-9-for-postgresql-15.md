@@ -7,12 +7,12 @@
 
 Spring Boot 2.7.18 manages **Flyway 8.5.13**. Flyway validates the database version it
 connects to against a supported range, and 8.5.13 predates PostgreSQL 15. Running it
-against the PostgreSQL 15 image required by the project rules fails at startup with
+against the PostgreSQL 15 image the project targets fails at startup with
 `Unsupported Database: PostgreSQL 15.x`.
 
 Options considered:
 
-1. Downgrade the database to PostgreSQL 14 — rejected, the project rules §2 pins PostgreSQL 15.
+1. Downgrade the database to PostgreSQL 14 — rejected, the stack pins PostgreSQL 15.
 2. Set `flyway.validate-migration-naming`/ignore flags — does not apply, the failure is
    a hard database-version check, not a naming check.
 3. Override the managed Flyway version.
