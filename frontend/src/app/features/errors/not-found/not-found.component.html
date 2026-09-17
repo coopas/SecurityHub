@@ -1,10 +1,25 @@
 <div class="error-page">
-  <mat-card class="error-card">
-    <p class="error-card__code">404</p>
+  <section class="error-card">
+    <p class="error-card__mark">
+      <mat-icon aria-hidden="true">shield</mat-icon>
+      <span>SecurityHub</span>
+    </p>
+
+    <div class="error-card__status">
+      <span class="error-card__icon error-card__icon--missing">
+        <mat-icon aria-hidden="true">search_off</mat-icon>
+      </span>
+      <p class="error-card__code">404</p>
+    </div>
+
     <h1 class="error-card__title">Página não encontrada</h1>
     <p class="error-card__message">
-      O endereço acessado não existe ou o registro pode ter sido removido.
+      O endereço acessado não existe ou o registro pode ter sido removido. Confira o link ou
+      recomece pelo dashboard.
     </p>
-    <a mat-raised-button color="primary" routerLink="/dashboard">Voltar ao dashboard</a>
-  </mat-card>
+
+    <div class="error-card__actions">
+      <a mat-raised-button color="primary" routerLink="/dashboard">Voltar ao dashboard</a>
+    </div>
+  </section>
 </div>

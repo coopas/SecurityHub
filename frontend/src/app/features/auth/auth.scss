@@ -1,62 +1,278 @@
-.auth-page {
+// Folha única das cinco telas públicas (entrar, cadastrar, esqueci, redefinir e convite).
+// As cinco compartilham a mesma casca de propósito: quem chega por um convite ou por um
+// link de redefinição precisa reconhecer na hora que está no mesmo produto em que entrou
+// ontem — telas de credencial que destoam entre si é exatamente o que um phishing imita.
+
+// O painel de marca é a única área grande de cor da aplicação, e é onde os dois temas
+// pedem tratamentos diferentes: no claro o azul-cofre chapado é a identidade; no escuro o
+// mesmo token vira azul-claro e meia tela dele ofuscaria. Por isso o apelido local, trocado
+// uma vez por tema, em vez de repetir a decisão em cada regra abaixo.
+.auth-shell {
+  --auth-brand-bg: linear-gradient(155deg, var(--sh-primary), var(--sh-primary-hover));
+  --auth-brand-fg: var(--sh-on-primary);
+  // Cor dos traços geométricos e do halo; a opacidade vive na camada, nunca na cor, porque
+  // um rgba() aqui congelaria um tema dentro do outro.
+  --auth-brand-ink: var(--sh-on-primary);
+  --auth-brand-grid-opacity: 0.1;
+  --auth-brand-glow-opacity: 0.16;
+
   min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+  background: var(--sh-surface);
+  color: var(--sh-text);
+}
+
+// `:host-context` e não `:root[data-theme]`: o encapsulamento emulado prefixa o atributo
+// do componente no primeiro seletor composto, e `[_ngcontent]:root` nunca casaria com o
+// <html>, que é justamente onde o tema é marcado.
+:host-context([data-theme='dark']) .auth-shell {
+  // No escuro a marca não é um bloco aceso: o painel recua para as superfícies fundas e o
+  // azul da identidade volta só nos traços e no halo, que é o que ainda o torna reconhecível.
+  --auth-brand-bg: linear-gradient(155deg, var(--sh-surface-sunken), var(--sh-background));
+  --auth-brand-fg: var(--sh-text);
+  --auth-brand-ink: var(--sh-primary);
+  --auth-brand-grid-opacity: 0.16;
+  --auth-brand-glow-opacity: 0.22;
+
+  // No claro a junção das duas colunas já é uma troca de azul para branco; no escuro as
+  // duas superfícies são vizinhas e a costura precisa do traço para existir.
+  .auth-brand {
+    border-right: 1px solid var(--sh-border);
+  }
+}
+
+// --- painel de marca ------------------------------------------------------
+
+.auth-brand {
+  position: relative;
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--sh-space-7);
+  overflow: hidden;
+  padding: var(--sh-space-7);
+  background: var(--auth-brand-bg);
+  color: var(--auth-brand-fg);
+}
+
+// Anéis concêntricos finos saindo do canto superior: a geometria é a de um varredura, que
+// é o que o produto faz. Fica em camada própria para que a opacidade baixe o desenho sem
+// levar junto o texto que corre por cima.
+.auth-brand__grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: repeating-radial-gradient(
+    circle at 14% 16%,
+    var(--auth-brand-ink) 0 1px,
+    transparent 1px 96px
+  );
+  opacity: var(--auth-brand-grid-opacity);
+}
+
+.auth-brand__glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(circle at 14% 16%, var(--auth-brand-ink), transparent 58%);
+  opacity: var(--auth-brand-glow-opacity);
+}
+
+.auth-brand__mark,
+.auth-brand__statement {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-brand__mark {
+  display: flex;
+  align-items: center;
+  gap: var(--sh-space-2);
+  margin: 0;
+  font-size: var(--sh-text-xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+
+  .mat-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 28px;
+    line-height: 28px;
+  }
+}
+
+.auth-brand__tagline {
+  margin: 0;
+  max-width: 16ch;
+  font-size: var(--sh-text-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.auth-brand__support {
+  margin: var(--sh-space-4) 0 0;
+  max-width: 42ch;
+  font-size: var(--sh-text-md);
+  line-height: 1.6;
+  // Hierarquia sem uma segunda cor: sobre um fundo de marca só há um tom legível, e
+  // rebaixar a camada inteira mantém o contraste previsível nos dois temas.
+  opacity: 0.78;
+}
+
+// --- coluna do formulário -------------------------------------------------
+
+.auth-panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 16px;
-  background: var(--sh-background);
+  padding: var(--sh-space-7) var(--sh-space-5);
+  background: var(--sh-surface);
 }
 
-.auth-card {
+// Medida de linha curta: um formulário de credencial com campos largos demais obriga o
+// olho a voltar do fim de um campo até o começo do seguinte.
+.auth-panel__inner {
   width: 100%;
-  max-width: 440px;
-  padding: 32px;
+  max-width: 400px;
 }
 
-.auth-card__brand {
+// A marca aparece uma vez só por largura: no painel quando ele existe, aqui quando não.
+// `display: none` e não `visibility`, para que o leitor de tela também ouça uma só.
+.auth-mark {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: var(--sh-text-muted);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  margin-bottom: 8px;
+  gap: var(--sh-space-2);
+  margin: 0 0 var(--sh-space-6);
+  color: var(--sh-primary);
+  font-size: var(--sh-text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
-.auth-card__title {
-  margin: 0 0 4px;
-  font-size: 1.5rem;
+.auth-title {
+  margin: 0;
+  font-size: var(--sh-text-2xl);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
-.auth-card__subtitle {
-  margin: 0 0 24px;
+.auth-subtitle {
+  margin: var(--sh-space-2) 0 var(--sh-space-6);
   color: var(--sh-text-muted);
+  font-size: var(--sh-text-md);
+  line-height: 1.6;
+
+  strong {
+    color: var(--sh-text);
+    font-weight: 600;
+  }
+}
+
+// Dois parágrafos seguidos de apoio (o resumo do convite, por exemplo) não podem herdar a
+// margem inferior larga do primeiro: entre eles a distância é de parágrafo, não de bloco.
+.auth-subtitle + .auth-subtitle {
+  margin-top: calc(var(--sh-space-4) * -1);
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--sh-space-1);
 }
 
 .auth-form__submit {
-  margin-top: 8px;
-  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sh-space-2);
+  width: 100%;
+  // A densidade -1 do tema encolhe o botão abaixo do alvo mínimo de toque; aqui ele é a
+  // ação principal da tela e volta ao tamanho cheio.
+  min-height: 48px;
+  margin-top: var(--sh-space-3);
+  font-size: var(--sh-text-base);
+}
+
+// Um alerta ou um estado de carregamento logo abaixo do título ocupa o lugar da linha de
+// apoio, e precisa da mesma distância que ela daria — sem isso encosta na caixa alta.
+.auth-title + .auth-alert,
+.auth-title + app-state-message {
+  display: block;
+  margin-top: var(--sh-space-5);
 }
 
 .auth-alert {
-  margin: 0 0 16px;
-  padding: 12px 16px;
-  border-radius: 6px;
-  border: 1px solid var(--sh-high);
-  background: rgba(179, 38, 30, 0.08);
-  color: var(--sh-high);
+  margin: 0 0 var(--sh-space-4);
+  padding: var(--sh-space-3) var(--sh-space-4);
+  border: 1px solid var(--sh-danger);
+  border-radius: var(--sh-radius-sm);
+  background: var(--sh-danger-soft);
+  color: var(--sh-danger);
+  font-size: var(--sh-text-md);
+  line-height: 1.5;
 }
 
-.auth-footer {
-  margin: 24px 0 0;
-  text-align: center;
+// --- rodapé de apoio ------------------------------------------------------
+
+.auth-foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sh-space-1);
+  margin-top: var(--sh-space-6);
+  padding-top: var(--sh-space-4);
+  border-top: 1px solid var(--sh-border);
   color: var(--sh-text-muted);
+  font-size: var(--sh-text-md);
+}
+
+.auth-foot__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sh-space-1);
+  margin: 0;
+
+  // O alvo de toque do link é a linha inteira, e não a altura da letra.
+  a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+@media (min-width: 960px) {
+  .auth-shell {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .auth-brand {
+    display: flex;
+  }
+
+  .auth-mark {
+    display: none;
+  }
+
+  .auth-panel {
+    padding: var(--sh-space-7) var(--sh-space-6);
+  }
+}
+
+@media (max-width: 599px) {
+  .auth-panel {
+    align-items: flex-start;
+    padding: var(--sh-space-6) var(--sh-space-4);
+  }
+
+  .auth-title {
+    font-size: var(--sh-text-xl);
+  }
 }

@@ -1,194 +1,417 @@
-/* Folha única da funcionalidade, como nas demais telas: cada componente a declara em
-   styleUrls e o Angular a isola por componente. */
+// Folha única da funcionalidade, como nas demais telas: cada componente a declara em
+// styleUrls e o Angular a isola por componente.
+//
+// Duas regras da casa aqui:
+//
+// 1. Nenhuma cor literal. Todo valor cromático sai de um token `--sh-*` de `styles.scss`,
+//    que é quem sabe o que cada tom vira no tema escuro. Cor escrita à mão passa
+//    despercebida no claro e reaparece ilegível no escuro.
+// 2. Os tokens `--sh-*-soft` são tinta translúcida: servem de fundo para área grande, como
+//    a faixa de erro do relatório, e nunca atrás de texto miúdo e negrito — ali eles
+//    empilham com o que estiver embaixo e derrubam o contraste. Selo é `.sh-badge`, que já
+//    vem com fundo opaco e contorno em `currentColor`.
+//
+// O agrupamento por propriedade compartilhada abaixo não é economia à toa: é o que mantém
+// um mesmo papel de texto com um mesmo tamanho em toda a tela.
 
 :host {
   display: block;
 }
 
-.dashboard-subtitle {
-  margin: 4px 0 0;
-  max-width: 80ch;
+// ------------------------------------------------------------------------------------
+// Papéis de texto da tela
+// ------------------------------------------------------------------------------------
+
+// Texto explicativo de topo: a linha do cabeçalho e as notas de painel.
+.dashboard-subtitle,
+.dashboard-note {
+  margin: var(--sh-space-1) 0 0;
+  max-width: 76ch;
   color: var(--sh-text-muted);
+  font-size: var(--sh-text-md);
+}
+
+.dashboard-note {
+  margin: 0 0 var(--sh-space-4);
+}
+
+// Linha de apoio: identifica o recorte de um painel sem disputar com o título.
+.dashboard-panel__subtitle,
+.dashboard-panel__totals,
+.dashboard-legend__item {
+  color: var(--sh-text-muted);
+  font-size: var(--sh-text-sm);
+}
+
+// Letra miúda: o que só é lido depois que o número já foi.
+.dashboard-card__hint,
+.dashboard-recent__context {
+  margin: 0;
+  color: var(--sh-text-muted);
+  font-size: var(--sh-text-xs);
+  line-height: 1.4;
+}
+
+// Rótulo em caixa alta pequena, no card e no cabeçalho da tabela: identifica o dado sem
+// ganhar peso visual. Reduzir o tamanho separa melhor do que engrossar.
+.dashboard-card__label,
+.dashboard-table thead th {
+  color: var(--sh-text-muted);
+  font-size: var(--sh-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+
+// Dígitos de largura fixa em tudo que é contagem: é o que permite comparar uma coluna de
+// relance, e o que impede a fila de cards de dançar quando um contador passa de 9 para 10.
+.dashboard-card__value,
+.dashboard-legend__value,
+.dashboard-legend__percent,
+.dashboard-table td,
+.dashboard-table thead th:not(:first-child) {
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard-cards,
+.dashboard-legend,
+.dashboard-recent {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-card,
+.dashboard-panel,
+.dashboard-panel__body,
+.dashboard-recent,
+.dashboard-recent__item {
+  display: flex;
+  flex-direction: column;
+}
+
+// Impede que um título longo estoure o cabeçalho ou o card.
+.dashboard-panel__heading,
+.dashboard-card__head {
+  min-width: 0;
+}
+
+// ------------------------------------------------------------------------------------
+// Arranjo da página
+// ------------------------------------------------------------------------------------
+
+// Alvo de toque do botão do relatório: a densidade -1 do Material o deixaria abaixo dos
+// 44px que a norma pede para um dedo.
+.dashboard-export {
+  min-height: 44px;
+}
+
+// Barra de progresso e aviso de falha ocupam o mesmo lugar sob o cabeçalho e guardam o
+// mesmo respiro em relação aos painéis.
+.dashboard-progress,
+.dashboard-alert {
+  margin: 0 0 var(--sh-space-4);
 }
 
 .dashboard-sections {
   display: grid;
-  gap: 24px;
+  gap: var(--sh-space-5);
 }
 
-/* auto-fit + minmax é o que faz os dois gráficos caírem um sob o outro no tablet;
-   min-width: 0 impede que o canvas force a coluna a crescer além da tela. */
+// auto-fit + minmax é o que faz os dois gráficos caírem um sob o outro no tablet;
+// min-width: 0 impede que o canvas force a coluna a crescer além da tela.
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: var(--sh-space-5);
 
   > * {
     min-width: 0;
   }
 }
 
-.dashboard-note {
-  margin: 0 0 16px;
-  color: var(--sh-text-muted);
-  max-width: 80ch;
-}
+// ------------------------------------------------------------------------------------
+// Cards do resumo
+// ------------------------------------------------------------------------------------
 
 .dashboard-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 16px;
-  margin: 0 0 24px;
-  padding: 0;
-  list-style: none;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--sh-space-3);
+  margin-bottom: var(--sh-space-5);
 }
 
-.dashboard-card {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  height: 100%;
-  padding: 16px;
-  border: 1px solid var(--sh-border);
-  border-radius: 8px;
-  background: var(--sh-surface);
-  color: inherit;
-  text-decoration: none;
-
-  &:hover {
-    border-color: var(--sh-text-muted);
+// Os sete números são a âncora da tela e valem mais lidos de uma vez, lado a lado, do que
+// distribuídos em duas fileiras desiguais. Abaixo desta largura o auto-fit reorganiza.
+//
+// O limiar é da janela, mas a grade não vive na janela: descontados o menu lateral (248px)
+// e o recuo da página (48px), sobram 296px a menos. A 1160px de janela restariam 864px para
+// sete cartões — eles transbordavam o contêiner e o sétimo saía cortado. 1400px é a largura
+// em que os sete cabem de fato.
+//
+// `minmax(0, 1fr)` e não `1fr`: o segundo é `minmax(auto, 1fr)` e recusa encolher abaixo do
+// conteúdo, então um rótulo longo volta a empurrar a fileira para fora da tela.
+@media (min-width: 1400px) {
+  .dashboard-cards {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 }
 
+// `--card-ink` é o tom do card, e é ele — não uma cor literal — que as variantes trocam.
+// O neutro é o padrão de quem só informa.
+.dashboard-card {
+  --card-ink: var(--sh-text-muted);
+
+  position: relative;
+  gap: var(--sh-space-1);
+  height: 100%;
+  padding: var(--sh-space-4);
+  padding-left: calc(var(--sh-space-4) + 3px);
+  border: 1px solid var(--sh-border);
+  border-radius: var(--sh-radius-md);
+  background: var(--sh-surface);
+  color: var(--sh-text);
+  text-decoration: none;
+  overflow: hidden;
+  // Filete lateral: dá o tom do card sem tingir a superfície inteira, que roubaria o
+  // contraste do número.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--card-ink);
+  }
+
+  &:hover {
+    box-shadow: var(--sh-shadow-md);
+  }
+
+  // A regra global de foco arredonda o elemento em 2px; aqui o card precisa manter o
+  // próprio raio para o contorno não desenhar um retângulo diferente do card.
+  &:focus-visible {
+    border-radius: var(--sh-radius-md);
+  }
+}
+
+.dashboard-card--critical {
+  --card-ink: var(--sh-critical);
+}
+
+.dashboard-card--high {
+  --card-ink: var(--sh-high);
+}
+
+.dashboard-card--positive {
+  --card-ink: var(--sh-resolved);
+}
+
+// Zero não é alarme. Declarada depois das variantes de propósito: com a mesma
+// especificidade, a última vence e devolve o card ao tom neutro.
+.dashboard-card--quiet {
+  --card-ink: var(--sh-text-muted);
+}
+
+.dashboard-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sh-space-2);
+}
+
+// O ícone toma o tom do card. Sem caixinha em volta: o filete lateral já marca o tom, e
+// uma segunda superfície atrás do ícone só traria outra pilha de contraste para medir.
 .dashboard-card__icon {
-  color: var(--sh-text-muted);
+  flex: 0 0 auto;
+  color: var(--card-ink);
 }
 
+// O número domina.
 .dashboard-card__value {
-  font-size: 2rem;
-  font-weight: 600;
-  line-height: 1.1;
+  margin-top: var(--sh-space-1);
+  font-size: 2.125rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
 }
 
-.dashboard-card__label {
-  font-weight: 500;
+// Só o que está acontecendo ganha a cor do risco; o ícone e o rótulo dizem a mesma coisa
+// para quem não separa os tons.
+.dashboard-card--critical .dashboard-card__value,
+.dashboard-card--high .dashboard-card__value {
+  color: var(--card-ink);
 }
 
-.dashboard-card__hint {
-  color: var(--sh-text-muted);
-  font-size: 0.78rem;
-}
+// ------------------------------------------------------------------------------------
+// Painéis
+// ------------------------------------------------------------------------------------
 
+// O `.sh-card` traz o preenchimento pronto; aqui ele é zerado para que o filete do
+// cabeçalho atravesse o card de ponta a ponta, em vez de flutuar recuado no meio dele.
 .dashboard-panel {
   height: 100%;
+  padding: 0;
+  overflow: hidden;
 }
 
 .dashboard-panel__header {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  align-items: flex-start;
+  gap: var(--sh-space-3);
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  padding: var(--sh-space-4) var(--sh-space-5);
+  border-bottom: 1px solid var(--sh-border);
+  background: var(--sh-surface-sunken);
+}
+
+.dashboard-panel__body {
+  flex: 1 1 auto;
+  padding: var(--sh-space-5);
 }
 
 .dashboard-panel__title {
-  margin: 0 0 8px;
-  font-size: 1.1rem;
+  margin: 0;
+  font-size: var(--sh-text-base);
+  font-weight: 700;
 }
 
 .dashboard-panel__subtitle {
-  margin: 0;
-  color: var(--sh-text-muted);
-  font-size: 0.85rem;
+  margin: 2px 0 0;
 }
 
 .dashboard-panel__totals {
-  margin: 0 0 8px;
-  color: var(--sh-text-muted);
-  font-size: 0.85rem;
+  margin: 0 0 var(--sh-space-3);
 }
 
+// Link do cabeçalho com área de toque de verdade: 44px de altura e contorno próprio, em
+// vez de um texto sublinhado de 16px de alvo.
 .dashboard-panel__action {
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sh-space-1);
+  min-height: 44px;
+  padding: 0 var(--sh-space-4);
+  border: 1px solid var(--sh-border-strong);
+  border-radius: var(--sh-radius-pill);
+  color: var(--sh-primary);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:focus-visible {
+    border-radius: var(--sh-radius-pill);
+  }
 }
 
-/* Altura fixa no contêiner + maintainAspectRatio: false no Chart.js: sem isso o canvas
-   cresce a cada redesenho e transborda a coluna. */
+// Um tamanho de ícone para a tela inteira, reunido aqui em vez de repetido em cada bloco.
+.dashboard-card__icon,
+.dashboard-panel__action .mat-icon,
+.dashboard-alert .mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+}
+
+// Seletor de janela da tendência. A altura vem da variável do próprio Material: mexer nela
+// chega ao botão interno sem `::ng-deep`, que atravessaria o encapsulamento do componente.
+.dashboard-days {
+  --mat-standard-button-toggle-height: 44px;
+}
+
+// Altura fixa no contêiner + maintainAspectRatio: false no Chart.js: sem isso o canvas
+// cresce a cada redesenho e transborda a coluna.
 .dashboard-chart {
   position: relative;
   width: 100%;
-  height: 260px;
+  height: 240px;
 }
 
 .dashboard-chart--wide {
   height: 300px;
 }
 
+// ------------------------------------------------------------------------------------
+// Legenda dos gráficos de distribuição
+// ------------------------------------------------------------------------------------
+
 .dashboard-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-  margin: 12px 0 0;
-  padding: 0;
-  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--sh-space-2) var(--sh-space-5);
+  margin-top: var(--sh-space-4);
+  padding-top: var(--sh-space-4);
+  border-top: 1px solid var(--sh-border);
 }
 
 .dashboard-legend__item {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 6px;
-  font-size: 0.85rem;
+  gap: var(--sh-space-2);
 }
 
+// O contorno do quadradinho era `rgba(0, 0, 0, 0.25)`: no escuro virava uma moldura preta
+// em volta de cada amostra. `--sh-border-strong` é o token que já vale 3:1 nos dois temas.
 .dashboard-legend__swatch {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 2px;
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--sh-border-strong);
 }
 
 .dashboard-legend__value {
-  font-weight: 600;
+  color: var(--sh-text);
+  font-weight: 700;
+}
+
+// ------------------------------------------------------------------------------------
+// Tabela dos projetos
+// ------------------------------------------------------------------------------------
+
+// A tabela já está dentro de um card: um segundo contorno em volta dela seria moldura
+// sobre moldura. O invólucro fica só pela rolagem horizontal em telas estreitas.
+.dashboard-panel__body .sh-table-wrapper {
+  border: 0;
+  background: transparent;
 }
 
 .dashboard-table {
   th,
   td {
-    padding: 8px 12px;
+    padding: var(--sh-space-3) var(--sh-space-4);
     text-align: left;
     border-bottom: 1px solid var(--sh-border);
   }
 
-  thead th {
-    color: var(--sh-text-muted);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+  // Números à direita: é assim que uma coluna de contagens é comparada de relance, sem ler
+  // valor por valor.
+  td,
+  thead th:not(:first-child) {
+    text-align: right;
   }
 
-  tbody th {
-    font-weight: 500;
-  }
 }
 
+.dashboard-table tbody th,
 .dashboard-table__link {
-  color: inherit;
-  font-weight: 500;
+  color: var(--sh-text);
+  font-weight: 600;
 }
 
-.dashboard-recent {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
+// ------------------------------------------------------------------------------------
+// Itens recentes
+// ------------------------------------------------------------------------------------
 
 .dashboard-recent__item {
-  padding-bottom: 16px;
+  gap: var(--sh-space-2);
+  padding: var(--sh-space-3) 0;
   border-bottom: 1px solid var(--sh-border);
+
+  &:first-child {
+    padding-top: 0;
+  }
 
   &:last-child {
     padding-bottom: 0;
@@ -196,43 +419,31 @@
   }
 }
 
+// O link ocupa a linha inteira e tem 44px de altura mínima: o alvo é a faixa, não as
+// poucas letras do título.
 .dashboard-recent__title {
-  color: inherit;
-  font-weight: 500;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--sh-text);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .dashboard-recent__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 16px;
-  margin: 6px 0 0;
+  gap: var(--sh-space-2);
+  margin: 0;
 }
 
-/* Ícone + texto em cada marcador: severidade, status e atraso nunca dependem só da cor. */
-.dashboard-recent__tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.82rem;
-  font-weight: 600;
-
-  mat-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-  }
-}
-
-.dashboard-recent__tag--overdue {
-  color: var(--sh-high);
-}
-
-.dashboard-recent__context {
-  margin: 4px 0 0;
-  color: var(--sh-text-muted);
-  font-size: 0.8rem;
-}
-
+// Os selos usam `.sh-badge`, que já traz fundo opaco e contorno em `currentColor`. Aqui
+// cada classe define só a tinta, e é dela que o contorno também sai. Ícone + texto em todos
+// eles: severidade, situação e atraso nunca dependem só da cor.
 .dashboard-severity--low {
   color: var(--sh-low);
 }
@@ -241,7 +452,8 @@
   color: var(--sh-medium);
 }
 
-.dashboard-severity--high {
+.dashboard-severity--high,
+.dashboard-recent__tag--overdue {
   color: var(--sh-high);
 }
 
@@ -265,12 +477,23 @@
   color: var(--sh-accepted-risk);
 }
 
-/* Falha do relatório: fica no cabeçalho, sem apagar painel algum. */
+// ------------------------------------------------------------------------------------
+// Falha do relatório
+// ------------------------------------------------------------------------------------
+
+// Fica no cabeçalho, sem apagar painel algum. É faixa larga, e não selo: aqui o token
+// translúcido é legítimo. Medido com a translucidez já empilhada sobre `--sh-background`,
+// que é o que fica atrás: `--sh-danger` sobre `--sh-danger-soft` dá 5.00:1 no claro e
+// 6.89:1 no escuro, e nada passa por baixo dela em nenhum estado. O ícone acompanha o
+// texto para o aviso não depender do vermelho.
 .dashboard-alert {
-  margin: 0 0 16px;
-  padding: 12px 16px;
-  border-radius: 6px;
-  border: 1px solid var(--sh-high);
-  background: rgba(179, 38, 30, 0.08);
-  color: var(--sh-high);
+  display: flex;
+  align-items: center;
+  gap: var(--sh-space-2);
+  padding: var(--sh-space-3) var(--sh-space-4);
+  border: 1px solid var(--sh-danger);
+  border-radius: var(--sh-radius-md);
+  background: var(--sh-danger-soft);
+  color: var(--sh-danger);
+  font-weight: 600;
 }

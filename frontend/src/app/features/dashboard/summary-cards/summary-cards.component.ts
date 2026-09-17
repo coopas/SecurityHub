@@ -6,6 +6,12 @@ import { DashboardSummary, ProjectSummary } from '../models/dashboard.model';
 import { DashboardService } from '../services/dashboard.service';
 
 /**
+ * Tom do card, que decide o filete lateral, a cor do ícone e a do número. É reforço, nunca
+ * o único sinal: o rótulo e o ícone já dizem do que o número trata.
+ */
+export type SummaryCardTone = 'critical' | 'high' | 'positive' | 'neutral';
+
+/**
  * Um card. `routerLink` + `queryParams` levam à listagem já filtrada: o número é o começo
  * de uma investigação, não um enfeite.
  *
@@ -20,6 +26,7 @@ export interface SummaryCard {
   value: number;
   icon: string;
   hint: string;
+  tone: SummaryCardTone;
   routerLink: string;
   queryParams: Params;
   linkHint?: string;
@@ -85,6 +92,19 @@ export class SummaryCardsComponent implements OnInit {
     return card.key;
   }
 
+  /**
+   * Classes do card. O tom vira ênfase visual só quando há o que olhar: um "críticas em
+   * aberto" zerado é boa notícia, e pintá-lo de vermelho ensinaria o analista a ignorar a
+   * cor justamente onde ela precisa significar alguma coisa.
+   */
+  cardClasses(card: SummaryCard): string[] {
+    const classes = [`dashboard-card--${card.tone}`];
+    if (card.value === 0) {
+      classes.push('dashboard-card--quiet');
+    }
+    return classes;
+  }
+
   trackByProjectId(_index: number, project: ProjectSummary): number {
     return project.projectId;
   }
@@ -96,6 +116,7 @@ export class SummaryCardsComponent implements OnInit {
         label: 'Vulnerabilidades',
         value: summary.totalVulnerabilities,
         icon: 'bug_report',
+        tone: 'neutral',
         hint: 'Todos os achados da empresa.',
         routerLink: '/vulnerabilities',
         queryParams: {},
@@ -105,6 +126,7 @@ export class SummaryCardsComponent implements OnInit {
         label: 'Em aberto',
         value: summary.openVulnerabilities,
         icon: 'error_outline',
+        tone: 'high',
         hint: 'Status Aberta e Em andamento, as que ainda exigem ação.',
         routerLink: '/vulnerabilities',
         queryParams: { status: 'OPEN' },
@@ -115,6 +137,7 @@ export class SummaryCardsComponent implements OnInit {
         label: 'Críticas em aberto',
         value: summary.criticalOpenVulnerabilities,
         icon: 'priority_high',
+        tone: 'critical',
         hint: 'Severidade Crítica ainda em aberto ou em andamento.',
         routerLink: '/vulnerabilities',
         queryParams: { severity: 'CRITICAL', status: 'OPEN' },
@@ -125,6 +148,7 @@ export class SummaryCardsComponent implements OnInit {
         label: 'Atrasadas',
         value: summary.overdueVulnerabilities,
         icon: 'schedule',
+        tone: 'high',
         hint: 'Prazo vencido e ainda sem resolução.',
         routerLink: '/vulnerabilities',
         queryParams: { overdue: 'true' },
@@ -134,6 +158,7 @@ export class SummaryCardsComponent implements OnInit {
         label: 'Resolvidas',
         value: summary.resolvedVulnerabilities,
         icon: 'check_circle',
+        tone: 'positive',
         hint: 'Status Resolvida.',
         routerLink: '/vulnerabilities',
         queryParams: { status: 'RESOLVED' },
@@ -143,6 +168,7 @@ export class SummaryCardsComponent implements OnInit {
         label: 'Projetos',
         value: summary.totalProjects,
         icon: 'folder_open',
+        tone: 'neutral',
         hint: 'Projetos cadastrados na empresa.',
         routerLink: '/projects',
         queryParams: {},
@@ -152,6 +178,7 @@ export class SummaryCardsComponent implements OnInit {
         label: 'Ativos',
         value: summary.totalAssets,
         icon: 'dns',
+        tone: 'neutral',
         hint: 'Ativos monitorados na empresa.',
         routerLink: '/assets',
         queryParams: {},

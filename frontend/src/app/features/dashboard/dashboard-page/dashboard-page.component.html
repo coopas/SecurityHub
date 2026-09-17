@@ -1,4 +1,4 @@
-<section class="sh-page">
+<section class="sh-page dashboard-page">
   <header class="sh-page__header">
     <div>
       <h1>Dashboard</h1>
@@ -10,6 +10,7 @@
 
     <button
       *ngIf="canExportReport"
+      class="dashboard-export"
       mat-raised-button
       color="primary"
       type="button"
@@ -23,12 +24,17 @@
   </header>
 
   <mat-progress-bar
+    class="dashboard-progress"
     *ngIf="exporting"
     mode="indeterminate"
     aria-label="Gerando o relatório executivo"
   ></mat-progress-bar>
 
-  <p class="dashboard-alert" role="alert" *ngIf="exportError">{{ exportError }}</p>
+  <!-- Ícone junto do texto: o aviso não depende do vermelho para ser reconhecido como erro. -->
+  <p class="dashboard-alert" role="alert" *ngIf="exportError">
+    <mat-icon aria-hidden="true">error_outline</mat-icon>
+    <span>{{ exportError }}</span>
+  </p>
 
   <div class="dashboard-sections">
     <app-summary-cards></app-summary-cards>

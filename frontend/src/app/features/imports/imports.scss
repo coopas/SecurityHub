@@ -1,84 +1,99 @@
-.imports-subtitle {
-  margin: 4px 0 0;
-  color: var(--sh-text-muted);
-  max-width: 80ch;
-}
+/* Importações: envio, prévia da revisão e histórico.
+   A prévia é a tela mais densa do produto — uma tabela de achados que se lê de cima a
+   baixo antes de uma decisão irreversível — e por isso todo o peso visual está na
+   severidade e na situação de cada linha, nunca na moldura em volta delas. */
 
 .imports-alert {
-  margin: 0 0 16px;
-  padding: 12px 16px;
-  border-radius: 6px;
-  border: 1px solid var(--sh-high);
-  background: rgba(179, 38, 30, 0.08);
-  color: var(--sh-high);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sh-space-2);
+  margin: 0 0 var(--sh-space-4);
+  padding: var(--sh-space-3) var(--sh-space-4);
+  border: 1px solid var(--sh-danger);
+  border-left-width: 4px;
+  border-radius: var(--sh-radius-sm);
+  background: var(--sh-danger-soft);
+  color: var(--sh-text);
+  font-size: var(--sh-text-md);
+
+  mat-icon {
+    flex: none;
+    color: var(--sh-danger);
+  }
 }
 
 .imports-hint {
-  margin: 8px 0 0;
+  margin: var(--sh-space-2) 0 0;
   color: var(--sh-text-muted);
-  font-size: 0.85rem;
+  font-size: var(--sh-text-md);
   max-width: 80ch;
 }
 
+.imports-results {
+  padding: 0;
+  overflow: hidden;
+}
+
+.imports-results__table {
+  border: 0;
+  border-radius: 0;
+}
+
+.imports-results__paginator {
+  background: transparent;
+  border-top: 1px solid var(--sh-border);
+}
+
 .imports-table__link {
-  color: inherit;
-  font-weight: 500;
+  color: var(--sh-text);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .imports-table__title {
   display: block;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .imports-table__meta {
   display: block;
+  margin-top: 2px;
   color: var(--sh-text-muted);
-  font-size: 0.78rem;
+  font-size: var(--sh-text-xs);
 }
 
 .imports-table__counters {
   color: var(--sh-text-muted);
-  font-size: 0.82rem;
+  font-size: var(--sh-text-sm);
   min-width: 260px;
+}
+
+.imports-table__target {
+  color: var(--sh-text-muted);
+  overflow-wrap: anywhere;
+  max-width: 28ch;
 }
 
 .imports-table__asset {
   min-width: 200px;
 }
 
-/* Ícone + texto: severidade e situação nunca dependem só da cor (WCAG 1.4.1). As cores
-   são as mesmas variáveis que as vulnerabilidades usam, para que um achado e a
-   vulnerabilidade que ele vira não mudem de aparência no caminho. */
-.imports-chip.mat-mdc-chip {
-  --mdc-chip-label-text-color: currentColor;
-  --mdc-chip-with-icon-icon-color: currentColor;
-
-  background: rgba(0, 0, 0, 0.04);
-  border: 1px solid currentColor;
-
-  mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    margin-right: 6px;
-  }
-}
-
+/* Todos os selos das cinco telas seguem a mesma receita: preenchimento opaco, contorno
+   na cor do próprio significado e ícone ao lado do rótulo. O preenchimento é opaco de
+   propósito — uma tinta translúcida soma com o realce da linha sob o cursor e derruba o
+   contraste do texto medido no tema claro justamente nos tons médio e baixo. */
+.imports-chip,
 .imports-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  font-size: 0.85rem;
-  font-weight: 500;
-
-  mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-  }
+  background: var(--sh-surface-sunken);
+  border-color: currentColor;
 }
 
+/* Achado e vulnerabilidade usam os mesmos tokens de severidade: é o mesmo risco antes e
+   depois da confirmação, e trocar de cor no caminho o faria parecer outra coisa. */
 .imports-severity--low {
   color: var(--sh-low);
 }
@@ -93,9 +108,9 @@
 
 .imports-severity--critical {
   color: var(--sh-critical);
-  font-weight: 600;
 }
 
+/* Cor é sempre reforço: o ícone e o rótulo já identificam a situação. */
 .imports-status--pending {
   color: var(--sh-in-progress);
 }
@@ -105,10 +120,13 @@
 }
 
 .imports-status--discarded {
-  color: var(--sh-accepted-risk);
+  color: var(--sh-text-muted);
 }
 
-.imports-finding--matched {
+/* Situação do achado: só "sem ativo" pede uma decisão de quem revisa, então é a única
+   que recebe o tom de atenção. As demais informam e saem do caminho. */
+.imports-finding--matched,
+.imports-finding--imported {
   color: var(--sh-resolved);
 }
 
@@ -116,104 +134,145 @@
   color: var(--sh-in-progress);
 }
 
-.imports-finding--duplicate {
-  color: var(--sh-accepted-risk);
-}
-
-.imports-finding--imported {
-  color: var(--sh-resolved);
-}
-
+.imports-finding--duplicate,
 .imports-finding--skipped {
   color: var(--sh-text-muted);
 }
 
+/* Escolha do arquivo: um input nativo acionado por botão, numa faixa rebaixada que
+   mostra onde o arquivo entra sem fingir ser uma área de arrastar e soltar. */
 .imports-upload {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  margin: 16px 0;
+  gap: var(--sh-space-3);
+  margin: var(--sh-space-4) 0;
+  padding: var(--sh-space-4);
+  border: 1px dashed var(--sh-border-strong);
+  border-radius: var(--sh-radius-md);
+  background: var(--sh-surface-sunken);
 }
 
 .imports-upload__file {
-  font-weight: 500;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .imports-upload__meta {
-  margin-left: 8px;
+  margin-left: var(--sh-space-2);
   color: var(--sh-text-muted);
-  font-size: 0.8rem;
+  font-size: var(--sh-text-sm);
   font-weight: 400;
+}
+
+.imports-upload .imports-hint {
+  margin: 0;
 }
 
 .imports-empty-projects {
   display: flex;
-  gap: 16px;
+  gap: var(--sh-space-4);
   align-items: flex-start;
-  padding: 32px 8px;
+  padding: var(--sh-space-6) var(--sh-space-2);
 
   h2 {
-    margin: 0 0 8px;
-    font-size: 1.1rem;
+    margin: 0 0 var(--sh-space-2);
+    font-size: var(--sh-text-lg);
   }
 
   p {
-    margin: 0 0 16px;
+    margin: 0 0 var(--sh-space-4);
     color: var(--sh-text-muted);
     max-width: 60ch;
   }
 
   > mat-icon {
-    color: var(--sh-text-muted);
+    flex: none;
+    color: var(--sh-text-subtle);
   }
 }
 
 .imports-summary__head {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--sh-space-4);
   align-items: flex-start;
   justify-content: space-between;
 }
 
 .imports-summary__title {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: var(--sh-text-lg);
+  overflow-wrap: anywhere;
 }
 
-/* Faixa de contadores: números grandes, rótulo pequeno em cima, sem virar gráfico. */
+/* Faixa de contadores: número grande, rótulo pequeno em cima, cada um na sua placa.
+   Números sem moldura, lado a lado, se leem como uma frase só. */
 .imports-counters {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 16px;
-  margin: 20px 0 0;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: var(--sh-space-3);
+  margin: var(--sh-space-5) 0 0;
 }
 
 .imports-counters__item {
+  padding: var(--sh-space-3);
+  border: 1px solid var(--sh-border);
+  border-radius: var(--sh-radius-sm);
+  background: var(--sh-surface-sunken);
+
   dt {
-    margin: 0 0 4px;
+    margin: 0 0 var(--sh-space-1);
     color: var(--sh-text-muted);
-    font-size: 0.78rem;
+    font-size: var(--sh-text-xs);
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
 
   dd {
     margin: 0;
-    font-size: 1.4rem;
-    font-weight: 600;
+    font-size: var(--sh-text-xl);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
   }
 }
 
 .imports-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 24px;
+  gap: var(--sh-space-3);
+  margin-top: var(--sh-space-5);
 }
 
-.imports-findings {
-  margin-top: 24px;
+/* "Achados" abre uma seção da página, não um card: o título vem antes do painel de
+   busca, como nas outras listagens, e o card fica só com a tabela. */
+.imports-findings__title {
+  margin: var(--sh-space-6) 0 var(--sh-space-3);
+  font-size: var(--sh-text-xl);
+}
+
+/* Aviso preso ao topo da tabela: explica por que alguns achados não podem ser vinculados
+   agora, e some junto com ela. */
+.imports-findings__hint {
+  margin: 0;
+  padding: var(--sh-space-3) var(--sh-space-5);
+  border-bottom: 1px solid var(--sh-border);
+  max-width: none;
+}
+
+/* Tabela densa: a coluna de severidade e a de situação já carregam cor, então as
+   células apertam a horizontal e devolvem o espaço para o título do achado. */
+.imports-findings__table {
+  .mat-mdc-header-cell,
+  .mat-mdc-cell {
+    padding-right: var(--sh-space-3);
+    padding-left: var(--sh-space-3);
+  }
+
+  .mat-mdc-cell {
+    padding-top: var(--sh-space-2);
+    padding-bottom: var(--sh-space-2);
+  }
 }

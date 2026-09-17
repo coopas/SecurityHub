@@ -2,7 +2,7 @@
   <header class="sh-page__header">
     <div>
       <h1>Nova importação</h1>
-      <p class="imports-subtitle">
+      <p class="sh-page__subtitle">
         Envie o relatório de uma varredura. Nada é criado agora: os achados ficam em
         revisão até você confirmar a importação.
       </p>
@@ -46,7 +46,8 @@
       novalidate
     >
       <p class="imports-alert" role="alert" *ngIf="errorMessage" data-testid="import-upload-error">
-        {{ errorMessage }}
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ errorMessage }}</span>
       </p>
 
       <div class="sh-form-grid">

@@ -1,15 +1,29 @@
-<h2 mat-dialog-title id="confirm-dialog-title">{{ data.title }}</h2>
+<!-- O ícone e a faixa de cor distinguem "apagar para sempre" de "confirmar": a pergunta
+     destrutiva precisa parecer diferente antes de ser lida. -->
+<h2
+  mat-dialog-title
+  id="confirm-dialog-title"
+  class="confirm-dialog__title"
+  [class.confirm-dialog__title--destructive]="data.destructive"
+>
+  <span class="confirm-dialog__badge" aria-hidden="true">
+    <mat-icon>{{ data.destructive ? 'delete_outline' : 'help_outline' }}</mat-icon>
+  </span>
+  <span class="confirm-dialog__heading">{{ data.title }}</span>
+</h2>
 
-<div mat-dialog-content>
+<div mat-dialog-content class="confirm-dialog__content">
   <p class="confirm-dialog__message">{{ data.message }}</p>
 </div>
 
-<div mat-dialog-actions align="end">
-  <button mat-button type="button" (click)="cancel()">{{ cancelLabel }}</button>
+<div mat-dialog-actions align="end" class="confirm-dialog__actions">
+  <button mat-stroked-button type="button" (click)="cancel()">{{ cancelLabel }}</button>
   <button
     mat-raised-button
     type="button"
     cdkFocusInitial
+    class="confirm-dialog__confirm"
+    [class.confirm-dialog__confirm--destructive]="data.destructive"
     [color]="data.destructive ? 'warn' : 'primary'"
     (click)="confirm()"
   >

@@ -2,7 +2,7 @@
   <header class="sh-page__header">
     <div>
       <h1>{{ user ? user.name : 'Usuário' }}</h1>
-      <p class="users-subtitle">
+      <p class="sh-page__subtitle">
         Papel e situação são alterados na listagem, onde as guardas do backend são explicadas.
       </p>
     </div>
@@ -33,7 +33,18 @@
         </div>
         <div class="users-detail__item">
           <dt>Situação</dt>
-          <dd>{{ current.active ? 'Ativo' : 'Inativo' }}</dd>
+          <dd>
+            <span
+              class="users-status"
+              [class.users-status--active]="current.active"
+              [class.users-status--inactive]="!current.active"
+            >
+              <mat-icon aria-hidden="true">
+                {{ current.active ? 'check_circle' : 'do_not_disturb_on' }}
+              </mat-icon>
+              <span>{{ current.active ? 'Ativo' : 'Inativo' }}</span>
+            </span>
+          </dd>
         </div>
         <div class="users-detail__item">
           <dt>Último acesso</dt>
@@ -47,7 +58,10 @@
 
       <mat-divider></mat-divider>
 
-      <p class="users-alert" role="alert" *ngIf="generalError">{{ generalError }}</p>
+      <p class="users-alert" role="alert" *ngIf="generalError">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ generalError }}</span>
+      </p>
 
       <form class="users-detail__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <mat-form-field appearance="outline">

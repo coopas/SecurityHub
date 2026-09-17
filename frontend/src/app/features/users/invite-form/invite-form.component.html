@@ -2,14 +2,17 @@
   <header class="sh-page__header">
     <div>
       <h1>Convidar usuário</h1>
-      <p class="users-subtitle">
+      <p class="sh-page__subtitle">
         A pessoa recebe um link por e-mail e escolhe a própria senha ao aceitar.
       </p>
     </div>
   </header>
 
   <div class="sh-card">
-    <p class="users-alert" role="alert" *ngIf="generalError">{{ generalError }}</p>
+    <p class="users-alert" role="alert" *ngIf="generalError">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>{{ generalError }}</span>
+    </p>
 
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <div class="sh-form-grid">

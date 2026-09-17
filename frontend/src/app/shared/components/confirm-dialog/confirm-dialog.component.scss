@@ -1,5 +1,79 @@
+.confirm-dialog__title.mat-mdc-dialog-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sh-space-3);
+  // O padding do Material é generoso demais para um diálogo de uma pergunta só.
+  padding: var(--sh-space-5) var(--sh-space-5) var(--sh-space-3);
+  margin: 0;
+  color: var(--sh-text);
+  font-size: var(--sh-text-lg);
+  line-height: 1.3;
+
+  // O ::before some no rodapé do diálogo do Material e aqui só empurraria o título.
+  &::before {
+    display: none;
+  }
+}
+
+// Medalhão do ícone: o mesmo desenho do selo, para o diálogo pertencer ao sistema.
+.confirm-dialog__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--sh-radius-pill);
+  background: var(--sh-primary-soft);
+  color: var(--sh-primary);
+
+  .mat-icon {
+    width: 22px;
+    height: 22px;
+    font-size: 22px;
+    line-height: 22px;
+  }
+}
+
+.confirm-dialog__title--destructive .confirm-dialog__badge {
+  background: var(--sh-danger-soft);
+  color: var(--sh-danger);
+}
+
+.confirm-dialog__heading {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.confirm-dialog__content.mat-mdc-dialog-content {
+  padding: 0 var(--sh-space-5);
+  color: var(--sh-text-muted);
+}
+
 .confirm-dialog__message {
   margin: 0;
   max-width: 44ch;
-  line-height: 1.5;
+  font-size: var(--sh-text-md);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.confirm-dialog__actions.mat-mdc-dialog-actions {
+  gap: var(--sh-space-2);
+  padding: var(--sh-space-5);
+  // Separa a decisão do texto sem fechar o diálogo com uma linha pesada.
+  border-top: 1px solid var(--sh-border);
+  margin-top: var(--sh-space-5);
+
+  .mat-mdc-button-base {
+    min-height: 44px;
+    // O Material já separa os botões por margem própria; a margem extra dobraria o vão.
+    margin: 0;
+  }
+}
+
+// A ação destrutiva é a mais pesada da tela: cor de perigo, não a cor da marca.
+.confirm-dialog__confirm--destructive.mat-mdc-raised-button {
+  --mdc-protected-button-container-color: var(--sh-danger);
+  --mdc-protected-button-label-text-color: var(--sh-text-inverse);
 }

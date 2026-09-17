@@ -1,96 +1,122 @@
-<div class="auth-page">
-  <mat-card class="auth-card">
-    <p class="auth-card__brand">
-      <mat-icon aria-hidden="true">security</mat-icon>
+<div class="auth-shell">
+  <!--
+    Painel de marca: só em telas largas, onde há espaço que o formulário não usaria. É o
+    mesmo bloco nas cinco telas públicas, para que o conjunto leia como um sistema só.
+  -->
+  <aside class="auth-brand">
+    <span class="auth-brand__grid" aria-hidden="true"></span>
+    <span class="auth-brand__glow" aria-hidden="true"></span>
+
+    <p class="auth-brand__mark">
+      <mat-icon aria-hidden="true">shield</mat-icon>
       <span>SecurityHub</span>
     </p>
 
-    <h1 class="auth-card__title">Aceitar convite</h1>
+    <div class="auth-brand__statement">
+      <p class="auth-brand__tagline">Toda a superfície exposta da sua empresa em um painel.</p>
+      <p class="auth-brand__support">
+        Descoberta, priorização e correção de vulnerabilidades, com trilha de auditoria de
+        ponta a ponta.
+      </p>
+    </div>
+  </aside>
 
-    <app-state-message *ngIf="loading" state="loading" message="Carregando o convite..."></app-state-message>
-
-    <p class="auth-alert" role="alert" *ngIf="previewError" data-testid="invitation-error">
-      {{ previewError }}
-    </p>
-
-    <ng-container *ngIf="preview as invitation">
-      <p class="auth-card__subtitle" data-testid="invitation-summary">
-        {{ invitationSummary }}.
+  <main class="auth-panel">
+    <div class="auth-panel__inner">
+      <p class="auth-mark">
+        <mat-icon aria-hidden="true">shield</mat-icon>
+        <span>SecurityHub</span>
       </p>
 
-      <p class="auth-card__subtitle" data-testid="invitation-email">
-        A conta será criada para <strong>{{ invitation.email }}</strong> em nome de
-        <strong>{{ invitation.name }}</strong>. Escolha uma senha para concluir.
+      <h1 class="auth-title">Aceitar convite</h1>
+
+      <app-state-message *ngIf="loading" state="loading" message="Carregando o convite..."></app-state-message>
+
+      <p class="auth-alert" role="alert" *ngIf="previewError" data-testid="invitation-error">
+        {{ previewError }}
       </p>
 
-      <p class="auth-alert" role="alert" *ngIf="generalError">{{ generalError }}</p>
+      <ng-container *ngIf="preview as invitation">
+        <p class="auth-subtitle" data-testid="invitation-summary">
+          {{ invitationSummary }}.
+        </p>
 
-      <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <mat-form-field appearance="outline">
-          <mat-label>Senha</mat-label>
-          <input
-            matInput
-            [type]="hidePassword ? 'password' : 'text'"
-            formControlName="password"
-            autocomplete="new-password"
-            data-testid="invitation-password"
-          />
+        <p class="auth-subtitle" data-testid="invitation-email">
+          A conta será criada para <strong>{{ invitation.email }}</strong> em nome de
+          <strong>{{ invitation.name }}</strong>. Escolha uma senha para concluir.
+        </p>
+
+        <p class="auth-alert" role="alert" *ngIf="generalError">{{ generalError }}</p>
+
+        <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <mat-form-field appearance="outline">
+            <mat-label>Senha</mat-label>
+            <input
+              matInput
+              [type]="hidePassword ? 'password' : 'text'"
+              formControlName="password"
+              autocomplete="new-password"
+              data-testid="invitation-password"
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              [attr.aria-label]="hidePassword ? 'Mostrar senha' : 'Ocultar senha'"
+              [attr.aria-pressed]="!hidePassword"
+              (click)="hidePassword = !hidePassword"
+            >
+              <mat-icon aria-hidden="true">{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-hint>Use ao menos {{ minLength }} caracteres.</mat-hint>
+            <mat-error *ngIf="form.controls['password'].hasError('required')">Informe a senha.</mat-error>
+            <mat-error
+              *ngIf="form.controls['password'].hasError('minlength') || form.controls['password'].hasError('maxlength')"
+            >
+              A senha deve ter entre {{ minLength }} e {{ maxLength }} caracteres.
+            </mat-error>
+            <mat-error *ngIf="form.controls['password'].hasError('server')">
+              {{ form.controls['password'].getError('server') }}
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Confirme a senha</mat-label>
+            <input
+              matInput
+              [type]="hidePassword ? 'password' : 'text'"
+              formControlName="confirmation"
+              autocomplete="new-password"
+              data-testid="invitation-confirmation"
+            />
+            <mat-error *ngIf="form.controls['confirmation'].hasError('required')">
+              Repita a senha.
+            </mat-error>
+            <mat-error *ngIf="form.controls['confirmation'].hasError('passwordMismatch')">
+              As senhas não coincidem.
+            </mat-error>
+          </mat-form-field>
+
           <button
-            mat-icon-button
-            matSuffix
-            type="button"
-            [attr.aria-label]="hidePassword ? 'Mostrar senha' : 'Ocultar senha'"
-            [attr.aria-pressed]="!hidePassword"
-            (click)="hidePassword = !hidePassword"
+            mat-raised-button
+            color="primary"
+            type="submit"
+            class="auth-form__submit"
+            [disabled]="submitting"
+            data-testid="invitation-submit"
           >
-            <mat-icon aria-hidden="true">{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+            <mat-spinner *ngIf="submitting" diameter="20" aria-hidden="true"></mat-spinner>
+            <span>{{ submitting ? 'Criando conta...' : 'Aceitar convite' }}</span>
           </button>
-          <mat-hint>Use ao menos {{ minLength }} caracteres.</mat-hint>
-          <mat-error *ngIf="form.controls['password'].hasError('required')">Informe a senha.</mat-error>
-          <mat-error
-            *ngIf="form.controls['password'].hasError('minlength') || form.controls['password'].hasError('maxlength')"
-          >
-            A senha deve ter entre {{ minLength }} e {{ maxLength }} caracteres.
-          </mat-error>
-          <mat-error *ngIf="form.controls['password'].hasError('server')">
-            {{ form.controls['password'].getError('server') }}
-          </mat-error>
-        </mat-form-field>
+        </form>
+      </ng-container>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Confirme a senha</mat-label>
-          <input
-            matInput
-            [type]="hidePassword ? 'password' : 'text'"
-            formControlName="confirmation"
-            autocomplete="new-password"
-            data-testid="invitation-confirmation"
-          />
-          <mat-error *ngIf="form.controls['confirmation'].hasError('required')">
-            Repita a senha.
-          </mat-error>
-          <mat-error *ngIf="form.controls['confirmation'].hasError('passwordMismatch')">
-            As senhas não coincidem.
-          </mat-error>
-        </mat-form-field>
-
-        <button
-          mat-raised-button
-          color="primary"
-          type="submit"
-          class="auth-form__submit"
-          [disabled]="submitting"
-          data-testid="invitation-submit"
-        >
-          <mat-spinner *ngIf="submitting" diameter="20" aria-hidden="true"></mat-spinner>
-          <span>{{ submitting ? 'Criando conta...' : 'Aceitar convite' }}</span>
-        </button>
-      </form>
-    </ng-container>
-
-    <p class="auth-footer">
-      Já tem conta?
-      <a routerLink="/login">Entrar</a>
-    </p>
-  </mat-card>
+      <div class="auth-foot">
+        <p class="auth-foot__item">
+          <span>Já tem conta?</span>
+          <a routerLink="/login">Entrar</a>
+        </p>
+      </div>
+    </div>
+  </main>
 </div>

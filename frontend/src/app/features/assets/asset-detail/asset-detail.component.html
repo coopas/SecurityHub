@@ -2,7 +2,7 @@
   <header class="sh-page__header">
     <div>
       <h1>{{ asset ? asset.name : 'Ativo' }}</h1>
-      <p class="assets-subtitle" *ngIf="asset">
+      <p class="sh-page__subtitle" *ngIf="asset">
         {{ typeLabels[asset.type] }} · {{ environmentLabels[asset.environment] }} ·
         {{ asset.vulnerabilityCount }}
         {{ asset.vulnerabilityCount === 1 ? 'vulnerabilidade' : 'vulnerabilidades' }}
@@ -40,7 +40,10 @@
     </div>
   </header>
 
-  <p class="assets-alert" role="alert" *ngIf="actionError">{{ actionError }}</p>
+  <p class="assets-alert" role="alert" *ngIf="actionError">
+    <mat-icon aria-hidden="true">error_outline</mat-icon>
+    <span>{{ actionError }}</span>
+  </p>
 
   <div class="sh-card">
     <app-state-message
@@ -74,7 +77,7 @@
       <div class="assets-detail__item">
         <dt>Ambiente</dt>
         <dd>
-          <span class="assets-tag">
+          <span class="sh-badge assets-environment">
             <mat-icon aria-hidden="true">{{ environmentIcons[asset.environment] }}</mat-icon>
             <span>{{ environmentLabels[asset.environment] }}</span>
           </span>
@@ -84,7 +87,11 @@
       <div class="assets-detail__item">
         <dt>Criticidade</dt>
         <dd>
-          <span class="assets-tag assets-criticality" [ngClass]="criticalityClass" data-testid="asset-criticality-value">
+          <span
+            class="sh-badge assets-criticality"
+            [ngClass]="criticalityClass"
+            data-testid="asset-criticality-value"
+          >
             <mat-icon aria-hidden="true">{{ criticalityIcons[asset.criticality] }}</mat-icon>
             <span>{{ criticalityLabels[asset.criticality] }}</span>
           </span>

@@ -2,7 +2,7 @@
   <header class="sh-page__header">
     <div>
       <h1>Projetos</h1>
-      <p class="projects-subtitle">
+      <p class="sh-page__subtitle">
         Projetos da sua empresa, com os ativos vinculados a cada um.
       </p>
     </div>
@@ -19,48 +19,51 @@
     </a>
   </header>
 
-  <p class="projects-alert" role="alert" *ngIf="actionError">{{ actionError }}</p>
+  <p class="projects-alert" role="alert" *ngIf="actionError">
+    <mat-icon aria-hidden="true">error_outline</mat-icon>
+    <span>{{ actionError }}</span>
+  </p>
 
-  <div class="sh-card">
-    <form class="sh-filters" (ngSubmit)="$event.preventDefault()" novalidate>
-      <mat-form-field appearance="outline">
-        <mat-label>Buscar por nome ou descrição</mat-label>
-        <input
-          matInput
-          type="search"
-          [formControl]="searchControl"
-          autocomplete="off"
-          data-testid="project-search"
-        />
-        <mat-icon matSuffix aria-hidden="true">search</mat-icon>
-      </mat-form-field>
+  <form class="sh-filters" (ngSubmit)="$event.preventDefault()" novalidate>
+    <mat-form-field appearance="outline">
+      <mat-label>Buscar por nome ou descrição</mat-label>
+      <input
+        matInput
+        type="search"
+        [formControl]="searchControl"
+        autocomplete="off"
+        data-testid="project-search"
+      />
+      <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+    </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Situação</mat-label>
-        <mat-select
-          [formControl]="statusControl"
-          (selectionChange)="onStatusChange($event.value)"
-          data-testid="project-status-filter"
-        >
-          <mat-option value="">Todas</mat-option>
-          <mat-option *ngFor="let status of statuses" [value]="status">
-            {{ statusLabels[status] }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <button
-        mat-stroked-button
-        type="button"
-        class="projects-filters__clear"
-        [disabled]="!hasFilters"
-        (click)="clearFilters()"
-        data-testid="project-clear-filters"
+    <mat-form-field appearance="outline">
+      <mat-label>Situação</mat-label>
+      <mat-select
+        [formControl]="statusControl"
+        (selectionChange)="onStatusChange($event.value)"
+        data-testid="project-status-filter"
       >
-        Limpar filtros
-      </button>
-    </form>
+        <mat-option value="">Todas</mat-option>
+        <mat-option *ngFor="let status of statuses" [value]="status">
+          {{ statusLabels[status] }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
 
+    <button
+      mat-stroked-button
+      type="button"
+      class="projects-filters__clear"
+      [disabled]="!hasFilters"
+      (click)="clearFilters()"
+      data-testid="project-clear-filters"
+    >
+      Limpar filtros
+    </button>
+  </form>
+
+  <div class="sh-card projects-results">
     <app-state-message
       *ngIf="state"
       [state]="state"
@@ -70,7 +73,7 @@
     ></app-state-message>
 
     <ng-container *ngIf="!state">
-      <div class="sh-table-wrapper">
+      <div class="sh-table-wrapper projects-results__table">
         <table
           mat-table
           class="sh-table"
@@ -99,7 +102,11 @@
           <ng-container matColumnDef="status">
             <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Situação</th>
             <td mat-cell *matCellDef="let project">
-              <span class="projects-status" [class.projects-status--archived]="project.status === 'ARCHIVED'">
+              <span
+                class="sh-badge projects-status"
+                [class.projects-status--active]="project.status === 'ACTIVE'"
+                [class.projects-status--archived]="project.status === 'ARCHIVED'"
+              >
                 <mat-icon aria-hidden="true">
                   {{ project.status === 'ACTIVE' ? 'play_circle_outline' : 'inventory_2' }}
                 </mat-icon>
@@ -110,7 +117,12 @@
 
           <ng-container matColumnDef="assetCount">
             <th mat-header-cell *matHeaderCellDef scope="col">Ativos</th>
-            <td mat-cell *matCellDef="let project">{{ project.assetCount }}</td>
+            <td mat-cell *matCellDef="let project">
+              <span class="projects-count">
+                <mat-icon aria-hidden="true">dns</mat-icon>
+                <span>{{ project.assetCount }}</span>
+              </span>
+            </td>
           </ng-container>
 
           <ng-container matColumnDef="createdAt">
@@ -150,6 +162,7 @@
       </div>
 
       <mat-paginator
+        class="projects-results__paginator"
         [length]="totalElements"
         [pageIndex]="query.page"
         [pageSize]="query.size"

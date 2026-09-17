@@ -1,26 +1,57 @@
-.projects-subtitle {
-  margin: 4px 0 0;
-  color: var(--sh-text-muted);
-}
+/* Projetos: listagem, formulário e detalhe. Mesma anatomia dos ativos — painel de
+   filtros, card de resultados e selo com ícone — porque são a mesma tela com outro
+   conteúdo, e o que muda de uma para a outra o usuário lê como troca de produto. */
 
 .projects-alert {
-  margin: 0 0 16px;
-  padding: 12px 16px;
-  border-radius: 6px;
-  border: 1px solid var(--sh-high);
-  background: rgba(179, 38, 30, 0.08);
-  color: var(--sh-high);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sh-space-2);
+  margin: 0 0 var(--sh-space-4);
+  padding: var(--sh-space-3) var(--sh-space-4);
+  border: 1px solid var(--sh-danger);
+  border-left-width: 4px;
+  border-radius: var(--sh-radius-sm);
+  background: var(--sh-danger-soft);
+  color: var(--sh-text);
+  font-size: var(--sh-text-md);
+
+  mat-icon {
+    flex: none;
+    color: var(--sh-danger);
+  }
+}
+
+/* O card é a moldura da região de resultados; a tabela rola dentro dele sem repetir
+   borda e raio, e a paginação fecha o bloco com uma divisória só. */
+.projects-results {
+  padding: 0;
+  overflow: hidden;
+}
+
+.projects-results__table {
+  border: 0;
+  border-radius: 0;
+}
+
+.projects-results__paginator {
+  background: transparent;
+  border-top: 1px solid var(--sh-border);
 }
 
 .projects-filters__clear {
   align-self: center;
   justify-self: start;
-  height: 44px;
+  min-height: 44px;
 }
 
 .projects-table__link {
-  color: inherit;
-  font-weight: 500;
+  color: var(--sh-text);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .projects-table__actions {
@@ -28,53 +59,74 @@
   text-align: right;
 }
 
-.projects-status {
+/* Contagem de ativos: número tabular para as colunas alinharem, com o rótulo no
+   cabeçalho — repetir "ativos" em cada linha só engorda a tabela. */
+.projects-count {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: var(--sh-resolved);
+  gap: var(--sh-space-2);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
 
   mat-icon {
+    flex: none;
+    color: var(--sh-text-subtle);
     font-size: 18px;
     width: 18px;
     height: 18px;
   }
 }
 
+/* Todos os selos das cinco telas seguem a mesma receita: preenchimento opaco, contorno
+   na cor do próprio significado e ícone ao lado do rótulo. O preenchimento é opaco de
+   propósito — uma tinta translúcida soma com o realce da linha sob o cursor e derruba o
+   contraste do texto medido no tema claro justamente nos tons médio e baixo. */
+.projects-status {
+  background: var(--sh-surface-sunken);
+  border-color: currentColor;
+}
+
+/* Projeto arquivado não é erro nem alerta: é um estado de arquivo. Daí o tom neutro com
+   o ícone de caixa, enquanto o ativo fica no verde de situação saudável. */
+.projects-status--active {
+  color: var(--sh-resolved);
+}
+
 .projects-status--archived {
-  color: var(--sh-accepted-risk);
+  color: var(--sh-text-muted);
 }
 
 .projects-form__description {
   width: 100%;
-  margin-top: 16px;
+  margin-top: var(--sh-space-4);
 }
 
 .projects-detail {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
+  gap: var(--sh-space-5);
   margin: 0;
 }
 
 .projects-detail__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--sh-space-3);
 }
 
 .projects-detail__item {
   dt {
-    margin: 0 0 4px;
+    margin: 0 0 var(--sh-space-1);
     color: var(--sh-text-muted);
-    font-size: 0.8rem;
+    font-size: var(--sh-text-xs);
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
 
   dd {
     margin: 0;
-    font-size: 1rem;
+    font-size: var(--sh-text-base);
   }
 }
 
@@ -84,4 +136,5 @@
 
 .projects-detail__description {
   white-space: pre-wrap;
+  max-width: 80ch;
 }

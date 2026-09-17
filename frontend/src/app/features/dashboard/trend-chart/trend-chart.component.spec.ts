@@ -1,8 +1,9 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { NgChartsModule } from 'ng2-charts';
 import { Subject, of, throwError } from 'rxjs';
 
+import { THEME_STORAGE_KEY, ThemeService } from '../../../core/services/theme.service';
 import { SharedModule } from '../../../shared/shared.module';
 import { DEFAULT_TREND_DAYS, Trend } from '../models/dashboard.model';
 import { DashboardService } from '../services/dashboard.service';
@@ -71,6 +72,34 @@ describe('TrendChartComponent', () => {
     // Segunda série também tracejada: as linhas não se distinguem só pela cor.
     expect(resolved.borderDash).toEqual([6, 4]);
   });
+
+  /**
+   * O canvas é bitmap: a cor vira pixel na hora do desenho e não acompanha a troca de
+   * tokens como o CSS acompanharia. Sem repintar, a linha do tema claro ficaria desenhada
+   * sobre o fundo escuro.
+   */
+  it('repinta as séries com os tokens do novo tema quando o tema muda', fakeAsync(() => {
+    fixture.detectChanges();
+    const theme = TestBed.inject(ThemeService);
+    const before = component.chartData.datasets[0].borderColor;
+
+    theme.set('dark');
+    // O ThemeService emite antes de escrever `data-theme`; o repintor espera uma
+    // microtarefa justamente para ler os tokens já trocados. Sem esse `tick` — e sem a
+    // espera no componente — a cor lida ainda seria a do tema que saiu.
+    tick();
+    fixture.detectChanges();
+
+    expect(component.chartData.datasets[0].borderColor).toBe(themeColor('--sh-open'));
+    expect(component.chartData.datasets[0].borderColor).not.toBe(before);
+    expect(component.chartData.datasets[1].borderColor).toBe(themeColor('--sh-resolved'));
+    // Uma troca de tema não é motivo para pedir a série de novo ao servidor.
+    expect(dashboardService.trend).toHaveBeenCalledTimes(1);
+
+    theme.set('light');
+    tick();
+    localStorage.removeItem(THEME_STORAGE_KEY);
+  }));
 
   it('repete a série em uma tabela visualmente oculta, com os totais', () => {
     fixture.detectChanges();

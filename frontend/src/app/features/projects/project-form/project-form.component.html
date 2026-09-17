@@ -2,7 +2,7 @@
   <header class="sh-page__header">
     <div>
       <h1>{{ title }}</h1>
-      <p class="projects-subtitle">
+      <p class="sh-page__subtitle">
         {{ isEdit ? 'Altere os dados do projeto e salve.' : 'Cadastre um projeto para agrupar ativos e vulnerabilidades.' }}
       </p>
     </div>
@@ -23,7 +23,10 @@
     ></app-state-message>
 
     <form *ngIf="!loadState" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-      <p class="projects-alert" role="alert" *ngIf="generalError">{{ generalError }}</p>
+      <p class="projects-alert" role="alert" *ngIf="generalError">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ generalError }}</span>
+      </p>
 
       <div class="sh-form-grid">
         <mat-form-field appearance="outline">

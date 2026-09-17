@@ -1,341 +1,144 @@
-.vulnerabilities-subtitle {
-  margin: 4px 0 0;
-  color: var(--sh-text-muted);
-}
+// ==========================================================================
+// Vulnerabilidades — camada comum às três telas: avisos, selos e alvos de
+// toque. O que é de uma tela só mora na folha dela, porque esta aqui é
+// emitida três vezes, uma por componente.
+//
+// Nenhum valor de cor literal: o tema escuro é exatamente esta marcação com
+// outros valores nos tokens, e um `#hex` esquecido aqui só apareceria
+// quebrado do outro lado da chave.
+// ==========================================================================
 
+// Erro de ação não é um parágrafo vermelho: é um bloco com ícone, porque a cor
+// sozinha não chega a quem não a distingue.
 .vulnerabilities-alert {
-  margin: 0 0 16px;
-  padding: 12px 16px;
-  border-radius: 6px;
-  border: 1px solid var(--sh-high);
-  background: rgba(179, 38, 30, 0.08);
-  color: var(--sh-high);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sh-space-2);
+  margin: 0 0 var(--sh-space-4);
+  padding: var(--sh-space-3) var(--sh-space-4);
+  border: 1px solid transparent;
+  border-left: 3px solid var(--sh-danger);
+  border-radius: var(--sh-radius-sm);
+  background: var(--sh-danger-soft);
+  color: var(--sh-danger);
+  font-size: var(--sh-text-md);
+
+  .mat-icon {
+    flex: 0 0 auto;
+  }
 }
 
-.vulnerabilities-filters__clear {
-  align-self: center;
-  justify-self: start;
-  height: 44px;
-}
-
-.vulnerabilities-table__link {
-  color: inherit;
-  font-weight: 500;
-}
-
-.vulnerabilities-table__cve {
-  display: block;
-  color: var(--sh-text-muted);
-  font-size: 0.78rem;
-}
-
-.vulnerabilities-table__actions {
-  white-space: nowrap;
-  text-align: right;
-}
-
-/* Ícone + texto dentro do chip: severidade e status nunca dependem só da cor. */
-.vulnerabilities-chip.mat-mdc-chip {
+// O selo é o `.sh-badge` global; do `mat-chip` sobra o elemento, porque é por ele
+// que a suíte identifica o selo na listagem. Os tokens abaixo desligam a caixa do
+// MDC (altura fixa, fundo, tipografia própria) para que a geometria do selo
+// compartilhado seja a que aparece, e não duas caixas somadas.
+.vulnerabilities-chip.sh-badge.mat-mdc-chip {
+  --mdc-chip-container-height: auto;
+  --mdc-chip-container-shape-radius: var(--sh-radius-pill);
   --mdc-chip-label-text-color: currentColor;
+  --mdc-chip-label-text-size: inherit;
+  --mdc-chip-label-text-weight: inherit;
+  --mdc-chip-label-text-line-height: inherit;
   --mdc-chip-with-icon-icon-color: currentColor;
 
-  background: rgba(0, 0, 0, 0.04);
-  border: 1px solid currentColor;
+  // O fundo do selo é opaco de propósito: tinta translúcida empilha com a linha
+  // realçada sob o cursor e derruba o contraste do texto pequeno. O MDC pinta o
+  // fundo com precedência sobre a base do `.sh-badge` — e, no tema escuro, com
+  // precedência ainda maior —, então o token dele aponta para a mesma superfície.
+  // É também por isso que o seletor acima soma as três classes: menos que isso
+  // empata com o tema escuro do Material e o vencedor passa a ser a ordem de
+  // injeção das folhas.
+  --mdc-chip-elevated-container-color: var(--sh-surface-sunken);
 
-  mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    margin-right: 6px;
+  color: var(--vulnerabilities-chip-ink, var(--sh-text-muted));
+
+  .mat-icon {
+    margin-right: var(--sh-space-1);
+  }
+
+  // O preenchimento e a camada de estado moram dentro do componente do Material e
+  // não há como alcançá-los de outro jeito; sem isto o selo ganha 24px de sobra
+  // horizontal e acende sob o mouse, como se fosse clicável.
+  ::ng-deep .mdc-evolution-chip__action--primary {
+    padding: 0;
+  }
+
+  ::ng-deep .mat-mdc-chip-focus-overlay {
+    display: none;
   }
 }
 
 .vulnerabilities-severity--low {
-  color: var(--sh-low);
+  --vulnerabilities-chip-ink: var(--sh-low);
 }
 
 .vulnerabilities-severity--medium {
-  color: var(--sh-medium);
+  --vulnerabilities-chip-ink: var(--sh-medium);
 }
 
 .vulnerabilities-severity--high {
-  color: var(--sh-high);
+  --vulnerabilities-chip-ink: var(--sh-high);
 }
 
 .vulnerabilities-severity--critical {
-  color: var(--sh-critical);
-  font-weight: 600;
+  --vulnerabilities-chip-ink: var(--sh-critical);
 }
 
 .vulnerabilities-status--open {
-  color: var(--sh-open);
+  --vulnerabilities-chip-ink: var(--sh-open);
 }
 
 .vulnerabilities-status--in-progress {
-  color: var(--sh-in-progress);
+  --vulnerabilities-chip-ink: var(--sh-in-progress);
 }
 
 .vulnerabilities-status--resolved {
-  color: var(--sh-resolved);
+  --vulnerabilities-chip-ink: var(--sh-resolved);
 }
 
 .vulnerabilities-status--accepted-risk {
-  color: var(--sh-accepted-risk);
+  --vulnerabilities-chip-ink: var(--sh-accepted-risk);
 }
 
-/* Atraso é marcador visível com ícone e texto, nunca apenas uma cor de fundo. */
+// Atraso é marcador visível com ícone e texto, nunca apenas uma cor de fundo.
 .vulnerabilities-overdue {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 8px;
-  color: var(--sh-high);
-  font-size: 0.8rem;
+  color: var(--sh-danger);
+}
+
+// "Sem prazo" e afins não são dados: recuam para o cinza de apoio.
+.vulnerabilities-empty-value {
+  color: var(--sh-text-subtle);
+}
+
+// Sublinhado discreto: onde uma coluna inteira é de links, tirar o sublinhado
+// deixaria o que é navegável indistinguível do que é só texto.
+.vulnerabilities-table__link {
+  color: var(--sh-text);
   font-weight: 600;
-  white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-color: var(--sh-border-strong);
+  text-underline-offset: 3px;
 
-  mat-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
+  &:hover {
+    color: var(--sh-primary);
+    text-decoration-color: currentColor;
   }
 }
 
-.vulnerabilities-form__description {
-  width: 100%;
-  margin-top: 16px;
+// 44px é o mínimo confortável para o dedo, e a densidade -1 do tema deixa os
+// botões abaixo disso.
+.mat-mdc-icon-button.mat-mdc-button-base {
+  --mdc-icon-button-state-layer-size: 44px;
 }
 
-.vulnerabilities-status-note {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 16px;
-  color: var(--sh-text-muted);
-}
-
-.vulnerabilities-empty-assets {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  padding: 32px 8px;
-
-  h2 {
-    margin: 0 0 8px;
-    font-size: 1.1rem;
-  }
-
-  p {
-    margin: 0 0 16px;
-    color: var(--sh-text-muted);
-    max-width: 60ch;
-  }
-
-  > mat-icon {
-    color: var(--sh-text-muted);
-  }
-}
-
-.vulnerabilities-detail {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-  margin: 0;
-}
-
+.vulnerabilities-header__actions,
 .vulnerabilities-detail__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-}
+  gap: var(--sh-space-3);
 
-.vulnerabilities-detail__chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.vulnerabilities-detail__item {
-  dt {
-    margin: 0 0 4px;
-    color: var(--sh-text-muted);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+  .mat-mdc-button-base {
+    min-height: 44px;
   }
-
-  dd {
-    margin: 0;
-    font-size: 1rem;
-  }
-}
-
-.vulnerabilities-detail__item--wide {
-  grid-column: 1 / -1;
-}
-
-.vulnerabilities-detail__description {
-  white-space: pre-wrap;
-}
-
-.vulnerabilities-section {
-  margin-top: 24px;
-
-  h2 {
-    margin: 0 0 16px;
-    font-size: 1.2rem;
-  }
-}
-
-.vulnerabilities-tracking {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
-}
-
-.vulnerabilities-tracking__field {
-  mat-form-field {
-    width: 100%;
-  }
-}
-
-.vulnerabilities-readonly {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 0;
-}
-
-.vulnerabilities-readonly__label {
-  color: var(--sh-text-muted);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.vulnerabilities-readonly__value {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 1rem;
-
-  mat-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-  }
-}
-
-.vulnerabilities-readonly__hint {
-  color: var(--sh-text-muted);
-  font-size: 0.82rem;
-  max-width: 60ch;
-}
-
-.vulnerabilities-comments {
-  list-style: none;
-  margin: 0 0 16px;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.vulnerabilities-comment {
-  border: 1px solid var(--sh-border);
-  border-radius: 6px;
-  padding: 12px 16px;
-}
-
-.vulnerabilities-comment__meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.vulnerabilities-comment__author {
-  font-weight: 600;
-}
-
-.vulnerabilities-comment__date {
-  color: var(--sh-text-muted);
-  font-size: 0.8rem;
-}
-
-.vulnerabilities-comment__content {
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-.vulnerabilities-comment__field {
-  width: 100%;
-}
-
-.vulnerabilities-comment__actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.vulnerabilities-comments__more {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 16px;
-}
-
-.vulnerabilities-comment-form {
-  margin-top: 8px;
-}
-
-.vulnerabilities-header__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.vulnerabilities-attachments {
-  list-style: none;
-  margin: 0 0 16px;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.vulnerabilities-attachment {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--sh-border);
-  border-radius: 6px;
-  padding: 8px 12px;
-}
-
-.vulnerabilities-attachment__name {
-  font-weight: 500;
-  overflow-wrap: anywhere;
-}
-
-.vulnerabilities-attachment__meta {
-  color: var(--sh-text-muted);
-  font-size: 0.8rem;
-}
-
-/* Empurra as ações para a direita sem depender da ordem do DOM. */
-.vulnerabilities-attachment__actions {
-  margin-left: auto;
-  white-space: nowrap;
-}
-
-.vulnerabilities-attachments__upload {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  margin-top: 8px;
 }

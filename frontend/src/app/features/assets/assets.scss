@@ -1,32 +1,69 @@
-.assets-subtitle {
-  margin: 4px 0 0;
-  color: var(--sh-text-muted);
-}
+/* Ativos: listagem, formulário e detalhe.
+   Criticidade é uma escala de severidade, então usa os mesmos tokens das
+   vulnerabilidades. Um segundo vocabulário de cor para a mesma ideia é o que faz duas
+   telas do mesmo painel parecerem dois produtos. */
 
+/* Erro de ação (uma exclusão recusada, por exemplo). A faixa lateral e o ícone carregam
+   o aviso; o texto fica na cor normal, bem mais legível que vermelho sobre vermelho. */
 .assets-alert {
-  margin: 0 0 16px;
-  padding: 12px 16px;
-  border-radius: 6px;
-  border: 1px solid var(--sh-high);
-  background: rgba(179, 38, 30, 0.08);
-  color: var(--sh-high);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sh-space-2);
+  margin: 0 0 var(--sh-space-4);
+  padding: var(--sh-space-3) var(--sh-space-4);
+  border: 1px solid var(--sh-danger);
+  border-left-width: 4px;
+  border-radius: var(--sh-radius-sm);
+  background: var(--sh-danger-soft);
+  color: var(--sh-text);
+  font-size: var(--sh-text-md);
+
+  mat-icon {
+    flex: none;
+    color: var(--sh-danger);
+  }
 }
 
+/* O card já é a moldura da região de resultados: a tabela rola dentro dele sem repetir
+   borda e raio, e a paginação fecha o bloco com uma divisória só. */
+.assets-results {
+  padding: 0;
+  overflow: hidden;
+}
+
+.assets-results__table {
+  border: 0;
+  border-radius: 0;
+}
+
+.assets-results__paginator {
+  background: transparent;
+  border-top: 1px solid var(--sh-border);
+}
+
+/* Os campos do painel de filtros reservam espaço para o rótulo flutuante; o botão
+   acompanha essa altura em vez de encostar no topo da linha. */
 .assets-filters__clear {
   align-self: center;
   justify-self: start;
-  height: 44px;
+  min-height: 44px;
 }
 
 .assets-table__link {
-  color: inherit;
-  font-weight: 500;
+  color: var(--sh-text);
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .assets-table__identifier {
   display: block;
+  margin-top: 2px;
   color: var(--sh-text-muted);
-  font-size: 0.78rem;
+  font-size: var(--sh-text-xs);
 }
 
 .assets-table__actions {
@@ -34,20 +71,39 @@
   text-align: right;
 }
 
-/* Ícone + texto: criticidade e ambiente nunca dependem só da cor. */
+/* Ícone + rótulo: o tipo do ativo nunca depende só da forma do ícone. */
 .assets-tag {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sh-space-2);
   white-space: nowrap;
 
   mat-icon {
+    flex: none;
+    color: var(--sh-text-subtle);
     font-size: 18px;
     width: 18px;
     height: 18px;
   }
 }
 
+/* Todos os selos das cinco telas seguem a mesma receita: preenchimento opaco, contorno
+   na cor do próprio significado e ícone ao lado do rótulo. O preenchimento é opaco de
+   propósito — uma tinta translúcida soma com o realce da linha sob o cursor e derruba o
+   contraste do texto medido no tema claro justamente nos tons médio e baixo. */
+.assets-environment,
+.assets-criticality {
+  background: var(--sh-surface-sunken);
+  border-color: currentColor;
+}
+
+/* Ambiente é um recorte, não uma escala: fica neutro para que só a criticidade tenha cor
+   na linha — quatro tons por linha viram um mosaico e ninguém lê nenhum. */
+.assets-environment {
+  color: var(--sh-text-muted);
+}
+
+/* Cor é sempre reforço: o ícone e o rótulo já identificam a criticidade. */
 .assets-criticality--low {
   color: var(--sh-low);
 }
@@ -62,61 +118,64 @@
 
 .assets-criticality--critical {
   color: var(--sh-critical);
-  font-weight: 600;
 }
 
 .assets-form__description {
   width: 100%;
-  margin-top: 16px;
+  margin-top: var(--sh-space-4);
 }
 
+/* Beco sem saída do formulário: sem projeto não existe ativo, então a tela explica e
+   oferece a saída em vez de apresentar um seletor vazio. */
 .assets-empty-projects {
   display: flex;
-  gap: 16px;
+  gap: var(--sh-space-4);
   align-items: flex-start;
-  padding: 32px 8px;
+  padding: var(--sh-space-6) var(--sh-space-2);
 
   h2 {
-    margin: 0 0 8px;
-    font-size: 1.1rem;
+    margin: 0 0 var(--sh-space-2);
+    font-size: var(--sh-text-lg);
   }
 
   p {
-    margin: 0 0 16px;
+    margin: 0 0 var(--sh-space-4);
     color: var(--sh-text-muted);
     max-width: 60ch;
   }
 
   > mat-icon {
-    color: var(--sh-text-muted);
+    flex: none;
+    color: var(--sh-text-subtle);
   }
 }
 
 .assets-detail {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
+  gap: var(--sh-space-5);
   margin: 0;
 }
 
 .assets-detail__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--sh-space-3);
 }
 
 .assets-detail__item {
   dt {
-    margin: 0 0 4px;
+    margin: 0 0 var(--sh-space-1);
     color: var(--sh-text-muted);
-    font-size: 0.8rem;
+    font-size: var(--sh-text-xs);
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
 
   dd {
     margin: 0;
-    font-size: 1rem;
+    font-size: var(--sh-text-base);
   }
 }
 
@@ -126,4 +185,5 @@
 
 .assets-detail__description {
   white-space: pre-wrap;
+  max-width: 80ch;
 }

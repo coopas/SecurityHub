@@ -2,7 +2,7 @@
   <header class="sh-page__header">
     <div>
       <h1>{{ project ? project.name : 'Projeto' }}</h1>
-      <p class="projects-subtitle" *ngIf="project">
+      <p class="sh-page__subtitle" *ngIf="project">
         {{ statusLabels[project.status] }} · {{ project.assetCount }}
         {{ project.assetCount === 1 ? 'ativo vinculado' : 'ativos vinculados' }}
       </p>
@@ -39,7 +39,10 @@
     </div>
   </header>
 
-  <p class="projects-alert" role="alert" *ngIf="actionError">{{ actionError }}</p>
+  <p class="projects-alert" role="alert" *ngIf="actionError">
+    <mat-icon aria-hidden="true">error_outline</mat-icon>
+    <span>{{ actionError }}</span>
+  </p>
 
   <div class="sh-card">
     <app-state-message
@@ -54,7 +57,11 @@
       <div class="projects-detail__item">
         <dt>Situação</dt>
         <dd>
-          <span class="projects-status" [class.projects-status--archived]="project.status === 'ARCHIVED'">
+          <span
+            class="sh-badge projects-status"
+            [class.projects-status--active]="project.status === 'ACTIVE'"
+            [class.projects-status--archived]="project.status === 'ARCHIVED'"
+          >
             <mat-icon aria-hidden="true">
               {{ project.status === 'ACTIVE' ? 'play_circle_outline' : 'inventory_2' }}
             </mat-icon>
@@ -65,7 +72,12 @@
 
       <div class="projects-detail__item">
         <dt>Ativos</dt>
-        <dd data-testid="project-asset-count">{{ project.assetCount }}</dd>
+        <dd data-testid="project-asset-count">
+          <span class="projects-count">
+            <mat-icon aria-hidden="true">dns</mat-icon>
+            <span>{{ project.assetCount }}</span>
+          </span>
+        </dd>
       </div>
 
       <div class="projects-detail__item">

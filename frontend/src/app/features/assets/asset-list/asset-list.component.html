@@ -2,7 +2,7 @@
   <header class="sh-page__header">
     <div>
       <h1>Ativos</h1>
-      <p class="assets-subtitle">
+      <p class="sh-page__subtitle">
         Ativos da sua empresa, com o projeto, o ambiente e a criticidade de cada um.
       </p>
     </div>
@@ -19,90 +19,93 @@
     </a>
   </header>
 
-  <p class="assets-alert" role="alert" *ngIf="actionError">{{ actionError }}</p>
+  <p class="assets-alert" role="alert" *ngIf="actionError">
+    <mat-icon aria-hidden="true">error_outline</mat-icon>
+    <span>{{ actionError }}</span>
+  </p>
 
-  <div class="sh-card">
-    <form class="sh-filters" (ngSubmit)="$event.preventDefault()" novalidate>
-      <mat-form-field appearance="outline">
-        <mat-label>Buscar por nome, descrição ou identificador</mat-label>
-        <input
-          matInput
-          type="search"
-          [formControl]="searchControl"
-          autocomplete="off"
-          data-testid="asset-search"
-        />
-        <mat-icon matSuffix aria-hidden="true">search</mat-icon>
-      </mat-form-field>
+  <form class="sh-filters" (ngSubmit)="$event.preventDefault()" novalidate>
+    <mat-form-field appearance="outline">
+      <mat-label>Buscar por nome, descrição ou identificador</mat-label>
+      <input
+        matInput
+        type="search"
+        [formControl]="searchControl"
+        autocomplete="off"
+        data-testid="asset-search"
+      />
+      <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+    </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Projeto</mat-label>
-        <mat-select
-          [formControl]="projectControl"
-          (selectionChange)="onProjectChange($event.value)"
-          data-testid="asset-project-filter"
-        >
-          <mat-option value="">Todos</mat-option>
-          <mat-option *ngFor="let project of projects" [value]="project.id">
-            {{ project.name }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Tipo</mat-label>
-        <mat-select
-          [formControl]="typeControl"
-          (selectionChange)="onTypeChange($event.value)"
-          data-testid="asset-type-filter"
-        >
-          <mat-option value="">Todos</mat-option>
-          <mat-option *ngFor="let type of types" [value]="type">
-            {{ typeLabels[type] }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Ambiente</mat-label>
-        <mat-select
-          [formControl]="environmentControl"
-          (selectionChange)="onEnvironmentChange($event.value)"
-          data-testid="asset-environment-filter"
-        >
-          <mat-option value="">Todos</mat-option>
-          <mat-option *ngFor="let environment of environments" [value]="environment">
-            {{ environmentLabels[environment] }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Criticidade</mat-label>
-        <mat-select
-          [formControl]="criticalityControl"
-          (selectionChange)="onCriticalityChange($event.value)"
-          data-testid="asset-criticality-filter"
-        >
-          <mat-option value="">Todas</mat-option>
-          <mat-option *ngFor="let criticality of criticalities" [value]="criticality">
-            {{ criticalityLabels[criticality] }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <button
-        mat-stroked-button
-        type="button"
-        class="assets-filters__clear"
-        [disabled]="!hasFilters"
-        (click)="clearFilters()"
-        data-testid="asset-clear-filters"
+    <mat-form-field appearance="outline">
+      <mat-label>Projeto</mat-label>
+      <mat-select
+        [formControl]="projectControl"
+        (selectionChange)="onProjectChange($event.value)"
+        data-testid="asset-project-filter"
       >
-        Limpar filtros
-      </button>
-    </form>
+        <mat-option value="">Todos</mat-option>
+        <mat-option *ngFor="let project of projects" [value]="project.id">
+          {{ project.name }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
 
+    <mat-form-field appearance="outline">
+      <mat-label>Tipo</mat-label>
+      <mat-select
+        [formControl]="typeControl"
+        (selectionChange)="onTypeChange($event.value)"
+        data-testid="asset-type-filter"
+      >
+        <mat-option value="">Todos</mat-option>
+        <mat-option *ngFor="let type of types" [value]="type">
+          {{ typeLabels[type] }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Ambiente</mat-label>
+      <mat-select
+        [formControl]="environmentControl"
+        (selectionChange)="onEnvironmentChange($event.value)"
+        data-testid="asset-environment-filter"
+      >
+        <mat-option value="">Todos</mat-option>
+        <mat-option *ngFor="let environment of environments" [value]="environment">
+          {{ environmentLabels[environment] }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Criticidade</mat-label>
+      <mat-select
+        [formControl]="criticalityControl"
+        (selectionChange)="onCriticalityChange($event.value)"
+        data-testid="asset-criticality-filter"
+      >
+        <mat-option value="">Todas</mat-option>
+        <mat-option *ngFor="let criticality of criticalities" [value]="criticality">
+          {{ criticalityLabels[criticality] }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <button
+      mat-stroked-button
+      type="button"
+      class="assets-filters__clear"
+      [disabled]="!hasFilters"
+      (click)="clearFilters()"
+      data-testid="asset-clear-filters"
+    >
+      Limpar filtros
+    </button>
+  </form>
+
+  <div class="sh-card assets-results">
     <app-state-message
       *ngIf="state"
       [state]="state"
@@ -112,7 +115,7 @@
     ></app-state-message>
 
     <ng-container *ngIf="!state">
-      <div class="sh-table-wrapper">
+      <div class="sh-table-wrapper assets-results__table">
         <table
           mat-table
           class="sh-table"
@@ -150,7 +153,7 @@
           <ng-container matColumnDef="environment">
             <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Ambiente</th>
             <td mat-cell *matCellDef="let asset">
-              <span class="assets-tag">
+              <span class="sh-badge assets-environment">
                 <mat-icon aria-hidden="true">{{ environmentIcon(asset.environment) }}</mat-icon>
                 <span>{{ environmentLabel(asset.environment) }}</span>
               </span>
@@ -160,7 +163,10 @@
           <ng-container matColumnDef="criticality">
             <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Criticidade</th>
             <td mat-cell *matCellDef="let asset">
-              <span class="assets-tag assets-criticality" [ngClass]="criticalityClass(asset.criticality)">
+              <span
+                class="sh-badge assets-criticality"
+                [ngClass]="criticalityClass(asset.criticality)"
+              >
                 <mat-icon aria-hidden="true">{{ criticalityIcon(asset.criticality) }}</mat-icon>
                 <span>{{ criticalityLabel(asset.criticality) }}</span>
               </span>
@@ -218,6 +224,7 @@
       </div>
 
       <mat-paginator
+        class="assets-results__paginator"
         [length]="totalElements"
         [pageIndex]="query.page"
         [pageSize]="query.size"

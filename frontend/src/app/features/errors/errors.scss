@@ -1,33 +1,125 @@
+// Folha das telas 403 e 404. As duas ficam fora do shell autenticado, então carregam a
+// marca por conta própria: sem toolbar e sem menu, elas seriam a única tela do produto em
+// que nada identifica o produto.
+
 .error-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px 16px;
+  padding: var(--sh-space-7) var(--sh-space-5);
   background: var(--sh-background);
 }
 
 .error-card {
-  max-width: 520px;
-  text-align: center;
-  padding: 40px 32px;
+  width: 100%;
+  max-width: 560px;
+  padding: var(--sh-space-7);
+  background: var(--sh-surface);
+  border: 1px solid var(--sh-border);
+  border-radius: var(--sh-radius-lg);
+  box-shadow: var(--sh-shadow-md);
+}
+
+// Mesma marca do painel público, no mesmo tamanho: são telas fora do shell, e é ela que
+// diz de qual produto é o erro.
+.error-card__mark {
+  display: flex;
+  align-items: center;
+  gap: var(--sh-space-2);
+  margin: 0 0 var(--sh-space-6);
+  color: var(--sh-primary);
+  font-size: var(--sh-text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.error-card__status {
+  display: flex;
+  align-items: center;
+  gap: var(--sh-space-4);
+}
+
+// O selo dá a cor; o número dá a escala. Separar os dois papéis evita o número gigante e
+// colorido, que é o que faz uma tela de erro parecer brincadeira em vez de diagnóstico.
+.error-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--sh-radius-md);
+
+  .mat-icon {
+    width: 26px;
+    height: 26px;
+    font-size: 26px;
+    line-height: 26px;
+  }
+}
+
+.error-card__icon--denied {
+  background: var(--sh-danger-soft);
+  color: var(--sh-danger);
+}
+
+.error-card__icon--missing {
+  background: var(--sh-primary-soft);
+  color: var(--sh-primary);
 }
 
 .error-card__code {
   margin: 0;
-  font-size: 3rem;
+  font-size: clamp(2.75rem, 8vw, 4rem);
   font-weight: 700;
-  letter-spacing: 0.04em;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  // Algarismos de largura fixa: o 1 estreito do 403 abriria um buraco ao lado do selo.
+  font-variant-numeric: tabular-nums;
   color: var(--sh-text-muted);
 }
 
 .error-card__title {
-  margin: 8px 0 12px;
-  font-size: 1.5rem;
+  margin: var(--sh-space-5) 0 var(--sh-space-3);
+  font-size: var(--sh-text-xl);
+  line-height: 1.25;
 }
 
 .error-card__message {
-  margin: 0 0 24px;
+  margin: 0;
+  max-width: 52ch;
   color: var(--sh-text-muted);
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+.error-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sh-space-3);
+  margin-top: var(--sh-space-6);
+
+  // A densidade -1 do tema deixa o botão abaixo do alvo mínimo de toque, e aqui ele é a
+  // única saída da tela.
+  a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 599px) {
+  .error-page {
+    align-items: flex-start;
+    padding: var(--sh-space-5) var(--sh-space-4);
+  }
+
+  .error-card {
+    padding: var(--sh-space-5);
+  }
+
+  .error-card__actions a {
+    width: 100%;
+  }
 }

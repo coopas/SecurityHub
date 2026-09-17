@@ -1,8 +1,9 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { NgChartsModule } from 'ng2-charts';
 import { Subject, of, throwError } from 'rxjs';
 
+import { THEME_STORAGE_KEY, ThemeService } from '../../../core/services/theme.service';
 import { SharedModule } from '../../../shared/shared.module';
 import { SeverityDistributionEntry } from '../models/dashboard.model';
 import { DashboardService } from '../services/dashboard.service';
@@ -102,6 +103,35 @@ describe('DistributionChartComponent', () => {
     );
     expect(component.categories[3].color).toBe(themeColor('--sh-accepted-risk'));
   });
+
+  /** Barras e legenda saem dos mesmos tokens, e os dois precisam seguir a troca de tema. */
+  it('repinta as barras e a legenda com os tokens do novo tema', fakeAsync(() => {
+    setup('severity');
+    fixture.detectChanges();
+    const theme = TestBed.inject(ThemeService);
+    const before = component.categories[3].color;
+
+    theme.set('dark');
+    // O ThemeService emite antes de aplicar `data-theme` no documento: o repintor adia a
+    // leitura por uma microtarefa para não pegar os tokens do tema anterior.
+    tick();
+    fixture.detectChanges();
+
+    expect(component.categories[3].color).toBe(themeColor('--sh-critical'));
+    expect(component.categories[3].color).not.toBe(before);
+    expect(component.chartData.datasets[0].backgroundColor).toEqual([
+      themeColor('--sh-low'),
+      themeColor('--sh-medium'),
+      themeColor('--sh-high'),
+      themeColor('--sh-critical'),
+    ]);
+    // Repintar é só trocar cor: os números não são pedidos de novo.
+    expect(dashboardService.severityDistribution).toHaveBeenCalledTimes(1);
+
+    theme.set('light');
+    tick();
+    localStorage.removeItem(THEME_STORAGE_KEY);
+  }));
 
   it('casa as contagens por chave, e não por posição da resposta', () => {
     setup('severity');
