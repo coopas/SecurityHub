@@ -1,4 +1,4 @@
--- Import of scanner reports.
+-- Importação de relatórios de scanner.
 --
 -- Two tables and one column. The tables hold the staging area of an import — the report that
 -- was uploaded and every finding it contained — and the column is what makes deduplication a

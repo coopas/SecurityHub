@@ -193,6 +193,21 @@ erDiagram
 
 ## Modelling decisions
 
+### An applied migration is frozen, comments included
+
+Flyway checksums the whole file, so editing a migration that some database has already run
+makes that database refuse to start — the crash loop the comment in `V6` warns about.
+
+This bit during the pass that put the repository into English: translating the comments of
+`V6`, `V7`, `V9` and `V10` changed their checksums, and every stack that had already come up
+stopped booting with `Migration checksum mismatch`. The test suite could not catch it, because
+Testcontainers builds an empty database on every run and has nothing to validate against.
+
+Those four files therefore keep their original Portuguese comments. It is a deliberate
+exception to the language rule, and a cheaper one than either asking people to run
+`flyway repair` or leaving an upgrade path that breaks. A new migration is always the answer;
+`V10` exists for exactly that reason.
+
 ### `company_id` is denormalised in every domain table
 `assets`, `vulnerabilities` and `comments` could reach the company by navigating to the parent,
 but they carry the column. Every domain query filters by company; forcing a join just to reach
