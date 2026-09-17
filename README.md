@@ -84,7 +84,42 @@ docker compose config
 ```
 
 Os testes de integração sobem um PostgreSQL 15 real via Testcontainers, portanto exigem
-um Docker acessível pelo usuário corrente.
+um Docker acessível pelo usuário corrente. Nenhum teste usa H2.
+
+### Docker acessível sem sudo
+
+Se `./mvnw test` falhar com `Could not find a valid Docker environment`, confirme que o
+socket responde para o seu usuário:
+
+```bash
+docker ps                     # se der "permission denied", falta o grupo
+sudo usermod -aG docker $USER # e reinicie a sessão do terminal
+```
+
+### Engine Docker anterior à 25.0
+
+O cliente docker-java embutido no Testcontainers negocia a API 1.32, que os Engines
+recentes recusam, então o `pom.xml` fixa a API 1.44 (`docs/adr/0005`). Em um Engine mais
+antigo que 25.0, sobrescreva:
+
+```bash
+cd backend && ./mvnw test -Ddocker.api.version=1.41
+```
+
+### Toolchain sem instalação global
+
+Se o JDK 11 e o Node 18 não estiverem no `PATH` da máquina, aponte para eles antes de
+rodar os gates. **O Node precisa ser o 18**: versões mais novas quebram o Karma do
+Angular 16.
+
+```bash
+export JAVA_HOME="/caminho/para/jdk-11"
+export PATH="$JAVA_HOME/bin:$PATH"                      # backend
+export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH" # frontend (ver frontend/.nvmrc)
+```
+
+O Maven não precisa estar instalado: `./mvnw` baixa e reutiliza a distribuição fixada em
+`backend/.mvn/wrapper/maven-wrapper.properties`.
 
 ## Estrutura
 
