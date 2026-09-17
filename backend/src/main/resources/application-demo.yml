@@ -2,6 +2,16 @@
 securityhub:
   demo:
     seed-enabled: true
+    # Credencial pública da demonstração local, e não um segredo. O tenant `demo` só existe
+    # dentro de um banco que o próprio usuário acabou de criar na máquina dele com
+    # `docker compose up`; não há nada atrás desta senha além de dados fictícios gerados no
+    # primeiro boot. Ela é pública de propósito para que o README e docs/http/securityhub.http
+    # possam documentar uma única credencial.
+    #
+    # Qualquer implantação exposta (demo hospedada, ambiente compartilhado, qualquer coisa
+    # alcançável fora de localhost) deve sobrescrever SECURITYHUB_DEMO_PASSWORD — ou desligar
+    # o seed com securityhub.demo.seed-enabled=false.
+    password: ${SECURITYHUB_DEMO_PASSWORD:Demo@SecurityHub2026}
 
 logging:
   level:
