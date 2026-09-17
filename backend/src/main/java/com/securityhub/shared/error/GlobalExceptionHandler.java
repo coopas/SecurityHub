@@ -2,6 +2,7 @@ package com.securityhub.shared.error;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -16,6 +17,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 @Slf4j
@@ -87,6 +90,32 @@ public class GlobalExceptionHandler {
                                                     HttpServletRequest request) {
         return build(HttpStatus.PAYLOAD_TOO_LARGE, ErrorCode.PAYLOAD_TOO_LARGE,
                 "Arquivo maior que o limite permitido", request, null);
+    }
+
+    /**
+     * A request that reaches a multipart-only endpoint with a JSON body never gets to a
+     * handler method, so the allowlist of {@code AttachmentContentTypeDetector} would never
+     * run: the mapping itself rejects it, and this is where that rejection becomes the
+     * documented envelope instead of Spring's default body.
+     */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMediaTypeNotSupported(HttpMediaTypeNotSupportedException ex,
+                                                                HttpServletRequest request) {
+        log.debug("Tipo de conteúdo não suportado em {}: {}", request.getRequestURI(), ex.getContentType());
+        return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, ErrorCode.UNSUPPORTED_MEDIA_TYPE,
+                "Tipo de conteúdo não suportado", request, null);
+    }
+
+    /**
+     * A multipart request without the expected part is a validation failure, not a malformed
+     * request: the client sent a well-formed body that is missing one named field, so the
+     * answer names the field like any other {@code VALIDATION_ERROR}.
+     */
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ApiError> handleMissingPart(MissingServletRequestPartException ex,
+                                                      HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_ERROR, "Dados inválidos", request,
+                Collections.singletonList(new ApiFieldError(ex.getRequestPartName(), "Parte obrigatória ausente")));
     }
 
     @ExceptionHandler({NoHandlerFoundException.class})
