@@ -2,6 +2,7 @@ package com.securityhub.support;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,10 +12,15 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
+/**
+ * Tagged so the suite can be filtered with -DexcludedGroups=integration on a machine without
+ * a Docker daemon. The default `mvn test` run still executes it.
+ */
+@Tag("integration")
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 @SpringBootTest
-@Import(DatabaseCleaner.class)
+@Import({DatabaseCleaner.class, TestDataFactory.class})
 public abstract class AbstractIntegrationTest {
 
     @Autowired
@@ -22,6 +28,9 @@ public abstract class AbstractIntegrationTest {
 
     @Autowired
     protected ObjectMapper objectMapper;
+
+    @Autowired
+    protected TestDataFactory fixtures;
 
     @Autowired
     private DatabaseCleaner databaseCleaner;
