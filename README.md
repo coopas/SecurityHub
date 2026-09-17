@@ -1,233 +1,180 @@
 # SecurityHub
 
-Aplicação web multiempresa para gestão de ativos e vulnerabilidades de segurança:
-cadastre projetos e ativos, registre achados, atribua responsáveis, acompanhe a correção
-e audite tudo que foi feito — com isolamento estrito entre empresas.
+Aplicação web para uma equipe de segurança acompanhar vulnerabilidades: você cadastra os
+projetos e os ativos da empresa, registra os achados, atribui um responsável e acompanha
+até a correção. Cada empresa enxerga apenas os próprios dados, cada papel tem permissões
+diferentes, e toda alteração relevante fica registrada numa trilha de auditoria.
+
+Foi construído como projeto de portfólio, então a ideia não era só fazer funcionar, mas
+tomar as decisões que um sistema desse tipo exige de verdade: isolamento entre clientes,
+autorização que não dependa da interface, e uma trilha que não vaze segredo.
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
-## Funcionalidades
+## O que dá para fazer
 
-- **Cadastro e autenticação** — registro de empresa com o primeiro administrador, login
-  com JWT e BCrypt, e sessão validada contra o banco a cada requisição.
-- **Isolamento entre empresas** — o `companyId` vem sempre do token assinado. Um recurso
-  de outra empresa responde **404, nunca 403**, para que a API não vire um oráculo de
-  enumeração.
-- **Quatro papéis com permissões distintas** — ADMIN, ANALYST, DEVELOPER e VIEWER,
-  aplicados no backend (`docs/permissions.md`). Um DEVELOPER só altera o status do que
-  está atribuído a ele.
-- **Projetos, ativos e vulnerabilidades** — CRUD completo com busca, filtros combináveis,
-  ordenação e paginação server-side, tudo refletido na URL.
-- **Fluxo de correção** — atribuição de responsável, transição de status com `resolvedAt`
-  automático, comentários com edição restrita ao autor ou a um administrador.
-- **Dashboard** — cards, distribuição por severidade e status, tendência diária de
-  achados abertos e resolvidos, e os últimos registros.
-- **Trilha de auditoria** — append-only, exclusiva de administradores, com comparação
-  antes/depois e sem nunca gravar segredos.
-- **Documentação de API** — OpenAPI/Swagger, exemplos em `docs/api-examples.md` e
-  coleções `.http` e Postman prontas para executar.
+Depois de registrar a empresa e o primeiro administrador, você organiza o trabalho em
+projetos, cadastra os ativos de cada um (uma API, um servidor, um site) e registra as
+vulnerabilidades encontradas, com severidade, CVSS, CVE e prazo.
 
-### Telas
+O fluxo do dia a dia é atribuir o achado a alguém, mudar o status conforme o trabalho
+anda, discutir nos comentários e resolver. Um desenvolvedor só consegue mexer no status
+do que está atribuído a ele; um analista mexe em qualquer um; um leitor não mexe em nada.
+
+O dashboard resume a situação: quantas vulnerabilidades existem, quantas continuam
+abertas, quantas passaram do prazo, como se distribuem por severidade e status, e como
+isso evoluiu nos últimos 30 dias. A tela de auditoria mostra quem mudou o quê, quando, e
+qual era o valor antes.
 
 | | |
 | --- | --- |
 | ![Vulnerabilidades](docs/screenshots/vulnerabilities.png) | ![Auditoria](docs/screenshots/audit.png) |
-| Lista de vulnerabilidades com filtros e chips acessíveis | Trilha de auditoria com comparação antes/depois |
+| Lista de vulnerabilidades com filtros | Auditoria com comparação antes/depois |
 | ![Ativos](docs/screenshots/assets.png) | ![Login](docs/screenshots/login.png) |
-| Ativos por projeto, tipo, ambiente e criticidade | Autenticação |
+| Ativos por projeto, tipo e criticidade | Autenticação |
 
-O layout é responsivo: [o mesmo dashboard em largura de tablet](docs/screenshots/dashboard-tablet.png).
+O layout funciona em desktop e tablet ([mesmo dashboard em 834px](docs/screenshots/dashboard-tablet.png)).
 
-## Credenciais de demonstração
+## Rodando
 
-O perfil `demo` — que é o padrão do Docker Compose — popula duas empresas com dados
-realistas. Todas as contas usam a mesma senha:
-
-| E-mail | Papel | Empresa |
-| --- | --- | --- |
-| `admin@demo.test` | ADMIN | Demo Security |
-| `analyst@demo.test` | ANALYST | Demo Security |
-| `developer@demo.test` | DEVELOPER | Demo Security |
-| `viewer@demo.test` | VIEWER | Demo Security |
-| `admin@northwind.test` | ADMIN | Northwind Labs |
-
-Senha: `Demo@SecurityHub2026`
-
-> Esta credencial é **pública e de demonstração local**, não um segredo: ela protege dados
-> sintéticos em um banco que você acabou de criar na sua máquina. Para expor a demo em
-> qualquer lugar acessível, defina `SECURITYHUB_DEMO_PASSWORD` no `.env` ou desative o seed
-> com `securityhub.demo.seed-enabled: false`. O segredo do JWT nunca é versionado.
-
-Entre como `admin@northwind.test` para ver o isolamento na prática: outra empresa, outro
-dashboard, nenhum dado em comum.
-
-## Stack
-
-| Camada | Tecnologia |
-| --- | --- |
-| Backend | Java 11, Spring Boot 2.7.18, Spring Security 5.7, Spring Data JPA |
-| Banco | PostgreSQL 15 com migrations Flyway |
-| API | REST `/api/v1`, Bean Validation, OpenAPI/Swagger (springdoc 1.7) |
-| Frontend | Angular 16 (TypeScript strict), Angular Material 16, RxJS |
-| Testes | JUnit 5, Mockito, Testcontainers, Jasmine/Karma |
-| Infra | Docker e Docker Compose |
-
-As versões acima são fixas. O projeto **não** usa Java 17, Spring Boot 3 nem `jakarta.*`
-— veja `docs/adr/0001-stack-java-11-spring-boot-2-7.md`.
-
-## Executar com Docker Compose
-
-Requer Docker e Docker Compose v2.
+Precisa de Docker e Docker Compose v2.
 
 ```bash
+git clone https://github.com/coopas/SecurityHub.git
+cd SecurityHub
 cp .env.example .env
-# gere um segredo real para o JWT
 sed -i "s|^SECURITYHUB_JWT_SECRET=.*|SECURITYHUB_JWT_SECRET=$(openssl rand -base64 48)|" .env
-
 docker compose up --build
 ```
 
-| Serviço | URL |
+Na primeira vez o build demora alguns minutos, porque compila o backend e o frontend do
+zero. Depois disso:
+
+| | |
 | --- | --- |
-| Frontend | http://localhost:8081 |
+| Aplicação | http://localhost:8081 |
 | API | http://localhost:8080/api/v1 |
-| Swagger UI | http://localhost:8080/swagger-ui.html |
-| Health | http://localhost:8080/actuator/health |
+| Swagger | http://localhost:8080/swagger-ui.html |
 
-Para parar e remover os volumes: `docker compose down -v`.
+Para derrubar tudo e apagar os dados: `docker compose down -v`.
 
-## Executar sem Docker
+### Entrando
 
-### Pré-requisitos
+O Compose sobe no perfil `demo`, que popula duas empresas com dados realistas. Todas as
+contas usam a senha `Demo@SecurityHub2026`:
 
-- JDK 11 (`JAVA_HOME` apontando para uma JDK 11)
-- Node 18 (o arquivo `frontend/.nvmrc` fixa 18.20.8; com nvm basta `nvm use`)
-- PostgreSQL 15 acessível
+| E-mail | Papel |
+| --- | --- |
+| `admin@demo.test` | Administrador |
+| `analyst@demo.test` | Analista |
+| `developer@demo.test` | Desenvolvedor |
+| `viewer@demo.test` | Leitor |
 
-### Backend
+Entre com cada um para ver as permissões mudando. Existe também
+`admin@northwind.test`, de outra empresa: o dashboard dele é completamente diferente, o
+que é a forma mais rápida de ver o isolamento funcionando.
+
+Essa senha é pública de propósito, para a demo funcionar sem configuração. Ela protege
+dados sintéticos num banco que você acabou de criar na sua máquina. Se for hospedar isso
+em algum lugar acessível, defina `SECURITYHUB_DEMO_PASSWORD` no `.env` ou desligue o seed
+com `securityhub.demo.seed-enabled: false`. O segredo do JWT nunca é versionado.
+
+## Stack
+
+| | |
+| --- | --- |
+| Backend | Java 11, Spring Boot 2.7.18, Spring Security 5.7, Spring Data JPA |
+| Banco | PostgreSQL 15, migrations com Flyway |
+| Frontend | Angular 16 com TypeScript strict, Angular Material, RxJS |
+| Testes | JUnit 5, Mockito, Testcontainers, Jasmine/Karma |
+| Infra | Docker Compose |
+
+As versões são fixas de propósito. O projeto fica em Java 11 e `javax.*`, sem migrar para
+Spring Boot 3, e o motivo está em [`docs/adr/0001`](docs/adr/0001-stack-java-11-spring-boot-2-7.md).
+
+## Algumas decisões
+
+**Recurso de outra empresa responde 404, não 403.** Um 403 confirmaria que o registro
+existe, e isso basta para alguém mapear os ids de um concorrente. O `companyId` vem sempre
+do token assinado, nunca do corpo ou da query, e é revalidado contra a linha do usuário a
+cada requisição.
+
+**A autorização mora no serviço, não no controller nem na tela.** Esconder um botão no
+Angular não é controle de acesso. Os testes negativos chamam a API direto com o papel
+errado e esperam 403. A regra de posse do desenvolvedor precisa da linha carregada para
+ser avaliada, então ela fica no corpo do método, depois da busca que já é escopada por
+empresa, para que outra empresa continue recebendo 404.
+
+**A auditoria guarda o tamanho do comentário, não o texto.** O sanitizador mascara por
+nome de campo, não por valor. Se alguém colar uma credencial num comentário, o texto iria
+íntegro para a trilha e ficaria legível para todo administrador.
+
+**Filtros são montados com a Criteria API.** A forma comum, `:param is null or coluna =
+:param`, quebra no PostgreSQL quando o filtro chega vazio, porque ele não infere o tipo de
+um parâmetro nulo nessa posição.
+
+**Vulnerabilidade não guarda `project_id`.** Um ativo pode ser movido de projeto, então a
+coluna ficaria desatualizada. O projeto é lido pelo ativo, e a listagem já faz esse join
+para mostrar o nome.
+
+Mais contexto em [`docs/architecture.md`](docs/architecture.md) e nos
+[ADRs](docs/adr/).
+
+## Testes
+
+```bash
+cd backend  && ./mvnw verify      # 243 testes
+cd frontend && npm ci && npm run lint && npm run test:ci && npm run build   # 300 testes
+./scripts/smoke-test.sh           # fluxo completo, com a aplicação no ar
+```
+
+Os testes de integração sobem um PostgreSQL 15 de verdade via Testcontainers, então
+precisam de um Docker acessível. Nenhum teste usa H2: um banco em memória com dialeto
+diferente não provaria que as constraints e os índices parciais funcionam.
+
+O `smoke-test.sh` percorre o caminho inteiro contra a pilha rodando, incluindo cadastro,
+login, o fluxo de correção, a auditoria e uma verificação de que uma empresa não alcança
+os dados da outra.
+
+Se `./mvnw test` reclamar que não encontrou um ambiente Docker, provavelmente seu usuário
+não está no grupo `docker`. Em engines anteriores à 25.0, rode com
+`-Ddocker.api.version=1.41` ([o motivo](docs/adr/0005-pin-docker-api-version-for-testcontainers.md)).
+
+## Rodando sem Docker
+
+Precisa de JDK 11, Node 18 (veja `frontend/.nvmrc`) e um PostgreSQL 15.
 
 ```bash
 cd backend
-export SECURITYHUB_JWT_SECRET="$(openssl rand -base64 48)"
+export SECURITYHUB_JWT_SECRET=$(openssl rand -base64 48)
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-```
 
-Variáveis de conexão (com os padrões usados em desenvolvimento):
-`DB_HOST=localhost`, `DB_PORT=5432`, `DB_NAME=securityhub`, `DB_USER=securityhub`,
-`DB_PASSWORD=securityhub`.
-
-O Flyway cria todo o schema na primeira execução contra um banco vazio.
-
-### Frontend
-
-```bash
 cd frontend
-nvm use          # opcional, fixa o Node 18
-npm ci
-npm start        # http://localhost:4200, com proxy de /api para o backend
+npm ci && npm start     # porta 4200, com proxy para o backend
 ```
 
-## Gates de validação
-
-```bash
-cd backend  && ./mvnw test        # testes unitários e de integração
-cd backend  && ./mvnw verify      # + relatório JaCoCo
-cd frontend && npm ci
-cd frontend && npm run lint
-cd frontend && npm run test:ci    # Karma headless (Chromium via puppeteer)
-cd frontend && npm run build
-docker compose config
-```
-
-Os testes de integração sobem um PostgreSQL 15 real via Testcontainers, portanto exigem
-um Docker acessível pelo usuário corrente. Nenhum teste usa H2.
-
-### Docker acessível sem sudo
-
-Se `./mvnw test` falhar com `Could not find a valid Docker environment`, confirme que o
-socket responde para o seu usuário:
-
-```bash
-docker ps                     # se der "permission denied", falta o grupo
-sudo usermod -aG docker $USER # e reinicie a sessão do terminal
-```
-
-### Engine Docker anterior à 25.0
-
-O cliente docker-java embutido no Testcontainers negocia a API 1.32, que os Engines
-recentes recusam, então o `pom.xml` fixa a API 1.44 (`docs/adr/0005`). Em um Engine mais
-antigo que 25.0, sobrescreva:
-
-```bash
-cd backend && ./mvnw test -Ddocker.api.version=1.41
-```
-
-### Toolchain sem instalação global
-
-Se o JDK 11 e o Node 18 não estiverem no `PATH` da máquina, aponte para eles antes de
-rodar os gates. **O Node precisa ser o 18**: versões mais novas quebram o Karma do
-Angular 16.
-
-```bash
-export JAVA_HOME="/caminho/para/jdk-11"
-export PATH="$JAVA_HOME/bin:$PATH"                      # backend
-export PATH="$HOME/.nvm/versions/node/v18.20.8/bin:$PATH" # frontend (ver frontend/.nvmrc)
-```
-
-O Maven não precisa estar instalado: `./mvnw` baixa e reutiliza a distribuição fixada em
-`backend/.mvn/wrapper/maven-wrapper.properties`.
-
-## Estrutura
-
-```text
-backend/    API Spring Boot, organizada por funcionalidade
-frontend/   SPA Angular com carregamento lazy por feature
-docs/       ADRs, arquitetura e exemplos de API
-scripts/    smoke test e utilitários de desenvolvimento
-```
+O Flyway cria o schema na primeira execução contra um banco vazio. As variáveis `DB_HOST`,
+`DB_PORT`, `DB_NAME`, `DB_USER` e `DB_PASSWORD` têm padrões de desenvolvimento.
 
 ## Documentação
 
-| Documento | Conteúdo |
+| | |
 | --- | --- |
-| [`docs/architecture.md`](docs/architecture.md) | Camadas, isolamento por empresa e semântica da auditoria |
-| [`docs/data-model.md`](docs/data-model.md) | DER e as decisões de modelagem que não são óbvias nas migrations |
-| [`docs/permissions.md`](docs/permissions.md) | Matriz de permissões e **onde cada regra é aplicada no código** |
-| [`docs/api-examples.md`](docs/api-examples.md) | Exemplos de requisição e resposta de toda a API |
-| [`docs/security-dependencies.md`](docs/security-dependencies.md) | Análise de dependências e exceções justificadas |
-| [`docs/adr/`](docs/adr/) | Decisões de arquitetura registradas |
-| [`docs/http/`](docs/http/) | Coleções `.http` e Postman, executáveis de ponta a ponta |
+| [`docs/architecture.md`](docs/architecture.md) | Camadas, isolamento entre empresas, auditoria |
+| [`docs/data-model.md`](docs/data-model.md) | Diagrama e as decisões de modelagem |
+| [`docs/permissions.md`](docs/permissions.md) | Matriz de permissões e onde cada regra é aplicada |
+| [`docs/api-examples.md`](docs/api-examples.md) | Requisições e respostas de toda a API |
+| [`docs/security-dependencies.md`](docs/security-dependencies.md) | Análise de dependências |
+| [`docs/http/`](docs/http/) | Coleções `.http` e Postman |
 
-## Segurança
+## O que ainda não tem
 
-- `companyId` sempre vem do JWT validado, nunca do corpo, da query string ou de um header,
-  e é revalidado contra a linha do usuário a cada requisição.
-- Acesso a dado de outra empresa responde **404, nunca 403**: um 403 confirmaria que o
-  registro existe.
-- Autorização aplicada em métodos de serviço com `@PreAuthorize` mais checagens explícitas
-  de posse. Esconder um botão no Angular não é um controle, e os testes negativos chamam a
-  API diretamente com o papel errado.
-- Senhas com BCrypt custo 12. O login devolve a mesma mensagem para e-mail inexistente,
-  senha errada e conta desativada, e faz um hash descartável para equalizar o tempo.
-- A aplicação recusa iniciar sem um segredo de JWT de pelo menos 32 bytes.
-- A trilha de auditoria é append-only e sanitiza campos sensíveis por nome de chave. O
-  comentário registra apenas o tamanho do conteúdo, nunca o texto, justamente porque a
-  máscara é por chave e não por valor.
-- Erros nunca expõem stack trace, SQL ou detalhe interno; cada resposta carrega um
-  `traceId` correlacionável ao log.
-- Segredos vêm do ambiente. O repositório não contém credencial real — veja a ressalva
-  sobre a senha de demonstração acima.
+Não há refresh token, recuperação de senha nem convite de usuários: o login usa um access
+token de vida curta e os usuários são criados no cadastro da empresa. Também não há
+exportação, anexos nem importação de relatórios de scanner.
 
-## Roadmap
-
-O escopo entregue é a **V1**, descrito no [`CHANGELOG.md`](CHANGELOG.md).
-
-- **V2** — refresh token com rotação e revogação, recuperação de senha, convites e gestão
-  de usuários, busca textual avançada, exportação CSV, anexos, testes E2E com Cypress e
-  observabilidade.
-- **V3** — importação de relatórios de Nmap, OWASP ZAP e Nuclei, com preview, deduplicação
-  por fingerprint, histórico de importações e processamento assíncrono.
+O [`CHANGELOG.md`](CHANGELOG.md) lista o que entrou na 1.0.0 e as limitações conhecidas.
 
 ## Licença
 
-MIT — veja [`LICENSE`](LICENSE).
+MIT, veja [`LICENSE`](LICENSE).
