@@ -1,0 +1,21 @@
+# Integration tests run against a real PostgreSQL 15 provided by Testcontainers; the
+# datasource URL is injected at runtime by AbstractIntegrationTest.
+securityhub:
+  jwt:
+    secret: test-only-secret-value-used-exclusively-by-the-automated-test-suite
+    expiration-minutes: 60
+  cors:
+    allowed-origins: http://localhost:4200
+  demo:
+    seed-enabled: false
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+logging:
+  level:
+    com.securityhub: INFO
+    org.testcontainers: WARN
+    com.github.dockerjava: WARN
