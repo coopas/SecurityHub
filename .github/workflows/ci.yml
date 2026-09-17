@@ -119,8 +119,16 @@ jobs:
           path: ~/.cache/Cypress
           key: cypress-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
 
+      # This job runs Cypress, never karma, so puppeteer's Chrome is dead weight here — and
+      # unlike the frontend job this one does not cache it, so `npm ci` downloaded ~500 MB on
+      # every run and stalled long enough to burn the job's whole 30-minute budget. The step
+      # timeout is the second half of the fix: a stall should fail this step in five minutes,
+      # not consume the budget the smoke test and the end-to-end suite still need.
       - name: Install
         working-directory: frontend
+        timeout-minutes: 5
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: '1'
         run: npm ci
 
       - name: End-to-end (Cypress)
