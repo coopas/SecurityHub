@@ -1,0 +1,18 @@
+<h2 mat-dialog-title id="confirm-dialog-title">{{ data.title }}</h2>
+
+<div mat-dialog-content>
+  <p class="confirm-dialog__message">{{ data.message }}</p>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">{{ cancelLabel }}</button>
+  <button
+    mat-raised-button
+    type="button"
+    cdkFocusInitial
+    [color]="data.destructive ? 'warn' : 'primary'"
+    (click)="confirm()"
+  >
+    {{ confirmLabel }}
+  </button>
+</div>

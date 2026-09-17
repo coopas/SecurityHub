@@ -1,0 +1,16 @@
+<div class="sh-state" role="status" aria-live="polite">
+  <mat-spinner *ngIf="state === 'loading'" diameter="40" aria-hidden="true"></mat-spinner>
+  <mat-icon *ngIf="state !== 'loading'" class="state-message__icon" aria-hidden="true">{{ icon }}</mat-icon>
+
+  <p class="state-message__text">{{ text }}</p>
+
+  <button
+    *ngIf="showRetry && state === 'error'"
+    mat-stroked-button
+    color="primary"
+    type="button"
+    (click)="retry.emit()"
+  >
+    {{ retryLabel }}
+  </button>
+</div>

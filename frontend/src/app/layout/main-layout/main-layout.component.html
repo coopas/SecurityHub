@@ -1,0 +1,73 @@
+<a class="sh-skip-link" href="#main-content">Pular para o conteúdo principal</a>
+
+<div class="layout" *ngIf="currentUser$ | async as user">
+  <mat-toolbar color="primary" class="layout__toolbar">
+    <button
+      *ngIf="isHandset"
+      mat-icon-button
+      type="button"
+      aria-label="Abrir menu de navegação"
+      (click)="drawer.toggle()"
+    >
+      <mat-icon aria-hidden="true">menu</mat-icon>
+    </button>
+
+    <span class="layout__brand">SecurityHub</span>
+    <span class="sh-toolbar-spacer"></span>
+
+    <button
+      mat-button
+      type="button"
+      class="layout__user-trigger"
+      [matMenuTriggerFor]="userMenu"
+      [attr.aria-label]="'Menu do usuário ' + user.name"
+    >
+      <mat-icon aria-hidden="true">account_circle</mat-icon>
+      <span class="layout__user-name">{{ user.name }}</span>
+      <mat-icon aria-hidden="true">arrow_drop_down</mat-icon>
+    </button>
+
+    <mat-menu #userMenu="matMenu">
+      <div class="layout__user-info" mat-menu-item [disabled]="true">
+        <span class="layout__user-info-name">{{ user.name }}</span>
+        <span class="layout__user-info-meta">{{ roleLabel(user.role) }} · {{ user.companyName }}</span>
+      </div>
+      <mat-divider></mat-divider>
+      <button mat-menu-item type="button" (click)="logout()">
+        <mat-icon aria-hidden="true">logout</mat-icon>
+        <span>Sair</span>
+      </button>
+    </mat-menu>
+  </mat-toolbar>
+
+  <mat-sidenav-container class="layout__container">
+    <mat-sidenav
+      #drawer
+      class="layout__sidenav"
+      [mode]="isHandset ? 'over' : 'side'"
+      [opened]="!isHandset"
+      [fixedInViewport]="isHandset"
+    >
+      <mat-nav-list aria-label="Navegação principal">
+        <a
+          mat-list-item
+          *ngFor="let item of visibleNavItems(user)"
+          [routerLink]="item.route"
+          routerLinkActive="layout__link--active"
+          #link="routerLinkActive"
+          [attr.aria-current]="link.isActive ? 'page' : null"
+          (click)="isHandset && drawer.close()"
+        >
+          <mat-icon matListItemIcon aria-hidden="true">{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      </mat-nav-list>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+      <main id="main-content" tabindex="-1" class="layout__content">
+        <router-outlet></router-outlet>
+      </main>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>
