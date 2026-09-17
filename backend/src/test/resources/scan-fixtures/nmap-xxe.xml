@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A entidade é referenciada em um NÓ DE TEXTO, e não em um valor de atributo.
+  O JDK recusa entidade externa em atributo por conta própria, independentemente da
+  configuração do parser, então uma fixture baseada em atributo passaria mesmo com a
+  proteção removida e não provaria nada.
+-->
+<!DOCTYPE nmaprun [
+  <!ENTITY roubo SYSTEM "file:///etc/passwd">
+]>
+<nmaprun scanner="nmap" start="1700000000" version="7.94">
+  <host>
+    <address addr="10.0.0.10" addrtype="ipv4"/>
+    <hostnames><hostname name="alvo.interno" type="PTR"/></hostnames>
+    <ports>
+      <port protocol="tcp" portid="443">
+        <script id="ssl-heartbleed" output="resumo do script">
+          <elem key="saida">&roubo;</elem>
+        </script>
+      </port>
+    </ports>
+  </host>
+</nmaprun>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun PUBLIC "-//IDN nmap.org//DTD Nmap XML 1.04//EN" "https://svn.nmap.org/nmap/docs/nmap.dtd">
+<nmaprun scanner="nmap" args="nmap -sV --script vuln -oX - 10.0.0.10-11" start="1700000000" version="7.94">
+  <host starttime="1700000000" endtime="1700000120">
+    <status state="up" reason="echo-reply"/>
+    <address addr="10.0.0.10" addrtype="ipv4"/>
+    <address addr="00:0C:29:11:22:33" addrtype="mac" vendor="VMware"/>
+    <hostnames>
+      <hostname name="web.acme.test" type="PTR"/>
+    </hostnames>
+    <ports>
+      <port protocol="tcp" portid="80">
+        <state state="open" reason="syn-ack"/>
+        <service name="http" product="nginx" version="1.18.0"/>
+      </port>
+      <port protocol="tcp" portid="443">
+        <state state="open" reason="syn-ack"/>
+        <service name="https" product="nginx" version="1.18.0"/>
+        <script id="ssl-heartbleed" output="VULNERABLE: The Heartbleed Bug is a serious vulnerability in OpenSSL. State: VULNERABLE Risk factor: High References: CVE-2014-0160"/>
+      </port>
+      <port protocol="tcp" portid="8080">
+        <state state="open" reason="syn-ack"/>
+        <script id="http-server-header" output="Apache/2.4.29 (Ubuntu)"/>
+      </port>
+    </ports>
+  </host>
+  <host starttime="1700000000" endtime="1700000130">
+    <status state="up" reason="reset"/>
+    <address addr="10.0.0.11" addrtype="ipv4"/>
+    <ports>
+      <port protocol="tcp" portid="22">
+        <state state="open" reason="syn-ack"/>
+        <service name="ssh" product="OpenSSH" version="8.2p1"/>
+      </port>
+    </ports>
+    <hostscript>
+      <script id="smb-vuln-ms17-010" output="VULNERABLE: Remote Code Execution vulnerability in Microsoft SMBv1 servers. IDs: CVE:CVE-2017-0143 Risk factor: HIGH"/>
+      <script output="um resultado sem id, que nao pode virar vulnerabilidade"/>
+    </hostscript>
+  </host>
+  <runstats><finished time="1700000200" elapsed="200.00"/></runstats>
+</nmaprun>

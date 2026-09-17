@@ -1,0 +1,70 @@
+{
+  "@programName": "ZAP",
+  "@version": "2.14.0",
+  "@generated": "Mon, 13 Nov 2023 10:15:00",
+  "site": [
+    {
+      "@name": "https://web.acme.test",
+      "@host": "web.acme.test",
+      "@port": "443",
+      "@ssl": "true",
+      "alerts": [
+        {
+          "pluginid": "40012",
+          "alertRef": "40012",
+          "name": "Cross Site Scripting (Reflected)",
+          "riskcode": "3",
+          "confidence": "2",
+          "riskdesc": "High (Medium)",
+          "desc": "<p>Cross-site Scripting (XSS) is an attack technique.</p>",
+          "cweid": "79",
+          "wascid": "8",
+          "instances": [
+            {"uri": "https://web.acme.test/search?q=1", "method": "GET", "param": "q"},
+            {"uri": "https://web.acme.test/login", "method": "POST", "param": "user"},
+            {"uri": "https://web.acme.test/comments", "method": "POST", "param": "body"}
+          ]
+        },
+        {
+          "pluginid": "10038",
+          "name": "Remote Code Execution - Log4Shell",
+          "riskcode": "3",
+          "desc": "<p>O servidor usa uma versao vulneravel do Log4j.</p>",
+          "cweid": "117",
+          "cveid": "CVE-2021-44228, CVE-2021-45046",
+          "cvssScore": "7.53",
+          "instances": [
+            {"uri": "https://web.acme.test/api/echo", "method": "GET", "param": "X-Api-Version"}
+          ]
+        },
+        {
+          "pluginid": "10015",
+          "name": "Re-examine Cache-control Directives",
+          "riskcode": "0",
+          "desc": "<p>The cache-control header has not been set properly.</p>",
+          "cweid": "525",
+          "instances": [
+            {"uri": "https://web.acme.test/", "method": "GET"}
+          ]
+        },
+        {
+          "pluginid": "10020",
+          "name": "Missing Anti-clickjacking Header",
+          "riskcode": "2",
+          "desc": "<p>The response does not protect against ClickJacking attacks.</p>",
+          "cweid": "1021",
+          "instances": []
+        },
+        {
+          "pluginid": "10096",
+          "name": "   ",
+          "riskcode": "1",
+          "desc": "<p>Um alerta sem nome, que nao pode virar vulnerabilidade.</p>",
+          "instances": [
+            {"uri": "https://web.acme.test/timestamp", "method": "GET"}
+          ]
+        }
+      ]
+    }
+  ]
+}
