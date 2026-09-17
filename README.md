@@ -21,10 +21,19 @@ O fluxo do dia a dia é atribuir o achado a alguém, mudar o status conforme o t
 anda, discutir nos comentários e resolver. Um desenvolvedor só consegue mexer no status
 do que está atribuído a ele; um analista mexe em qualquer um; um leitor não mexe em nada.
 
+Cada achado aceita anexos, para guardar a evidência junto do registro: um PDF de
+varredura, uma captura de tela, um log. A lista pode ser exportada em CSV com os mesmos
+filtros que estão na tela.
+
 O dashboard resume a situação: quantas vulnerabilidades existem, quantas continuam
 abertas, quantas passaram do prazo, como se distribuem por severidade e status, e como
-isso evoluiu nos últimos 30 dias. A tela de auditoria mostra quem mudou o quê, quando, e
-qual era o valor antes.
+isso evoluiu nos últimos 30 dias. Dali sai também um relatório executivo em PDF, com os
+mesmos números. A tela de auditoria mostra quem mudou o quê, quando, e qual era o valor
+antes.
+
+Um administrador convida novas pessoas por e-mail, muda papéis e desativa contas. Quem
+esquece a senha se recupera por um link de uso único, e a sessão se renova sozinha sem
+derrubar quem está no meio de uma tarefa.
 
 | | |
 | --- | --- |
@@ -55,6 +64,7 @@ zero. Depois disso:
 | Aplicação | http://localhost:8081 |
 | API | http://localhost:8080/api/v1 |
 | Swagger | http://localhost:8080/swagger-ui.html |
+| Caixa de entrada (MailHog) | http://localhost:8025 |
 
 Para derrubar tudo e apagar os dados: `docker compose down -v`.
 
@@ -73,6 +83,10 @@ contas usam a senha `Demo@SecurityHub2026`:
 Entre com cada um para ver as permissões mudando. Existe também
 `admin@northwind.test`, de outra empresa: o dashboard dele é completamente diferente, o
 que é a forma mais rápida de ver o isolamento funcionando.
+
+Para experimentar a recuperação de senha ou um convite, peça o link na tela e abra
+http://localhost:8025 — o compose sobe um MailHog, que é uma caixa de entrada local. Nada
+sai da sua máquina e não é preciso configurar provedor nenhum.
 
 Essa senha é pública de propósito, para a demo funcionar sem configuração. Ela protege
 dados sintéticos num banco que você acabou de criar na sua máquina. Se for hospedar isso
@@ -169,11 +183,15 @@ O Flyway cria o schema na primeira execução contra um banco vazio. As variáve
 
 ## O que ainda não tem
 
-Não há refresh token, recuperação de senha nem convite de usuários: o login usa um access
-token de vida curta e os usuários são criados no cadastro da empresa. Também não há
-exportação, anexos nem importação de relatórios de scanner.
+Não há importação de relatórios de scanner: Nmap, OWASP ZAP e Nuclei ainda são trabalho
+manual. Também não há SSO corporativo nem aplicativo móvel.
 
-O [`CHANGELOG.md`](CHANGELOG.md) lista o que entrou na 1.0.0 e as limitações conhecidas.
+A listagem de usuários e as distribuições do dashboard devolvem um array simples em vez
+do envelope paginado, porque são agregados de tamanho fixo. A decisão está registrada no
+código.
+
+O [`CHANGELOG.md`](CHANGELOG.md) lista o que entrou em cada versão e as limitações
+conhecidas.
 
 ## Licença
 

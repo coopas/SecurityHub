@@ -3,6 +3,65 @@
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/);
 versionamento conforme [SemVer](https://semver.org/lang/pt-BR/).
 
+## [1.1.0] — 2026-09-17
+
+Fecha as lacunas de identidade e acrescenta os entregáveis que faltavam.
+
+### Adicionado
+
+**Sessão**
+- Refresh token rotativo, guardado apenas como digest, com revogação por família e detecção
+  de reuso. A interface renova a sessão e repete a requisição que falhou, em vez de mandar o
+  usuário de volta ao login no meio de uma tarefa.
+- `POST /auth/logout`, que revoga a família no servidor.
+- Recuperação de senha por link de uso único, com expiração, sem revelar se a conta existe.
+
+**Usuários**
+- Convite por e-mail, com aceite que cria a conta e já devolve uma sessão.
+- Alteração de papel, alteração de nome e ativação/desativação, com as regras do último
+  administrador ativo e da autodesativação.
+- Tela de administração de usuários e de convites pendentes.
+
+**Conteúdo**
+- Anexos em vulnerabilidades, com allowlist de tipo verificada pelos bytes, limite de
+  tamanho, nome em disco gerado e download como `attachment`.
+- Exportação da listagem de vulnerabilidades em CSV, com os mesmos filtros da tela.
+- Relatório executivo em PDF, com os números do dashboard.
+
+**Operação**
+- Métricas em `/actuator/prometheus` e log estruturado em JSON no profile de produção.
+- Testes E2E com Cypress nos fluxos críticos.
+- MailHog no Compose, para o fluxo de e-mail funcionar sem provedor externo.
+
+### Corrigido
+
+- **O botão de sair não revogava a sessão no servidor.** A chamada não era assinada, e um
+  observable frio não dispara: a sessão local ia embora enquanto a família de refresh token
+  continuava válida até expirar.
+- **`/actuator/metrics` era legível por qualquer papel autenticado**, inclusive o de leitura.
+  As métricas passaram a ser servidas numa porta de gerenciamento separada, publicada apenas
+  em loopback. O administrador aqui é o do cliente, não o operador da infraestrutura, e a
+  matriz de papéis não tem como expressar essa diferença.
+- O indicador de saúde do e-mail derrubava `/actuator/health` quando o SMTP estava fora,
+  contradizendo o fato de que o envio é deliberadamente tolerante a falha.
+- Em respostas binárias, o erro chegava ao usuário como mensagem genérica ao lado da
+  mensagem real, porque o corpo não podia ser lido como JSON pelo interceptor.
+
+### Segurança
+
+- Material de credencial é guardado como SHA-256, e o banco recusa qualquer outra forma.
+- O tipo de um anexo é determinado pelos bytes; o tipo declarado pelo cliente é ignorado.
+- A exportação neutraliza fórmulas e sempre delimita as células, porque o prefixo sozinho
+  não impede que uma célula com vírgula parta a linha.
+- Nenhuma vulnerabilidade crítica nas dependências de produção.
+
+### Infraestrutura
+
+- Todos os jobs de CI passaram a declarar tempo limite, e o navegador que o puppeteer baixa
+  é cacheado. Sem isso, uma instalação estolada ocupava um runner até o teto de seis horas.
+
+[1.1.0]: https://github.com/coopas/SecurityHub/releases/tag/v1.1.0
+
 ## [1.0.0] — 2026-09-17
 
 Primeira versão publicável. Gestão multiempresa de ativos e vulnerabilidades de segurança,
