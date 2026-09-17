@@ -1,0 +1,219 @@
+.imports-subtitle {
+  margin: 4px 0 0;
+  color: var(--sh-text-muted);
+  max-width: 80ch;
+}
+
+.imports-alert {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--sh-high);
+  background: rgba(179, 38, 30, 0.08);
+  color: var(--sh-high);
+}
+
+.imports-hint {
+  margin: 8px 0 0;
+  color: var(--sh-text-muted);
+  font-size: 0.85rem;
+  max-width: 80ch;
+}
+
+.imports-table__link {
+  color: inherit;
+  font-weight: 500;
+}
+
+.imports-table__title {
+  display: block;
+  font-weight: 500;
+}
+
+.imports-table__meta {
+  display: block;
+  color: var(--sh-text-muted);
+  font-size: 0.78rem;
+}
+
+.imports-table__counters {
+  color: var(--sh-text-muted);
+  font-size: 0.82rem;
+  min-width: 260px;
+}
+
+.imports-table__asset {
+  min-width: 200px;
+}
+
+/* Ícone + texto: severidade e situação nunca dependem só da cor (WCAG 1.4.1). As cores
+   são as mesmas variáveis que as vulnerabilidades usam, para que um achado e a
+   vulnerabilidade que ele vira não mudem de aparência no caminho. */
+.imports-chip.mat-mdc-chip {
+  --mdc-chip-label-text-color: currentColor;
+  --mdc-chip-with-icon-icon-color: currentColor;
+
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid currentColor;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    margin-right: 6px;
+  }
+}
+
+.imports-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  font-weight: 500;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.imports-severity--low {
+  color: var(--sh-low);
+}
+
+.imports-severity--medium {
+  color: var(--sh-medium);
+}
+
+.imports-severity--high {
+  color: var(--sh-high);
+}
+
+.imports-severity--critical {
+  color: var(--sh-critical);
+  font-weight: 600;
+}
+
+.imports-status--pending {
+  color: var(--sh-in-progress);
+}
+
+.imports-status--confirmed {
+  color: var(--sh-resolved);
+}
+
+.imports-status--discarded {
+  color: var(--sh-accepted-risk);
+}
+
+.imports-finding--matched {
+  color: var(--sh-resolved);
+}
+
+.imports-finding--unmatched {
+  color: var(--sh-in-progress);
+}
+
+.imports-finding--duplicate {
+  color: var(--sh-accepted-risk);
+}
+
+.imports-finding--imported {
+  color: var(--sh-resolved);
+}
+
+.imports-finding--skipped {
+  color: var(--sh-text-muted);
+}
+
+.imports-upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.imports-upload__file {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.imports-upload__meta {
+  margin-left: 8px;
+  color: var(--sh-text-muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.imports-empty-projects {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 32px 8px;
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 1.1rem;
+  }
+
+  p {
+    margin: 0 0 16px;
+    color: var(--sh-text-muted);
+    max-width: 60ch;
+  }
+
+  > mat-icon {
+    color: var(--sh-text-muted);
+  }
+}
+
+.imports-summary__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.imports-summary__title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+/* Faixa de contadores: números grandes, rótulo pequeno em cima, sem virar gráfico. */
+.imports-counters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  margin: 20px 0 0;
+}
+
+.imports-counters__item {
+  dt {
+    margin: 0 0 4px;
+    color: var(--sh-text-muted);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+  }
+}
+
+.imports-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.imports-findings {
+  margin-top: 24px;
+}

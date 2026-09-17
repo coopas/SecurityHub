@@ -50,14 +50,22 @@ describe('MainLayoutComponent', () => {
     setup('ADMIN');
 
     const routes = component.visibleNavItems(makeUser('ADMIN')).map((item) => item.route);
-    expect(routes).toEqual(['/dashboard', '/projects', '/assets', '/vulnerabilities', '/users', '/audit']);
+    expect(routes).toEqual([
+      '/dashboard',
+      '/projects',
+      '/assets',
+      '/vulnerabilities',
+      '/imports',
+      '/users',
+      '/audit',
+    ]);
   });
 
   it('esconde as áreas administrativas dos demais papéis', () => {
     setup('ANALYST');
 
     const routes = component.visibleNavItems(makeUser('ANALYST')).map((item) => item.route);
-    expect(routes).toEqual(['/dashboard', '/projects', '/assets', '/vulnerabilities']);
+    expect(routes).toEqual(['/dashboard', '/projects', '/assets', '/vulnerabilities', '/imports']);
   });
 
   it('renderiza o skip link e a região principal', () => {

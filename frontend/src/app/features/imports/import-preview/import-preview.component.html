@@ -1,0 +1,248 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>Prévia da importação</h1>
+      <p class="imports-subtitle">
+        Revise o que a varredura encontrou. Nada foi criado ainda: só a confirmação
+        transforma os achados em vulnerabilidades.
+      </p>
+    </div>
+
+    <a mat-stroked-button routerLink="/imports">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      <span>Voltar</span>
+    </a>
+  </header>
+
+  <app-state-message
+    *ngIf="state"
+    [state]="state"
+    [message]="state === 'error' ? (errorMessage ?? undefined) : undefined"
+    [showRetry]="!notFound"
+    (retry)="load()"
+    data-testid="import-preview-state"
+  ></app-state-message>
+
+  <ng-container *ngIf="!state">
+   <ng-container *ngIf="scanImport as current">
+    <p class="imports-alert" role="alert" *ngIf="actionError" data-testid="import-action-error">
+      {{ actionError }}
+    </p>
+
+    <div class="sh-card">
+      <div class="imports-summary__head">
+        <div>
+          <h2 class="imports-summary__title">{{ current.originalFilename }}</h2>
+          <p class="imports-hint">
+            {{ formatLabels[current.format] }} · {{ current.projectName }} ·
+            enviado por {{ current.importedByName }} em
+            {{ current.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+          </p>
+        </div>
+
+        <span
+          class="imports-tag"
+          [ngClass]="'imports-status--' + current.status.toLowerCase()"
+          data-testid="import-status"
+        >
+          <mat-icon aria-hidden="true">{{ importStatusIcons[current.status] }}</mat-icon>
+          <span>{{ importStatusLabels[current.status] }}</span>
+        </span>
+      </div>
+
+      <dl class="imports-counters" data-testid="import-counters">
+        <div class="imports-counters__item" *ngFor="let counter of counters">
+          <dt>{{ counter.label }}</dt>
+          <dd>{{ counter.value }}</dd>
+        </div>
+      </dl>
+
+      <!-- Uma importação encerrada é histórico: nenhum botão, porque toda ação sobre ela
+           seria recusada pelo servidor. -->
+      <div class="imports-actions" *ngIf="isPending && canImport" data-testid="import-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          type="button"
+          [disabled]="!canAct"
+          (click)="confirmImport()"
+          data-testid="import-confirm"
+        >
+          <mat-icon aria-hidden="true">check_circle</mat-icon>
+          <span>{{ submitting ? 'Processando...' : 'Confirmar importação' }}</span>
+        </button>
+
+        <button
+          mat-stroked-button
+          color="warn"
+          type="button"
+          [disabled]="!canAct"
+          (click)="discardImport()"
+          data-testid="import-discard"
+        >
+          <mat-icon aria-hidden="true">delete_outline</mat-icon>
+          <span>Descartar</span>
+        </button>
+      </div>
+
+      <p class="imports-hint" *ngIf="!isPending" data-testid="import-readonly-hint">
+        Esta importação já foi resolvida e é mostrada apenas como histórico.
+      </p>
+
+      <p class="imports-hint" *ngIf="isPending && !canImport" data-testid="import-no-permission">
+        Seu perfil pode acompanhar a revisão, mas não confirmar nem descartar importações.
+      </p>
+    </div>
+
+    <div class="sh-card imports-findings">
+      <h2 class="imports-summary__title">Achados</h2>
+
+      <form class="sh-filters" (ngSubmit)="$event.preventDefault()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Buscar por título, regra, alvo, CVE ou ativo</mat-label>
+          <input
+            matInput
+            type="search"
+            [formControl]="searchControl"
+            autocomplete="off"
+            data-testid="import-search"
+          />
+          <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+        </mat-form-field>
+      </form>
+
+      <app-state-message
+        *ngIf="findingsState"
+        [state]="findingsState"
+        [message]="'O relatório não trouxe nenhum achado.'"
+        data-testid="import-findings-state"
+      ></app-state-message>
+
+      <p
+        class="imports-hint"
+        *ngIf="!findingsState && assetsState === 'error'"
+        data-testid="import-assets-error"
+      >
+        Não foi possível carregar os ativos do projeto, então os achados sem ativo não
+        podem ser vinculados agora.
+      </p>
+
+      <p
+        class="imports-hint"
+        *ngIf="!findingsState && assetsState === 'empty'"
+        data-testid="import-assets-empty"
+      >
+        Este projeto ainda não tem ativos cadastrados, então os achados sem ativo serão
+        ignorados na confirmação.
+      </p>
+
+      <div class="sh-table-wrapper" *ngIf="!findingsState">
+        <table
+          mat-table
+          class="sh-table"
+          matSort
+          matSortActive="severity"
+          matSortDirection="desc"
+          matSortDisableClear
+          aria-label="Achados da importação"
+          [dataSource]="dataSource"
+          [trackBy]="trackById"
+        >
+          <caption class="sh-visually-hidden">
+            Achados do relatório, com severidade, título, alvo, situação, ativo
+            correspondente e data de descoberta. Os achados sem ativo têm um seletor que
+            os vincula a um ativo do projeto.
+          </caption>
+
+          <ng-container matColumnDef="severity">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Severidade</th>
+            <td mat-cell *matCellDef="let finding">
+              <mat-chip
+                class="imports-chip"
+                [ngClass]="severityClass(finding.severity)"
+                [disableRipple]="true"
+              >
+                <mat-icon aria-hidden="true">{{ severityIcon(finding.severity) }}</mat-icon>
+                <span>{{ severityLabel(finding.severity) }}</span>
+              </mat-chip>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="title">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Achado</th>
+            <td mat-cell *matCellDef="let finding">
+              <span class="imports-table__title">{{ finding.title }}</span>
+              <span class="imports-table__meta">
+                {{ finding.ruleId }}
+                <ng-container *ngIf="finding.cve"> · {{ finding.cve }}</ng-container>
+                <ng-container *ngIf="hasCvss(finding)">
+                  · CVSS {{ finding.cvssScore }}
+                </ng-container>
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="target">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Alvo</th>
+            <td mat-cell *matCellDef="let finding">{{ finding.target }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Situação</th>
+            <td mat-cell *matCellDef="let finding">
+              <span
+                class="imports-tag"
+                [ngClass]="findingStatusClass(finding.status)"
+                [attr.data-testid]="'import-finding-status-' + finding.id"
+              >
+                <mat-icon aria-hidden="true">{{ findingStatusIcon(finding.status) }}</mat-icon>
+                <span>{{ findingStatusLabel(finding.status) }}</span>
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="asset">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Ativo</th>
+            <td mat-cell *matCellDef="let finding">
+              <mat-form-field
+                appearance="outline"
+                class="imports-table__asset"
+                subscriptSizing="dynamic"
+                *ngIf="needsAsset(finding) && canAct; else assetText"
+              >
+                <mat-label class="sh-visually-hidden">Ativo de {{ finding.title }}</mat-label>
+                <mat-select
+                  [disabled]="isSaving(finding) || assets.length === 0"
+                  (selectionChange)="onAssetSelected(finding, $event.value)"
+                  [attr.data-testid]="'import-finding-asset-' + finding.id"
+                >
+                  <mat-option *ngFor="let asset of assets" [value]="asset.id">
+                    {{ asset.name }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <ng-template #assetText>
+                <span *ngIf="finding.assetName; else noAsset">{{ finding.assetName }}</span>
+                <ng-template #noAsset>
+                  <span class="imports-table__meta">Sem ativo correspondente</span>
+                </ng-template>
+              </ng-template>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="discoveredAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Descoberto em</th>
+            <td mat-cell *matCellDef="let finding">
+              {{ finding.discoveredAt | date: 'dd/MM/yyyy HH:mm' }}
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+    </div>
+   </ng-container>
+  </ng-container>
+</section>

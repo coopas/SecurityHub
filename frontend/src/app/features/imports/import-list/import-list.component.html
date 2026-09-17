@@ -1,0 +1,126 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>Importações</h1>
+      <p class="imports-subtitle">
+        Relatórios de varredura enviados para revisão. Os achados só viram vulnerabilidades
+        depois que alguém confirma a importação.
+      </p>
+    </div>
+
+    <a
+      mat-raised-button
+      color="primary"
+      routerLink="/imports/novo"
+      *ngIf="canImport"
+      data-testid="import-new"
+    >
+      <mat-icon aria-hidden="true">upload_file</mat-icon>
+      <span>Nova importação</span>
+    </a>
+  </header>
+
+  <div class="sh-card">
+    <app-state-message
+      *ngIf="state"
+      [state]="state"
+      [message]="
+        state === 'empty' ? 'Nenhum relatório importado ainda.' : loadError ?? undefined
+      "
+      [showRetry]="true"
+      (retry)="load()"
+      data-testid="import-list-state"
+    ></app-state-message>
+
+    <ng-container *ngIf="!state">
+      <div class="sh-table-wrapper">
+        <table
+          mat-table
+          class="sh-table"
+          matSort
+          matSortDisableClear
+          aria-label="Histórico de importações"
+          [dataSource]="imports"
+          [trackBy]="trackById"
+          [matSortActive]="sortActive"
+          [matSortDirection]="sortDirection"
+          (matSortChange)="onSort($event)"
+        >
+          <caption class="sh-visually-hidden">
+            Relatórios de varredura importados, com projeto, formato, situação, contagem de
+            achados, quem importou e quando. Formato, situação, achados e data podem ser
+            ordenados. Uma importação aguardando revisão leva à tela de prévia.
+          </caption>
+
+          <ng-container matColumnDef="originalFilename">
+            <th mat-header-cell *matHeaderCellDef scope="col">Arquivo</th>
+            <td mat-cell *matCellDef="let scanImport">
+              <a
+                class="imports-table__link"
+                *ngIf="isPending(scanImport); else plainFilename"
+                [routerLink]="['/imports', scanImport.id]"
+              >
+                {{ scanImport.originalFilename }}
+              </a>
+              <ng-template #plainFilename>{{ scanImport.originalFilename }}</ng-template>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="projectName">
+            <th mat-header-cell *matHeaderCellDef scope="col">Projeto</th>
+            <td mat-cell *matCellDef="let scanImport">{{ scanImport.projectName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="format">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Formato</th>
+            <td mat-cell *matCellDef="let scanImport">{{ formatLabel(scanImport.format) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Situação</th>
+            <td mat-cell *matCellDef="let scanImport">
+              <span class="imports-tag" [ngClass]="statusClass(scanImport.status)">
+                <mat-icon aria-hidden="true">{{ statusIcon(scanImport.status) }}</mat-icon>
+                <span>{{ statusLabel(scanImport.status) }}</span>
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="counters">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header="totalFindings" scope="col">
+              Achados
+            </th>
+            <td mat-cell *matCellDef="let scanImport" class="imports-table__counters">
+              {{ countersLabel(scanImport) }}
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="importedByName">
+            <th mat-header-cell *matHeaderCellDef scope="col">Importado por</th>
+            <td mat-cell *matCellDef="let scanImport">{{ scanImport.importedByName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Enviado em</th>
+            <td mat-cell *matCellDef="let scanImport">
+              {{ scanImport.createdAt | date: 'dd/MM/yyyy HH:mm' }}
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="totalElements"
+        [pageIndex]="query.page"
+        [pageSize]="query.size"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPage($event)"
+        showFirstLastButtons
+        aria-label="Paginação do histórico de importações"
+      ></mat-paginator>
+    </ng-container>
+  </div>
+</section>

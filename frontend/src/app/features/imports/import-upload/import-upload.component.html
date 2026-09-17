@@ -1,0 +1,152 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>Nova importação</h1>
+      <p class="imports-subtitle">
+        Envie o relatório de uma varredura. Nada é criado agora: os achados ficam em
+        revisão até você confirmar a importação.
+      </p>
+    </div>
+
+    <a mat-stroked-button routerLink="/imports">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      <span>Voltar</span>
+    </a>
+  </header>
+
+  <div class="sh-card">
+    <app-state-message
+      *ngIf="loadState"
+      [state]="loadState"
+      [message]="loadState === 'error' ? (loadErrorMessage ?? undefined) : undefined"
+      [showRetry]="true"
+      (retry)="loadProjects()"
+      data-testid="import-upload-state"
+    ></app-state-message>
+
+    <div class="imports-empty-projects" *ngIf="hasNoProjects" data-testid="import-no-projects">
+      <mat-icon aria-hidden="true">folder_off</mat-icon>
+      <div>
+        <h2>Nenhum projeto cadastrado</h2>
+        <p>
+          Toda importação pertence a um projeto, que é onde os achados procuram os ativos
+          correspondentes.
+        </p>
+        <a mat-raised-button color="primary" routerLink="/projects/novo">
+          <mat-icon aria-hidden="true">add</mat-icon>
+          <span>Criar projeto</span>
+        </a>
+      </div>
+    </div>
+
+    <form
+      *ngIf="!loadState && !hasNoProjects"
+      [formGroup]="form"
+      (ngSubmit)="submit()"
+      novalidate
+    >
+      <p class="imports-alert" role="alert" *ngIf="errorMessage" data-testid="import-upload-error">
+        {{ errorMessage }}
+      </p>
+
+      <div class="sh-form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Projeto</mat-label>
+          <mat-select formControlName="projectId" data-testid="import-project">
+            <mat-option *ngFor="let project of projects" [value]="project.id">
+              {{ project.name }}
+            </mat-option>
+          </mat-select>
+          <mat-hint>Os achados procuram ativos dentro deste projeto.</mat-hint>
+          <mat-error *ngIf="form.controls['projectId'].hasError('required')">
+            Selecione o projeto da varredura.
+          </mat-error>
+          <mat-error *ngIf="form.controls['projectId'].hasError('server')">
+            {{ form.controls['projectId'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Formato</mat-label>
+          <mat-select formControlName="format" data-testid="import-format">
+            <mat-option *ngFor="let format of formats" [value]="format">
+              {{ formatLabels[format] }}
+            </mat-option>
+          </mat-select>
+          <mat-hint>{{ formatHint }}</mat-hint>
+          <mat-error *ngIf="form.controls['format'].hasError('required')">
+            Selecione o formato do relatório.
+          </mat-error>
+          <mat-error *ngIf="form.controls['format'].hasError('server')">
+            {{ form.controls['format'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="imports-upload">
+        <!-- Um input de arquivo simples, acionado por um botão do Material: já é
+             acessível por teclado e por leitor de tela, o que uma área de arrastar e
+             soltar não é sem trabalho extra. -->
+        <input
+          #fileInput
+          type="file"
+          hidden
+          [accept]="accept"
+          (change)="onFileSelected(fileInput)"
+          data-testid="import-file-input"
+        />
+        <button
+          mat-stroked-button
+          type="button"
+          [disabled]="uploading"
+          (click)="fileInput.click()"
+          data-testid="import-file-pick"
+        >
+          <mat-icon aria-hidden="true">attach_file</mat-icon>
+          <span>{{ file ? 'Trocar arquivo' : 'Escolher arquivo' }}</span>
+        </button>
+
+        <span class="imports-upload__file" *ngIf="file" data-testid="import-file-name">
+          {{ file.name }}
+          <span class="imports-upload__meta">{{ fileSize() }}</span>
+        </span>
+
+        <button
+          mat-icon-button
+          type="button"
+          *ngIf="file && !uploading"
+          aria-label="Remover o arquivo escolhido"
+          matTooltip="Remover arquivo"
+          (click)="clearFile()"
+          data-testid="import-file-clear"
+        >
+          <mat-icon aria-hidden="true">close</mat-icon>
+        </button>
+
+        <span class="imports-hint" *ngIf="!file">Nenhum arquivo escolhido.</span>
+      </div>
+
+      <mat-progress-bar
+        *ngIf="uploading"
+        mode="determinate"
+        [value]="progress"
+        aria-label="Enviando o relatório"
+        data-testid="import-progress"
+      ></mat-progress-bar>
+
+      <div class="sh-form-actions">
+        <a mat-button routerLink="/imports">Cancelar</a>
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="!canSubmit"
+          data-testid="import-submit"
+        >
+          <mat-icon aria-hidden="true">cloud_upload</mat-icon>
+          <span>{{ uploading ? 'Enviando...' : 'Enviar relatório' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

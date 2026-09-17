@@ -33,6 +33,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     { label: 'Projetos', icon: 'folder', route: '/projects', roles: [] },
     { label: 'Ativos', icon: 'dns', route: '/assets', roles: [] },
     { label: 'Vulnerabilidades', icon: 'bug_report', route: '/vulnerabilities', roles: [] },
+    { label: 'Importações', icon: 'upload_file', route: '/imports', roles: [] },
     { label: 'Usuários', icon: 'group', route: '/users', roles: ['ADMIN'] },
     { label: 'Auditoria', icon: 'history', route: '/audit', roles: ['ADMIN'] },
   ];

@@ -39,6 +39,13 @@ export const APP_ROUTES: Routes = [
           ),
       },
       {
+        // O histórico e a revisão são leitura, liberadas a qualquer papel — é o backend
+        // que restringe enviar, mapear, confirmar e descartar. O roleGuard cobre só a
+        // rota de envio, no roteador da própria funcionalidade.
+        path: 'imports',
+        loadChildren: () => import('./features/imports/imports.module').then((m) => m.ImportsModule),
+      },
+      {
         // O roleGuard com data.roles fica no roteador da própria funcionalidade, junto
         // do componente que ele protege; aqui basta o carregamento sob demanda.
         path: 'audit',
