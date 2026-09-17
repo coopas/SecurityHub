@@ -3,6 +3,24 @@
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- IBM Plex Sans typography, neutral surfaces, teal actions and smaller corner radii
+  across authentication, listings, forms and detail screens.
+- Dark navigation rail with separate operation and administration sections, company
+  context and a toolbar that stays visible while scrolling.
+- Dashboard indicators grouped on one surface with aligned figures. Filter
+  limitations remain available through tooltips and screen-reader text.
+- Creation forms use a narrower content area and shared action placement.
+
+### Fixed
+
+- The dashboard summary and positioned table descendants no longer widen the page
+  on small screens; wide tables scroll inside their own containers.
+- The mobile navigation drawer covers the toolbar instead of opening underneath it.
+
 ## [1.3.0] — 2026-09-17
 
 Redesign of the whole interface, from the sign-in screen to the listings, and a dark theme.
