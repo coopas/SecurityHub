@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Supressões do OWASP dependency-check. O pom.xml referencia este arquivo no profile
+  `dependency-check`, então ele precisa existir mesmo vazio, senão o build do profile falha.
+
+  Regra: toda supressão precisa de um comentário dizendo POR QUE o achado não se aplica a
+  este projeto. Suprimir sem justificativa transforma o scan em teatro de segurança.
+-->
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+</suppressions>
