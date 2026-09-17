@@ -1,0 +1,101 @@
+### SecurityHub — coleção de requisições
+### Compatível com o REST Client do VS Code e com o cliente HTTP do IntelliJ.
+### Nenhum segredo aqui: o token é capturado da resposta de login em tempo de execução.
+
+@baseUrl = http://localhost:8080/api/v1
+@demoEmail = admin@demo.test
+@demoPassword = Demo@SecurityHub2026
+
+### 1. Cadastro de uma nova empresa com o primeiro administrador
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "companyName": "Acme Segurança",
+  "name": "Administrador",
+  "email": "admin@acme.test",
+  "password": "uma-senha-suficientemente-longa"
+}
+
+### 2. Login — guarda o access token para as chamadas seguintes
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{demoEmail}}",
+  "password": "{{demoPassword}}"
+}
+
+@token = {{login.response.body.accessToken}}
+
+### 3. Usuário autenticado
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+### 4. Endpoint protegido sem token — deve responder 401
+GET {{baseUrl}}/projects
+
+### 5. Projetos — listagem paginada, filtrada e ordenada
+GET {{baseUrl}}/projects?page=0&size=20&sort=createdAt,desc&search=portal&status=ACTIVE
+Authorization: Bearer {{token}}
+
+### 6. Criar projeto (somente ADMIN)
+# @name createProject
+POST {{baseUrl}}/projects
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Portal do Cliente",
+  "description": "Aplicação web voltada ao cliente final",
+  "status": "ACTIVE"
+}
+
+@projectId = {{createProject.response.body.id}}
+
+### 7. Detalhe do projeto
+GET {{baseUrl}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+
+### 8. Atualizar projeto
+PUT {{baseUrl}}/projects/{{projectId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Portal do Cliente",
+  "description": "Descrição revisada",
+  "status": "ARCHIVED"
+}
+
+### 9. Nome duplicado — deve responder 409
+POST {{baseUrl}}/projects
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Portal do Cliente"
+}
+
+### 10. Payload inválido — deve responder 400 com fieldErrors
+POST {{baseUrl}}/projects
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": ""
+}
+
+### 11. Usuários da empresa (ADMIN e ANALYST)
+GET {{baseUrl}}/users?active=true
+Authorization: Bearer {{token}}
+
+### 12. Trilha de auditoria (somente ADMIN)
+GET {{baseUrl}}/audit-logs?page=0&size=20&entityType=Project
+Authorization: Bearer {{token}}
+
+### 13. Excluir projeto — 409 se ainda houver ativos
+DELETE {{baseUrl}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
