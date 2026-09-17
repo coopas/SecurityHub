@@ -7,20 +7,48 @@
 .layout__toolbar {
   position: relative;
   z-index: 3;
-  gap: 8px;
+  gap: var(--sh-space-2);
+  padding-inline: var(--sh-space-4);
+
+  // A barra não usa a cor cheia da marca. Uma faixa escura de 64px no topo de toda tela
+  // compete com o conteúdo pela atenção, e num painel o conteúdo é o produto. Fica na
+  // superfície, separada por uma linha, e a marca aparece pelo símbolo.
+  background: var(--sh-surface);
+  color: var(--sh-text);
+  border-bottom: 1px solid var(--sh-border);
+  box-shadow: none;
 }
 
 .layout__brand {
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sh-space-2);
+  font-weight: 800;
+  font-size: var(--sh-text-lg);
+  letter-spacing: -0.01em;
+  color: var(--sh-text);
+}
+
+.layout__brand-mark {
+  color: var(--sh-primary);
+}
+
+.layout__theme-toggle {
+  color: var(--sh-text-muted);
+}
+
+.layout__user-trigger {
+  color: var(--sh-text);
+  border-radius: var(--sh-radius-pill);
 }
 
 .layout__user-name {
-  margin: 0 4px;
+  margin: 0 var(--sh-space-1);
   max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 600;
 }
 
 .layout__user-info {
@@ -29,12 +57,16 @@
   align-items: flex-start;
   line-height: 1.3;
   height: auto;
-  padding-top: 8px;
-  padding-bottom: 8px;
+  padding-top: var(--sh-space-2);
+  padding-bottom: var(--sh-space-2);
+}
+
+.layout__user-info-name {
+  font-weight: 700;
 }
 
 .layout__user-info-meta {
-  font-size: 0.75rem;
+  font-size: var(--sh-text-sm);
   color: var(--sh-text-muted);
 }
 
@@ -47,11 +79,49 @@
   width: 248px;
   border-right: 1px solid var(--sh-border);
   background: var(--sh-surface);
+  padding: var(--sh-space-3) var(--sh-space-2);
 }
 
+.layout__sidenav .mat-mdc-list-item {
+  border-radius: var(--sh-radius-sm);
+  margin-bottom: var(--sh-space-1);
+  color: var(--sh-text-muted);
+  transition: background-color var(--sh-dur-fast) var(--sh-ease),
+    color var(--sh-dur-fast) var(--sh-ease);
+
+  .mat-icon {
+    color: var(--sh-text-subtle);
+    transition: color var(--sh-dur-fast) var(--sh-ease);
+  }
+
+  &:hover {
+    background: var(--sh-surface-hover);
+    color: var(--sh-text);
+  }
+}
+
+// O item ativo ganha cor, peso e uma barra à esquerda. Só o fundo colorido seria uma
+// distinção por cor sozinha — some para quem não a enxerga e some de novo sob luz forte
+// numa tela de brilho baixo.
 .layout__link--active {
-  background: rgba(26, 35, 126, 0.1);
-  font-weight: 500;
+  background: var(--sh-primary-soft);
+  color: var(--sh-primary);
+  font-weight: 700;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset-block: 6px;
+    inset-inline-start: 0;
+    width: 3px;
+    border-radius: var(--sh-radius-pill);
+    background: var(--sh-primary);
+  }
+
+  .mat-icon {
+    color: var(--sh-primary);
+  }
 }
 
 .layout__content {
@@ -66,5 +136,9 @@
 @media (max-width: 599px) {
   .layout__user-name {
     display: none;
+  }
+
+  .layout__toolbar {
+    padding-inline: var(--sh-space-2);
   }
 }

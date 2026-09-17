@@ -5,6 +5,7 @@ import { Observable, Subject, takeUntil } from 'rxjs';
 
 import { ROLE_LABELS, Role, User } from '../../core/models';
 import { AuthService } from '../../core/services/auth.service';
+import { Theme, ThemeService } from '../../core/services/theme.service';
 
 export interface NavItem {
   label: string;
@@ -26,6 +27,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   readonly currentUser$: Observable<User | null> = this.authService.currentUser$;
+  readonly theme$: Observable<Theme> = this.themeService.theme$;
   readonly roleLabels = ROLE_LABELS;
 
   readonly navItems: NavItem[] = [
@@ -42,6 +44,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly authService: AuthService,
+    private readonly themeService: ThemeService,
     private readonly breakpointObserver: BreakpointObserver,
     private readonly router: Router,
   ) {}
@@ -82,5 +85,9 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       next: () => void this.router.navigate(['/login']),
       error: () => void this.router.navigate(['/login']),
     });
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggle();
   }
 }

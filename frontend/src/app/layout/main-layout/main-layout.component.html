@@ -1,7 +1,7 @@
 <a class="sh-skip-link" href="#main-content">Pular para o conteúdo principal</a>
 
 <div class="layout" *ngIf="currentUser$ | async as user">
-  <mat-toolbar color="primary" class="layout__toolbar">
+  <mat-toolbar class="layout__toolbar">
     <button
       *ngIf="isHandset"
       mat-icon-button
@@ -12,8 +12,28 @@
       <mat-icon aria-hidden="true">menu</mat-icon>
     </button>
 
-    <span class="layout__brand">SecurityHub</span>
+    <span class="layout__brand">
+      <mat-icon class="layout__brand-mark" aria-hidden="true">shield</mat-icon>
+      <span>SecurityHub</span>
+    </span>
     <span class="sh-toolbar-spacer"></span>
+
+    <!--
+      O rótulo diz o que o botão faz, e não em que estado a tela está: um leitor de tela
+      anuncia a ação, e "modo escuro" sozinho deixaria a pessoa sem saber se está ligando
+      ou desligando.
+    -->
+    <button
+      *ngIf="theme$ | async as theme"
+      mat-icon-button
+      type="button"
+      class="layout__theme-toggle"
+      [attr.aria-label]="theme === 'dark' ? 'Mudar para o tema claro' : 'Mudar para o tema escuro'"
+      [matTooltip]="theme === 'dark' ? 'Tema claro' : 'Tema escuro'"
+      (click)="toggleTheme()"
+    >
+      <mat-icon aria-hidden="true">{{ theme === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+    </button>
 
     <button
       mat-button

@@ -2,38 +2,331 @@
 
 @include mat.core();
 
-$securityhub-primary: mat.define-palette(mat.$indigo-palette, 700, 400, 900);
-$securityhub-accent: mat.define-palette(mat.$teal-palette, 600, 300, 800);
-$securityhub-warn: mat.define-palette(mat.$red-palette, 700, 400, 900);
-
-$securityhub-theme: mat.define-light-theme((
-  color: (
-    primary: $securityhub-primary,
-    accent: $securityhub-accent,
-    warn: $securityhub-warn,
+// Paletas próprias em vez das prontas do Material: a identidade é azul-cofre com verde
+// seguro, e nenhuma paleta embutida chega perto. Os tons de contraste de cada faixa foram
+// medidos, não escolhidos no olho — ver o bloco de tokens abaixo.
+$sh-blue: (
+  50: #eef2f7,
+  100: #d3dde9,
+  200: #b5c5d9,
+  300: #94a9c6,
+  400: #7591b5,
+  500: #4f74a0,
+  600: #395c85,
+  700: #1e3a5f,
+  800: #182f4d,
+  900: #112035,
+  contrast: (
+    50: #112035,
+    100: #112035,
+    200: #112035,
+    300: #112035,
+    400: #112035,
+    500: #ffffff,
+    600: #ffffff,
+    700: #ffffff,
+    800: #ffffff,
+    900: #ffffff,
   ),
-  typography: mat.define-typography-config(),
-  density: 0,
+);
+
+$sh-green: (
+  50: #e7f5ef,
+  100: #c2e6d6,
+  200: #99d5bb,
+  300: #6bc49f,
+  400: #34d399,
+  500: #059669,
+  600: #047857,
+  700: #036445,
+  800: #024f36,
+  900: #013a27,
+  contrast: (
+    50: #013a27,
+    100: #013a27,
+    200: #013a27,
+    300: #013a27,
+    400: #013a27,
+    // 500 (#059669) não alcança 4.5:1 com nenhuma das duas tintas: 3.77 com branco, 3.41
+    // com escuro. Fica declarado por completude da rampa e nunca é escolhido como matiz de
+    // um tema — é o mesmo motivo de `--sh-accent-fill` existir separado de `--sh-accent`.
+    500: #ffffff,
+    600: #ffffff,
+    700: #ffffff,
+    800: #ffffff,
+    900: #ffffff,
+  ),
+);
+
+$sh-red: (
+  50: #fdeced,
+  100: #f9cfd1,
+  200: #f0a8ab,
+  300: #fca5a5,
+  400: #d95d63,
+  500: #c62f37,
+  600: #b91c1c,
+  700: #9f1239,
+  800: #86102f,
+  900: #6b0c25,
+  contrast: (
+    50: #6b0c25,
+    100: #6b0c25,
+    200: #6b0c25,
+    300: #6b0c25,
+    // 400 (#d95d63) também fica entre as duas tintas (3.69 / 3.34) e, como o verde 500,
+    // não é escolhido por tema nenhum.
+    400: #ffffff,
+    500: #ffffff,
+    600: #ffffff,
+    700: #ffffff,
+    800: #ffffff,
+    900: #ffffff,
+  ),
+);
+
+// O azul-cofre é a marca no claro e some no escuro: #1e3a5f sobre #192134 dá 1.2:1. O tema
+// escuro precisa da mesma identidade em uma faixa que se sustente sobre fundo fundo, e é o
+// que esta rampa dá — o matiz 300 é exatamente o `--sh-primary` do escuro, para que botão do
+// Material e token contem a mesma história em vez de dois azuis parecidos.
+$sh-sky: (
+  50: #f0f9ff,
+  100: #e0f2fe,
+  200: #bae6fd,
+  300: #7dd3fc,
+  400: #38bdf8,
+  500: #0ea5e9,
+  600: #0284c7,
+  700: #0369a1,
+  800: #075985,
+  900: #0c4a6e,
+  contrast: (
+    50: #0f172a,
+    100: #0f172a,
+    200: #0f172a,
+    300: #0f172a,
+    400: #0f172a,
+    500: #0f172a,
+    // 600 (#0284c7) não fecha 4.5:1 com nenhuma tinta (4.10 / 4.36). Declarado para a rampa
+    // ficar completa, nunca escolhido como matiz.
+    600: #ffffff,
+    700: #ffffff,
+    800: #ffffff,
+    900: #ffffff,
+  ),
+);
+
+$sh-primary: mat.define-palette($sh-blue, 700, 400, 900);
+$sh-accent: mat.define-palette($sh-green, 600, 400, 800);
+$sh-warn: mat.define-palette($sh-red, 600, 400, 800);
+
+// A família vem do Google Fonts, como o Roboto já vinha. A pilha de reserva é o que mantém
+// o painel legível numa rede fechada: ali a fonte externa simplesmente não chega, e sem
+// reserva declarada o navegador cairia num serifado qualquer.
+$sh-font-family: 'Plus Jakarta Sans', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+$sh-typography: mat.define-typography-config(
+  $font-family: $sh-font-family,
+  $headline-5: mat.define-typography-level(1.75rem, 2.125rem, 700, $letter-spacing: -0.02em),
+  $headline-6: mat.define-typography-level(1.375rem, 1.75rem, 700, $letter-spacing: -0.01em),
+  $subtitle-1: mat.define-typography-level(1.125rem, 1.5rem, 600),
+  $subtitle-2: mat.define-typography-level(1rem, 1.5rem, 600),
+  $body-1: mat.define-typography-level(1rem, 1.6, 400),
+  $body-2: mat.define-typography-level(0.9375rem, 1.55, 400),
+  $caption: mat.define-typography-level(0.8125rem, 1.4, 500),
+  $button: mat.define-typography-level(0.9375rem, 1.25rem, 600, $letter-spacing: 0.01em),
+);
+
+$sh-light-theme: mat.define-light-theme((
+  color: (primary: $sh-primary, accent: $sh-accent, warn: $sh-warn),
+  typography: $sh-typography,
+  density: -1,
 ));
 
-@include mat.all-component-themes($securityhub-theme);
+// Um tema escuro não herda as paletas do claro. O Material pinta o botão com o matiz
+// escolhido e escreve por cima com a tinta de contraste daquele matiz — e um #1e3a5f sobre
+// #192134 devolve um botão primário que quase não se separa do fundo. No escuro os três
+// papéis passam a matizes claros com texto escuro, que é o mesmo valor dos tokens de cada
+// um: 10.71, 9.29 e 9.41 contra a tinta escura, todos medidos.
+$sh-primary-dark: mat.define-palette($sh-sky, 300, 200, 500);
+$sh-accent-dark: mat.define-palette($sh-green, 400, 200, 600);
+$sh-warn-dark: mat.define-palette($sh-red, 300, 200, 500);
+
+$sh-dark-theme: mat.define-dark-theme((
+  color: (primary: $sh-primary-dark, accent: $sh-accent-dark, warn: $sh-warn-dark),
+  typography: $sh-typography,
+  density: -1,
+));
+
+@include mat.all-component-themes($sh-light-theme);
+
+// Só as cores no tema escuro. `all-component-themes` reemitiria tipografia e densidade
+// idênticas dentro do seletor, dobrando o CSS sem mudar um pixel.
+:root[data-theme='dark'] {
+  @include mat.all-component-colors($sh-dark-theme);
+}
 
 :root {
+  color-scheme: light;
+
+  // --- superfícies -------------------------------------------------------
+  --sh-background: #f1f5f9;
   --sh-surface: #ffffff;
-  --sh-background: #f4f5f9;
-  --sh-border: #d8dae5;
-  --sh-text: #1c1d29;
-  --sh-text-muted: #55596b;
+  --sh-surface-sunken: #f8fafc;
+  --sh-surface-hover: rgba(15, 23, 42, 0.04);
+  --sh-surface-selected: rgba(30, 58, 95, 0.08);
 
-  --sh-critical: #7b1020;
-  --sh-high: #b3261e;
-  --sh-medium: #8a5300;
-  --sh-low: #1f5e3a;
+  // --- traços ------------------------------------------------------------
+  // Duas bordas porque a norma pede coisas diferentes de cada uma: uma divisória é
+  // decoração e pode ser leve, enquanto a borda que delimita um campo identifica o
+  // controle e precisa de 3:1. Medidas: 1.3:1 e 3.68:1 sobre branco.
+  --sh-border: #e2e8f0;
+  --sh-border-strong: #75879c;
 
-  --sh-open: #b3261e;
-  --sh-in-progress: #8a5300;
-  --sh-resolved: #1f5e3a;
-  --sh-accepted-risk: #4a4a68;
+  // --- texto -------------------------------------------------------------
+  --sh-text: #0f172a;
+  --sh-text-muted: #475569;
+  --sh-text-subtle: #64748b;
+  --sh-text-inverse: #ffffff;
+
+  // --- marca -------------------------------------------------------------
+  --sh-primary: #1e3a5f;
+  --sh-primary-hover: #182f4d;
+  --sh-primary-soft: rgba(30, 58, 95, 0.09);
+  --sh-on-primary: #ffffff;
+
+  // O verde claro (#059669) só preenche: com texto branco dá 3.77:1 e reprova em 4.5.
+  // Onde houver texto por cima, o token escuro é o obrigatório.
+  --sh-accent: #047857;
+  --sh-accent-fill: #059669;
+  --sh-accent-soft: rgba(5, 150, 105, 0.1);
+  --sh-on-accent: #ffffff;
+
+  // --- severidade --------------------------------------------------------
+  --sh-critical: #9f1239;
+  --sh-high: #b91c1c;
+  --sh-medium: #a16207;
+  --sh-low: #15803d;
+
+  --sh-critical-soft: rgba(159, 18, 57, 0.1);
+  --sh-high-soft: rgba(185, 28, 28, 0.1);
+  --sh-medium-soft: rgba(161, 98, 7, 0.12);
+  --sh-low-soft: rgba(21, 128, 61, 0.1);
+
+  // --- situação ----------------------------------------------------------
+  --sh-open: #b91c1c;
+  --sh-in-progress: #a16207;
+  --sh-resolved: #15803d;
+  --sh-accepted-risk: #475569;
+
+  --sh-danger: #b91c1c;
+  --sh-danger-soft: rgba(185, 28, 28, 0.1);
+  --sh-warning-soft: rgba(161, 98, 7, 0.12);
+  --sh-success-soft: rgba(21, 128, 61, 0.1);
+
+  // --- foco --------------------------------------------------------------
+  --sh-focus: #1e3a5f;
+  --sh-focus-halo: rgba(30, 58, 95, 0.25);
+
+  // --- espaçamento (escala densa, para painel) ---------------------------
+  --sh-space-1: 4px;
+  --sh-space-2: 8px;
+  --sh-space-3: 12px;
+  --sh-space-4: 16px;
+  --sh-space-5: 24px;
+  --sh-space-6: 32px;
+  --sh-space-7: 48px;
+
+  // --- forma -------------------------------------------------------------
+  --sh-radius-sm: 6px;
+  --sh-radius-md: 10px;
+  --sh-radius-lg: 16px;
+  --sh-radius-pill: 999px;
+
+  // --- elevação ----------------------------------------------------------
+  // Duas camadas por sombra: uma linha curta que desenha a aresta e uma difusa que dá a
+  // distância. Uma sombra só, larga, borra a aresta e é o que faz um card parecer sujo.
+  --sh-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.05);
+  --sh-shadow-md: 0 2px 4px rgba(15, 23, 42, 0.06), 0 6px 16px rgba(15, 23, 42, 0.08);
+  --sh-shadow-lg: 0 4px 8px rgba(15, 23, 42, 0.07), 0 16px 32px rgba(15, 23, 42, 0.1);
+
+  // --- movimento ---------------------------------------------------------
+  --sh-ease: cubic-bezier(0.2, 0, 0.2, 1);
+  --sh-dur-fast: 120ms;
+  --sh-dur: 200ms;
+  --sh-dur-slow: 280ms;
+
+  // --- tipografia --------------------------------------------------------
+  --sh-font: #{$sh-font-family};
+  --sh-text-xs: 0.75rem;
+  --sh-text-sm: 0.8125rem;
+  --sh-text-md: 0.875rem;
+  --sh-text-base: 1rem;
+  --sh-text-lg: 1.125rem;
+  --sh-text-xl: 1.375rem;
+  --sh-text-2xl: 1.75rem;
+}
+
+// O escuro não é o claro com as cores invertidas. As superfícies sobem de luminosidade
+// conforme se aproximam de quem olha, o texto nunca é branco puro (que vibra sobre fundo
+// escuro) e todo tom de severidade clareia, porque os tons fechados do tema claro somem
+// contra #192134. Cada par abaixo foi medido em 4.5:1 ou mais.
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --sh-background: #0f172a;
+  --sh-surface: #192134;
+  --sh-surface-sunken: #131b2b;
+  --sh-surface-hover: rgba(248, 250, 252, 0.06);
+  --sh-surface-selected: rgba(125, 211, 252, 0.14);
+
+  --sh-border: rgba(248, 250, 252, 0.1);
+  --sh-border-strong: #64748b;
+
+  --sh-text: #f8fafc;
+  --sh-text-muted: #94a3b8;
+  --sh-text-subtle: #7d8da3;
+  --sh-text-inverse: #0f172a;
+
+  // O azul-cofre é a identidade no claro e desaparece no escuro: #1e3a5f sobre #192134 dá
+  // 1.2:1. A marca migra para o tom claro da mesma família, que é como ela continua sendo
+  // reconhecível sem deixar de ser legível.
+  --sh-primary: #7dd3fc;
+  --sh-primary-hover: #a5e0fd;
+  --sh-primary-soft: rgba(125, 211, 252, 0.16);
+  --sh-on-primary: #0f172a;
+
+  --sh-accent: #34d399;
+  --sh-accent-fill: #34d399;
+  --sh-accent-soft: rgba(52, 211, 153, 0.16);
+  --sh-on-accent: #0f172a;
+
+  --sh-critical: #fda4af;
+  --sh-high: #fca5a5;
+  --sh-medium: #fcd34d;
+  --sh-low: #6ee7b7;
+
+  --sh-critical-soft: rgba(253, 164, 175, 0.16);
+  --sh-high-soft: rgba(252, 165, 165, 0.16);
+  --sh-medium-soft: rgba(252, 211, 77, 0.16);
+  --sh-low-soft: rgba(110, 231, 183, 0.16);
+
+  --sh-open: #fca5a5;
+  --sh-in-progress: #fcd34d;
+  --sh-resolved: #6ee7b7;
+  --sh-accepted-risk: #cbd5e1;
+
+  --sh-danger: #fca5a5;
+  --sh-danger-soft: rgba(252, 165, 165, 0.16);
+  --sh-warning-soft: rgba(252, 211, 77, 0.16);
+  --sh-success-soft: rgba(110, 231, 183, 0.16);
+
+  --sh-focus: #7dd3fc;
+  --sh-focus-halo: rgba(125, 211, 252, 0.3);
+
+  --sh-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sh-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.4), 0 6px 16px rgba(0, 0, 0, 0.36);
+  --sh-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.44), 0 16px 32px rgba(0, 0, 0, 0.4);
 }
 
 html,
@@ -42,19 +335,73 @@ body {
   margin: 0;
   background: var(--sh-background);
   color: var(--sh-text);
-  font-family: Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--sh-font);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
   box-sizing: border-box;
 }
 
+// A troca de tema repinta a árvore inteira. Sem esta transição a mudança é um estouro
+// branco; com ela, as superfícies atravessam. Só cor: animar layout aqui custaria caro.
+body,
+.sh-card,
+.sh-panel,
+.mat-mdc-card,
+.mat-toolbar {
+  transition: background-color var(--sh-dur) var(--sh-ease),
+    border-color var(--sh-dur) var(--sh-ease), color var(--sh-dur) var(--sh-ease);
+}
+
+// Quem pediu menos movimento recebe menos movimento — inclusive na troca de tema.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--sh-text);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: var(--sh-primary);
+}
+
 /* Keyboard focus must stay visible everywhere, including inside Material overlays. */
+//
+// Sem `border-radius` aqui: declarar o raio nesta regra mudaria a forma do próprio elemento
+// ao receber foco — um botão pílula viraria quase retângulo no instante em que o teclado
+// chegasse nele. O contorno já acompanha sozinho o raio de quem ele circunda.
 :focus-visible {
-  outline: 3px solid #1a237e;
+  outline: 3px solid var(--sh-focus);
   outline-offset: 2px;
 }
 
+// Esconde do olho e mantém para o leitor de tela.
+//
+// `table-layout: fixed` não é detalhe: um `<table>` trata `width` como mínimo e se alarga
+// até caber o conteúdo. As tabelas equivalentes dos gráficos do dashboard chegavam a 570px
+// escondidas assim, e empurravam a rolagem horizontal da área de conteúdo — invisíveis e
+// ainda assim deslocando a tela. Trocar o `display` resolveria a largura e destruiria a
+// semântica de tabela para quem depende dela, que é justamente o motivo de ela existir.
+//
+// `clip-path` acompanha o `clip`, que está obsoleto mas segue sendo o que navegador antigo
+// entende.
 .sh-visually-hidden {
   position: absolute;
   width: 1px;
@@ -63,8 +410,19 @@ body {
   margin: -1px;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+  table-layout: fixed;
+}
+
+// O `nowrap` da receita clássica serve a texto corrido; numa tabela ele fixa cada célula na
+// largura do seu conteúdo e impede a tabela de encolher, mesmo com `table-layout: fixed`.
+// Medido nas tabelas equivalentes dos gráficos: 628px com o nowrap, 121px sem, e a rolagem
+// horizontal da área de conteúdo desaparece junto. As dez células seguem no mesmo lugar,
+// que é o que importa para quem lê por áudio.
+table.sh-visually-hidden {
+  white-space: normal;
 }
 
 .sh-skip-link {
@@ -72,43 +430,55 @@ body {
   left: -9999px;
   top: 0;
   z-index: 1000;
-  padding: 12px 16px;
-  background: #1a237e;
-  color: #fff;
+  padding: var(--sh-space-3) var(--sh-space-4);
+  background: var(--sh-primary);
+  color: var(--sh-on-primary);
+  border-radius: var(--sh-radius-sm);
   text-decoration: none;
+  font-weight: 600;
 
   &:focus {
-    left: 8px;
-    top: 8px;
+    left: var(--sh-space-2);
+    top: var(--sh-space-2);
   }
 }
 
 .sh-page {
-  padding: 24px;
-  max-width: 1400px;
+  padding: var(--sh-space-5);
+  max-width: 1440px;
   margin: 0 auto;
 }
 
 .sh-page__header {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--sh-space-4);
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: var(--sh-space-5);
 
   h1 {
     margin: 0;
-    font-size: 1.6rem;
-    line-height: 1.3;
+    font-size: var(--sh-text-2xl);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
   }
+}
+
+// Linha de apoio do cabeçalho: conta quantos itens a tela está mostrando, ou explica o
+// recorte aplicado. Sem ela o número de uma listagem filtrada não quer dizer nada.
+.sh-page__subtitle {
+  margin: var(--sh-space-1) 0 0;
+  color: var(--sh-text-muted);
+  font-size: var(--sh-text-md);
 }
 
 .sh-card {
   background: var(--sh-surface);
   border: 1px solid var(--sh-border);
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: var(--sh-radius-md);
+  padding: var(--sh-space-5);
+  box-shadow: var(--sh-shadow-sm);
 }
 
 .sh-toolbar-spacer {
@@ -119,53 +489,123 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 48px 16px;
+  gap: var(--sh-space-3);
+  padding: var(--sh-space-7) var(--sh-space-4);
   text-align: center;
   color: var(--sh-text-muted);
 }
 
 .sh-table-wrapper {
   overflow-x: auto;
+  border-radius: var(--sh-radius-md);
+  border: 1px solid var(--sh-border);
+  background: var(--sh-surface);
 }
 
 table.sh-table {
   width: 100%;
+
+  // Cabeçalho em caixa alta pequena: numa tabela densa ele precisa se separar do corpo sem
+  // ganhar peso visual, e reduzir o tamanho funciona melhor do que engrossar.
+  th.mat-mdc-header-cell {
+    font-size: var(--sh-text-xs);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--sh-text-muted);
+    background: var(--sh-surface-sunken);
+    white-space: nowrap;
+  }
+
+  td.mat-mdc-cell {
+    font-size: var(--sh-text-md);
+    color: var(--sh-text);
+  }
+
+  tr.mat-mdc-row {
+    transition: background-color var(--sh-dur-fast) var(--sh-ease);
+
+    &:hover {
+      background: var(--sh-surface-hover);
+    }
+  }
 }
 
 .sh-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
+  gap: var(--sh-space-4);
 }
 
 .sh-form-actions {
   display: flex;
-  gap: 12px;
+  gap: var(--sh-space-3);
   justify-content: flex-end;
-  margin-top: 24px;
+  margin-top: var(--sh-space-5);
 }
 
 .sh-filters {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  gap: var(--sh-space-3);
   align-items: start;
-  margin-bottom: 16px;
+  margin-bottom: var(--sh-space-4);
+  padding: var(--sh-space-4);
+  background: var(--sh-surface);
+  border: 1px solid var(--sh-border);
+  border-radius: var(--sh-radius-md);
+}
+
+// Selo compartilhado por severidade, situação e formato. Cor mais ícone, nunca cor
+// sozinha: cerca de 8% dos homens não distinguem vermelho de verde, e severidade é
+// exatamente a informação que não pode depender disso.
+//
+// O preenchimento é opaco de propósito, e não o `--sh-*-soft` correspondente. Tinta
+// translúcida empilha com o que estiver atrás: sobre a linha realçada pelo cursor, o par
+// "texto médio sobre fundo médio" caía de 4.20 para 3.90 — já reprovava parado e piorava ao
+// passar o mouse. Com uma superfície opaca o pior par do conjunto mede 4.71 em qualquer
+// estado. O contorno em `currentColor` devolve a cor que o fundo deixou de dar.
+.sh-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sh-space-1);
+  padding: 2px var(--sh-space-2);
+  border-radius: var(--sh-radius-pill);
+  font-size: var(--sh-text-xs);
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+  background: var(--sh-surface-sunken);
+  border: 1px solid currentColor;
+
+  .mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+    line-height: 14px;
+  }
+}
+
+.sh-page--narrow {
+  max-width: 880px;
 }
 
 @media (max-width: 599px) {
   .sh-page {
-    padding: 16px;
+    padding: var(--sh-space-4);
+  }
+
+  .sh-page__header h1 {
+    font-size: var(--sh-text-xl);
   }
 }
 
 .mat-mdc-snack-bar-container.sh-snack-error {
-  --mdc-snackbar-container-color: #7b1020;
+  --mdc-snackbar-container-color: #86102f;
   --mdc-snackbar-supporting-text-color: #ffffff;
 }
 
 .mat-mdc-snack-bar-container.sh-snack-success {
-  --mdc-snackbar-container-color: #1f5e3a;
+  --mdc-snackbar-container-color: #024f36;
   --mdc-snackbar-supporting-text-color: #ffffff;
 }
