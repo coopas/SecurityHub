@@ -4,7 +4,7 @@ A política de segurança do projeto exige dependências sem vulnerabilidades cr
 conhecidas no momento da entrega, com exceções justificadas registradas. Este documento é
 esse registro.
 
-Data da análise: **2026-09-17**.
+Data da análise: **2026-09-17**. Revisto ao final da V2.
 
 ## Comandos
 
@@ -68,6 +68,32 @@ Nada disso é servido ao navegador nem empacotado: o `frontend/Dockerfile` é mu
 imagem final é um `nginx:alpine` com apenas os artefatos estáticos de `dist/`. O risco é de
 máquina de desenvolvedor e de runner de CI, não da aplicação publicada. Corrigi-los exige a
 mesma atualização de major recusada acima.
+
+## Dependências acrescentadas na V2
+
+| Dependência | Escopo | Licença | Por quê |
+| --- | --- | --- | --- |
+| `spring-boot-starter-mail` | runtime | Apache-2.0 | Entrega dos links de recuperação de senha e de convite (`docs/adr/0007`). |
+| `com.github.librepdf:openpdf` | runtime | LGPL-2.1 / MPL-2.0 | Relatório executivo em PDF (`docs/adr/0008`). |
+| `org.apache.pdfbox:pdfbox` | **test** | Apache-2.0 | Só para `PDFTextStripper`: um PDF que imprime `Injeç?o` é um defeito que nenhuma asserção em bytes pega. |
+| `cypress` | **devDependency** | MIT | Testes E2E dos fluxos críticos. Não vai para o bundle. |
+
+### Obrigações de licença
+
+O OpenPDF é LGPL/MPL dual. As obrigações da LGPL incidem sobre a distribuição de obra
+combinada e são atendidas por depender do artefato publicado sem modificação; esta é uma
+aplicação de servidor, que não é distribuída.
+
+### Fonte embarcada
+
+`backend/src/main/resources/fonts/DejaVuSans.ttf` é redistribuído sob a licença Bitstream
+Vera / Arev, cujo texto está ao lado do arquivo em `LICENSE-DejaVu.txt`. A redistribuição é
+permitida; **incluir o texto da licença é a parte que costuma ser esquecida**.
+
+### MailHog não é dependência da aplicação
+
+O container de caixa de entrada existe só no `docker-compose.yml` de desenvolvimento. Não há
+artefato dele no build, e a aplicação fala SMTP comum com qualquer relay.
 
 ## Backend
 

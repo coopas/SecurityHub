@@ -11,6 +11,9 @@ entre entidade e schema derruba a aplicação no boot em vez de corrigir silenci
 | `V3__projects.sql` | `projects` |
 | `V4__assets.sql` | `assets` |
 | `V5__vulnerabilities_and_comments.sql` | `vulnerabilities`, `comments` |
+| `V6__dashboard_indexes.sql` | índices das agregações do dashboard |
+| `V7__identity_core.sql` | `refresh_tokens`, `password_reset_tokens`, `invitations` |
+| `V8__vulnerability_attachments.sql` | `vulnerability_attachments` |
 
 ## DER
 
@@ -22,6 +25,11 @@ erDiagram
     COMPANIES ||--o{ VULNERABILITIES : "possui"
     COMPANIES ||--o{ COMMENTS : "possui"
     COMPANIES ||--o{ AUDIT_LOGS : "possui"
+    COMPANIES ||--o{ INVITATIONS : "convida"
+
+    USERS ||--o{ REFRESH_TOKENS : "abre sessão"
+    USERS ||--o| PASSWORD_RESET_TOKENS : "redefine"
+    VULNERABILITIES ||--o{ VULNERABILITY_ATTACHMENTS : "documenta"
 
     PROJECTS ||--o{ ASSETS : "agrupa"
     ASSETS   ||--o{ VULNERABILITIES : "expõe"
@@ -90,6 +98,43 @@ erDiagram
         bigint    author_id FK
         varchar   content
     }
+    REFRESH_TOKENS {
+        bigserial id PK
+        bigint    user_id FK
+        varchar   family_id "linhagem: rotação herda, reuso revoga toda a família"
+        varchar   token_hash UK "SHA-256 hex, nunca o token em claro"
+        varchar   status "ACTIVE|ROTATED|REVOKED"
+        varchar   revoked_reason "existe sse status = REVOKED"
+        timestamptz expires_at
+        timestamptz used_at "marco da janela de tolerância"
+    }
+    PASSWORD_RESET_TOKENS {
+        bigserial id PK
+        bigint    user_id FK "UNIQUE: no máximo um link vivo"
+        varchar   token_hash UK
+        timestamptz expires_at
+    }
+    INVITATIONS {
+        bigserial id PK
+        bigint    company_id FK
+        varchar   email "único global entre os PENDING"
+        varchar   role
+        varchar   token_hash UK
+        varchar   status "PENDING|ACCEPTED|REVOKED"
+        timestamptz expires_at
+        bigint    invited_by FK
+    }
+    VULNERABILITY_ATTACHMENTS {
+        bigserial id PK
+        bigint    company_id FK
+        bigint    vulnerability_id FK
+        bigint    uploaded_by FK "anulável: remover o autor não apaga a evidência"
+        varchar   original_filename "só para anunciar no download"
+        varchar   stored_filename UK "32 hex gerados; nunca o nome do cliente"
+        varchar   content_type "detectado por magic number"
+        bigint    size_bytes
+        char      checksum_sha256
+    }
     AUDIT_LOGS {
         bigserial id PK
         bigint    company_id FK
@@ -151,6 +196,45 @@ Dois índices são parciais por refletirem exatamente o predicado que servem:
 `projects (company_id, lower(name))` e `assets (project_id, lower(identifier)) WHERE identifier IS NOT NULL`.
 O índice parcial é o que permite vários ativos sem identificador no mesmo projeto, em vez de
 tratar todos os nulos como colisão.
+
+### Material de credencial é guardado como SHA-256, e o banco recusa outra coisa
+
+As três tabelas da V7 guardam apenas o digest hexadecimal, sob
+`CHECK (token_hash ~ '^[0-9a-f]{64}$')`. Se um dia alguém tentar gravar o token em claro, a
+linha não entra. SHA-256 e não BCrypt: a entrada tem 256 bits de CSPRNG, não é senha humana, e
+o hash lento seria além de inútil **imbuscável** — encontrar a linha de um token exigiria
+comparar contra todas as do usuário.
+
+### `refresh_tokens` não tem `company_id`
+
+É a única exceção à regra de que toda tabela de domínio carrega o tenant. Esta tabela nunca é
+consultada por empresa: todo acesso é por `token_hash`, `user_id` ou `family_id`. A empresa vem
+de `users`, que é a fonte autoritativa e não pode divergir. Denormalizar aqui criaria uma
+segunda cópia de um fato que a chave estrangeira já carrega.
+
+### `family_id` é `VARCHAR(36)` e não `uuid`
+
+O Hibernate 5.6 mapeia `java.util.UUID` como `uuid-binary` por padrão, o que falharia no
+`ddl-auto: validate` contra uma coluna `uuid` a menos que a entidade carregasse
+`@Type("pg-uuid")`. Guardar o texto elimina a armadilha e é legível no `psql`.
+
+### `password_reset_tokens` não tem coluna de uso
+
+"Uso único", "invalidado ao trocar a senha" e "no máximo um link vivo" colapsam num `DELETE`
+mais um `UNIQUE (user_id)`. Uma máquina de estados aqui seria complexidade para guardar
+histórico que a trilha de auditoria já guarda.
+
+### O convite não é uma linha de `users`
+
+Registrado em `docs/permissions.md`: um convite de ADMIN nunca aceito contaria na regra do
+último administrador ativo. Também apareceria como responsável possível de vulnerabilidade e
+queimaria o endereço contra o único global sem forma de liberar.
+
+### O anexo separa o nome do cliente do nome em disco
+
+`stored_filename` é gerado e validado por regex no próprio banco; `original_filename` é
+sanitizado e serve apenas para anunciar no download. São duas camadas independentes, e nenhuma
+depende da outra para impedir travessia de caminho.
 
 ### `users.email` é único globalmente
 Decisão registrada em `docs/adr/0004`: o modelo de domínio pede unicidade por empresa, mas o contrato de login
