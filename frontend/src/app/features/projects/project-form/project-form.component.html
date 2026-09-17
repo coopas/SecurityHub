@@ -1,0 +1,92 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>{{ title }}</h1>
+      <p class="projects-subtitle">
+        {{ isEdit ? 'Altere os dados do projeto e salve.' : 'Cadastre um projeto para agrupar ativos e vulnerabilidades.' }}
+      </p>
+    </div>
+
+    <a mat-stroked-button [routerLink]="cancelLink">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      <span>Voltar</span>
+    </a>
+  </header>
+
+  <div class="sh-card">
+    <app-state-message
+      *ngIf="loadState"
+      [state]="loadState"
+      [message]="loadState === 'error' ? (loadErrorMessage ?? undefined) : undefined"
+      [showRetry]="!notFound"
+      (retry)="loadProject()"
+    ></app-state-message>
+
+    <form *ngIf="!loadState" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <p class="projects-alert" role="alert" *ngIf="generalError">{{ generalError }}</p>
+
+      <div class="sh-form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Nome</mat-label>
+          <input matInput type="text" formControlName="name" maxlength="140" data-testid="project-name" />
+          <mat-hint>De 2 a 140 caracteres.</mat-hint>
+          <mat-error *ngIf="form.controls['name'].hasError('required')">Informe o nome do projeto.</mat-error>
+          <mat-error *ngIf="form.controls['name'].hasError('minlength')">
+            O nome deve ter ao menos 2 caracteres.
+          </mat-error>
+          <mat-error *ngIf="form.controls['name'].hasError('maxlength')">
+            O nome deve ter no máximo 140 caracteres.
+          </mat-error>
+          <mat-error *ngIf="form.controls['name'].hasError('server')">
+            {{ form.controls['name'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Situação</mat-label>
+          <mat-select formControlName="status" data-testid="project-status">
+            <mat-option *ngFor="let status of statuses" [value]="status">
+              {{ statusLabels[status] }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.controls['status'].hasError('required')">Selecione a situação.</mat-error>
+          <mat-error *ngIf="form.controls['status'].hasError('server')">
+            {{ form.controls['status'].getError('server') }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="projects-form__description">
+        <mat-label>Descrição</mat-label>
+        <textarea
+          matInput
+          formControlName="description"
+          rows="4"
+          maxlength="2000"
+          data-testid="project-description"
+        ></textarea>
+        <mat-hint>Opcional, até 2000 caracteres.</mat-hint>
+        <mat-error *ngIf="form.controls['description'].hasError('maxlength')">
+          A descrição deve ter no máximo 2000 caracteres.
+        </mat-error>
+        <mat-error *ngIf="form.controls['description'].hasError('server')">
+          {{ form.controls['description'].getError('server') }}
+        </mat-error>
+      </mat-form-field>
+
+      <div class="sh-form-actions">
+        <a mat-button [routerLink]="cancelLink">Cancelar</a>
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="submitting"
+          data-testid="project-submit"
+        >
+          <mat-spinner *ngIf="submitting" diameter="20" aria-hidden="true"></mat-spinner>
+          <span>{{ submitting ? 'Salvando...' : 'Salvar' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

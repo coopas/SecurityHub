@@ -22,8 +22,13 @@ export const APP_ROUTES: Routes = [
         loadChildren: () =>
           import('./features/dashboard/dashboard.module').then((m) => m.DashboardModule),
       },
+      {
+        path: 'projects',
+        loadChildren: () =>
+          import('./features/projects/projects.module').then((m) => m.ProjectsModule),
+      },
       // Rotas das próximas entregas, filhas deste mesmo shell:
-      // 'projects', 'assets' e 'vulnerabilities' para qualquer papel autenticado;
+      // 'assets' e 'vulnerabilities' para qualquer papel autenticado;
       // 'users' e 'audit' somente para ADMIN, usando roleGuard com data.roles.
     ],
   },

@@ -1,0 +1,94 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>{{ project ? project.name : 'Projeto' }}</h1>
+      <p class="projects-subtitle" *ngIf="project">
+        {{ statusLabels[project.status] }} · {{ project.assetCount }}
+        {{ project.assetCount === 1 ? 'ativo vinculado' : 'ativos vinculados' }}
+      </p>
+    </div>
+
+    <div class="projects-detail__actions">
+      <a mat-stroked-button routerLink="/projects">
+        <mat-icon aria-hidden="true">arrow_back</mat-icon>
+        <span>Voltar</span>
+      </a>
+
+      <ng-container *ngIf="isAdmin && project">
+        <a
+          mat-stroked-button
+          color="primary"
+          [routerLink]="['/projects', project.id, 'editar']"
+          data-testid="project-edit"
+        >
+          <mat-icon aria-hidden="true">edit</mat-icon>
+          <span>Editar</span>
+        </a>
+        <button
+          mat-raised-button
+          color="warn"
+          type="button"
+          [disabled]="deleting"
+          (click)="confirmDelete()"
+          data-testid="project-delete"
+        >
+          <mat-icon aria-hidden="true">delete_outline</mat-icon>
+          <span>Excluir</span>
+        </button>
+      </ng-container>
+    </div>
+  </header>
+
+  <p class="projects-alert" role="alert" *ngIf="actionError">{{ actionError }}</p>
+
+  <div class="sh-card">
+    <app-state-message
+      *ngIf="state"
+      [state]="state"
+      [message]="state === 'error' ? (errorMessage ?? undefined) : undefined"
+      [showRetry]="!notFound"
+      (retry)="load()"
+    ></app-state-message>
+
+    <dl class="projects-detail" *ngIf="!state && project">
+      <div class="projects-detail__item">
+        <dt>Situação</dt>
+        <dd>
+          <span class="projects-status" [class.projects-status--archived]="project.status === 'ARCHIVED'">
+            <mat-icon aria-hidden="true">
+              {{ project.status === 'ACTIVE' ? 'play_circle_outline' : 'inventory_2' }}
+            </mat-icon>
+            <span>{{ statusLabels[project.status] }}</span>
+          </span>
+        </dd>
+      </div>
+
+      <div class="projects-detail__item">
+        <dt>Ativos</dt>
+        <dd data-testid="project-asset-count">{{ project.assetCount }}</dd>
+      </div>
+
+      <div class="projects-detail__item">
+        <dt>Criado por</dt>
+        <dd>{{ project.createdByName ?? 'Não informado' }}</dd>
+      </div>
+
+      <div class="projects-detail__item">
+        <dt>Criado em</dt>
+        <dd>{{ project.createdAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      </div>
+
+      <div class="projects-detail__item">
+        <dt>Atualizado em</dt>
+        <dd>{{ project.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      </div>
+
+      <div class="projects-detail__item projects-detail__item--wide">
+        <dt>Descrição</dt>
+        <dd class="projects-detail__description">
+          {{ project.description ?? 'Sem descrição.' }}
+        </dd>
+      </div>
+    </dl>
+  </div>
+</section>

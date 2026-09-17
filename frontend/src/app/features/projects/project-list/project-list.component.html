@@ -1,0 +1,162 @@
+<section class="sh-page">
+  <header class="sh-page__header">
+    <div>
+      <h1>Projetos</h1>
+      <p class="projects-subtitle">
+        Projetos da sua empresa, com os ativos vinculados a cada um.
+      </p>
+    </div>
+
+    <a
+      *ngIf="isAdmin"
+      mat-raised-button
+      color="primary"
+      routerLink="/projects/novo"
+      data-testid="project-create"
+    >
+      <mat-icon aria-hidden="true">add</mat-icon>
+      <span>Novo projeto</span>
+    </a>
+  </header>
+
+  <p class="projects-alert" role="alert" *ngIf="actionError">{{ actionError }}</p>
+
+  <div class="sh-card">
+    <form class="sh-filters" (ngSubmit)="$event.preventDefault()" novalidate>
+      <mat-form-field appearance="outline">
+        <mat-label>Buscar por nome ou descrição</mat-label>
+        <input
+          matInput
+          type="search"
+          [formControl]="searchControl"
+          autocomplete="off"
+          data-testid="project-search"
+        />
+        <mat-icon matSuffix aria-hidden="true">search</mat-icon>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Situação</mat-label>
+        <mat-select
+          [formControl]="statusControl"
+          (selectionChange)="onStatusChange($event.value)"
+          data-testid="project-status-filter"
+        >
+          <mat-option value="">Todas</mat-option>
+          <mat-option *ngFor="let status of statuses" [value]="status">
+            {{ statusLabels[status] }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button
+        mat-stroked-button
+        type="button"
+        class="projects-filters__clear"
+        [disabled]="!hasFilters"
+        (click)="clearFilters()"
+        data-testid="project-clear-filters"
+      >
+        Limpar filtros
+      </button>
+    </form>
+
+    <app-state-message
+      *ngIf="state"
+      [state]="state"
+      [message]="state === 'empty' ? emptyMessage : undefined"
+      [showRetry]="true"
+      (retry)="load()"
+    ></app-state-message>
+
+    <ng-container *ngIf="!state">
+      <div class="sh-table-wrapper">
+        <table
+          mat-table
+          class="sh-table"
+          matSort
+          matSortDisableClear
+          aria-label="Lista de projetos"
+          [dataSource]="projects"
+          [trackBy]="trackById"
+          [matSortActive]="sortActive"
+          [matSortDirection]="sortDirection"
+          (matSortChange)="onSort($event)"
+        >
+          <caption class="sh-visually-hidden">
+            Projetos da empresa, com situação, quantidade de ativos e data de criação.
+          </caption>
+
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Nome</th>
+            <td mat-cell *matCellDef="let project">
+              <a class="projects-table__link" [routerLink]="['/projects', project.id]">
+                {{ project.name }}
+              </a>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Situação</th>
+            <td mat-cell *matCellDef="let project">
+              <span class="projects-status" [class.projects-status--archived]="project.status === 'ARCHIVED'">
+                <mat-icon aria-hidden="true">
+                  {{ project.status === 'ACTIVE' ? 'play_circle_outline' : 'inventory_2' }}
+                </mat-icon>
+                <span>{{ statusLabel(project.status) }}</span>
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="assetCount">
+            <th mat-header-cell *matHeaderCellDef scope="col">Ativos</th>
+            <td mat-cell *matCellDef="let project">{{ project.assetCount }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header scope="col">Criado em</th>
+            <td mat-cell *matCellDef="let project">{{ project.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef scope="col">
+              <span class="sh-visually-hidden">Ações</span>
+            </th>
+            <td mat-cell *matCellDef="let project" class="projects-table__actions">
+              <a
+                mat-icon-button
+                [routerLink]="['/projects', project.id, 'editar']"
+                [attr.aria-label]="'Editar projeto ' + project.name"
+                [matTooltip]="'Editar projeto'"
+              >
+                <mat-icon aria-hidden="true">edit</mat-icon>
+              </a>
+              <button
+                mat-icon-button
+                type="button"
+                color="warn"
+                [attr.aria-label]="'Excluir projeto ' + project.name"
+                [matTooltip]="'Excluir projeto'"
+                (click)="confirmDelete(project)"
+              >
+                <mat-icon aria-hidden="true">delete_outline</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+        </table>
+      </div>
+
+      <mat-paginator
+        [length]="totalElements"
+        [pageIndex]="query.page"
+        [pageSize]="query.size"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPage($event)"
+        aria-label="Paginação dos projetos"
+      ></mat-paginator>
+    </ng-container>
+  </div>
+</section>
