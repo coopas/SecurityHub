@@ -44,4 +44,5 @@ Thumbs.db
 
 # Uploads / temp
 backend/uploads/
+backend/uploads-scan/
 tmp/

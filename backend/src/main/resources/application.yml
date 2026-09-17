@@ -123,7 +123,12 @@ securityhub:
     directory: ${SECURITYHUB_ATTACHMENTS_DIR:./uploads}
     max-size-bytes: 10485760
   scan:
+    directory: ${SECURITYHUB_SCAN_DIR:./uploads-scan}
     max-upload-bytes: 10485760
+    # Teto de achados por arquivo. Um relatório acima disso é recusado antes de
+    # qualquer gravação: importar milhares de linhas de uma vez enterraria o backlog
+    # sob ruído que ninguém revisa, e a revisão manual é o ponto do fluxo.
+    max-findings: 2000
 
 logging:
   level:

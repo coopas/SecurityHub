@@ -104,6 +104,38 @@ public class TestDataFactory {
     }
 
     /**
+     * The identifier overload the scan importer needs: {@code asset(project, name)} hardcodes a
+     * null identifier, and a null identifier can never match a finding's target.
+     *
+     * <p>Written straight to the repository like every other fixture here, so the value lands
+     * exactly as given — {@code AssetMapper.normalizeIdentifier} is not applied. That is on
+     * purpose: a test that wants to prove the importer trims and lower-cases before looking up
+     * has to be able to store an identifier the write endpoint would have normalized.
+     */
+    @Transactional
+    public Asset asset(Project project, String name, String identifier) {
+        Project managed = projectRepository.findById(project.getId())
+                .orElseThrow(() -> new IllegalStateException("Projeto de teste não encontrado"));
+        return assetRepository.save(new Asset(managed.getCompany(), managed, name, null,
+                AssetType.SERVER, identifier, Environment.PRODUCTION, Criticality.MEDIUM));
+    }
+
+    /**
+     * An open finding carrying a scanner fingerprint, which only the importer ever sets in
+     * production. Exists so a test can prove that
+     * {@code uk_vulnerabilities_company_fingerprint} refuses the second one.
+     */
+    @Transactional
+    public Vulnerability fingerprintedVulnerability(Asset asset, String title, String fingerprint) {
+        Asset managed = assetRepository.findById(asset.getId())
+                .orElseThrow(() -> new IllegalStateException("Ativo de teste não encontrado"));
+        Vulnerability vulnerability = new Vulnerability(managed.getCompany(), managed, title, null,
+                Severity.HIGH, null, null, Instant.now(), null, null, null);
+        vulnerability.setFingerprint(fingerprint);
+        return vulnerabilityRepository.save(vulnerability);
+    }
+
+    /**
      * Full control over every date, which is what a deterministic dashboard dataset needs.
      *
      * @param resolvedAt must be non-null exactly when the status is RESOLVED; V5 enforces the

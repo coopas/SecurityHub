@@ -38,6 +38,7 @@ services:
       SECURITYHUB_REFRESH_EXPIRATION_DAYS: ${SECURITYHUB_REFRESH_EXPIRATION_DAYS:-14}
       SECURITYHUB_CORS_ALLOWED_ORIGINS: ${SECURITYHUB_CORS_ALLOWED_ORIGINS:-http://localhost:8081}
       SECURITYHUB_ATTACHMENTS_DIR: /var/securityhub/uploads
+      SECURITYHUB_SCAN_DIR: /var/securityhub/uploads-scan
       MAIL_HOST: mailhog
       MAIL_PORT: 1025
       SECURITYHUB_MAIL_FROM: ${SECURITYHUB_MAIL_FROM:-nao-responda@securityhub.local}
@@ -57,6 +58,10 @@ services:
       - "127.0.0.1:${MANAGEMENT_PORT:-9090}:9090"
     volumes:
       - attachments-data:/var/securityhub/uploads
+      # Volume próprio, e não uma pasta dentro do de anexos: o relatório de uma
+      # importação descartada é lixo, enquanto o anexo que alguém prendeu a um achado
+      # é evidência. Retenções diferentes não dividem o mesmo volume.
+      - scan-data:/var/securityhub/uploads-scan
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/actuator/health/readiness"]
       interval: 10s
@@ -97,3 +102,4 @@ services:
 volumes:
   postgres-data:
   attachments-data:
+  scan-data:

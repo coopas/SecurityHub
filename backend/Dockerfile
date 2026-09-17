@@ -9,10 +9,14 @@ COPY src ./src
 RUN mvn -B -q clean package -DskipTests
 
 FROM eclipse-temurin:11-jre-alpine
+# Os dois diretórios de upload precisam existir na imagem, ainda que vazios. O Compose monta
+# um volume nomeado em cada um, e um volume montado sobre um caminho que não existe na imagem
+# é criado pelo Docker como root — a aplicação roda como `securityhub` e o primeiro upload
+# morreria com AccessDenied. Criá-los aqui faz o volume herdar o dono certo.
 RUN apk add --no-cache wget \
  && addgroup -S securityhub \
  && adduser -S -G securityhub securityhub \
- && mkdir -p /var/securityhub/uploads \
+ && mkdir -p /var/securityhub/uploads /var/securityhub/uploads-scan \
  && chown -R securityhub:securityhub /var/securityhub
 
 WORKDIR /app

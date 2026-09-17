@@ -32,6 +32,22 @@ public interface AssetRepository extends JpaRepository<Asset, Long>, JpaSpecific
 
     boolean existsByProjectIdAndIdentifierIgnoreCase(Long projectId, String identifier);
 
+    /**
+     * The one lookup that returns the asset behind an identifier instead of only asserting
+     * that one exists. Added for the scan importer, which has to resolve a finding's target to
+     * the asset it will hang the vulnerability from.
+     *
+     * <p>Scoped by project and not by company, because that is the uniqueness boundary of
+     * docs/data-model.md: the same identifier may legitimately name a different asset in a
+     * different project, and a company-wide lookup would have no single answer. The caller
+     * proves the project belongs to the tenant before asking.
+     *
+     * <p>{@code IgnoreCase} matches the {@code lower(identifier)} of the unique index of V4.
+     * The index does not trim, so the caller normalizes the value first — otherwise
+     * {@code "host "} reads as a different asset from {@code host}.
+     */
+    Optional<Asset> findByProjectIdAndIdentifierIgnoreCase(Long projectId, String identifier);
+
     /** Update check: the asset being edited must not collide with itself. */
     boolean existsByProjectIdAndIdentifierIgnoreCaseAndIdNot(Long projectId, String identifier, Long id);
 
